@@ -1,5 +1,51 @@
 # Kafka Connect
 
+
+## Содержание
+
+1. [Введение](#введение)
+   - [Ключевые преимущества](#ключевые-преимущества)
+2. [Архитектура](#архитектура)
+   - [Компоненты](#компоненты)
+   - [Режимы работы](#режимы-работы)
+3. [Source Connectors](#source-connectors)
+   - [JDBC Source Connector](#jdbc-source-connector)
+   - [Debezium CDC Connectors](#debezium-cdc-connectors)
+   - [FileStream Source Connector](#filestream-source-connector)
+   - [S3 Source Connector](#s3-source-connector)
+4. [Sink Connectors](#sink-connectors)
+   - [JDBC Sink Connector](#jdbc-sink-connector)
+   - [Elasticsearch Sink Connector](#elasticsearch-sink-connector)
+   - [S3 Sink Connector](#s3-sink-connector)
+   - [HDFS Sink Connector](#hdfs-sink-connector)
+5. [Single Message Transforms (SMT)](#single-message-transforms-smt)
+   - [InsertField](#insertfield)
+   - [ReplaceField](#replacefield)
+   - [MaskField](#maskfield)
+   - [Filter](#filter)
+   - [TimestampConverter](#timestampconverter)
+   - [Flatten](#flatten)
+   - [Chain трансформаций](#chain-трансформаций)
+6. [Converters и Serialization](#converters-и-serialization)
+   - [Доступные Converters](#доступные-converters)
+7. [Управление коннекторами](#управление-коннекторами)
+   - [REST API](#rest-api)
+8. [Конфигурация Worker](#конфигурация-worker)
+   - [Distributed Mode Config](#distributed-mode-config)
+9. [Мониторинг и метрики](#мониторинг-и-метрики)
+   - [JMX Метрики](#jmx-метрики)
+   - [Логирование](#логирование)
+10. [Best Practices](#best-practices)
+   - [1. Настройка количества задач](#1-настройка-количества-задач)
+   - [2. Batch конфигурация](#2-batch-конфигурация)
+   - [3. Error handling](#3-error-handling)
+   - [4. Использование Schema Registry](#4-использование-schema-registry)
+   - [5. Мониторинг lag](#5-мониторинг-lag)
+11. [Практический пример: PostgreSQL → Kafka → Elasticsearch](#практический-пример-postgresql-kafka-elasticsearch)
+   - [1. Source Connector (PostgreSQL)](#1-source-connector-postgresql)
+   - [2. Sink Connector (Elasticsearch)](#2-sink-connector-elasticsearch)
+12. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 ## Введение
 
 **Kafka Connect** — это фреймворк для масштабируемой и надёжной интеграции Apache Kafka с внешними системами (базами данных, файловыми системами, облачными сервисами и другими источниками/приёмниками данных). Connect упрощает построение data pipelines без необходимости писать и поддерживать собственный код для интеграции.
