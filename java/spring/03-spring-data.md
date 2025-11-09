@@ -53,6 +53,7 @@
    - [Выбор правильного интерфейса репозитория](#выбор-правильного-интерфейса-репозитория)
    - [Оптимизация производительности](#оптимизация-производительности)
    - [Обработка больших объёмов данных](#обработка-больших-объёмов-данных)
+   - [Проблемы производительности пагинации (Offset/Limit)](#проблемы-производительности-пагинации-offsetlimit)
    - [Интеграция с аудитом и безопасностью](#интеграция-с-аудитом-и-безопасностью)
    - [Кеширование запросов](#кеширование-запросов)
    - [Тестирование репозиториев](#тестирование-репозиториев)
@@ -1202,6 +1203,249 @@ public class UserService {
     }
 }
 ```
+
+### Проблемы производительности пагинации (Offset/Limit)
+
+Классическая пагинация с использованием `OFFSET` и `LIMIT` хорошо работает для небольших наборов данных, но имеет серьёзные проблемы производительности на больших таблицах.
+
+**Проблема деградации производительности OFFSET**
+
+При использовании стандартной пагинации Spring Data генерирует SQL с `OFFSET`:
+
+```java
+// Страница 1: LIMIT 10 OFFSET 0
+Page<User> page1 = userRepository.findAll(PageRequest.of(0, 10));
+
+// Страница 1000: LIMIT 10 OFFSET 10000
+Page<User> page1000 = userRepository.findAll(PageRequest.of(1000, 10));
+```
+
+**Почему это медленно?**
+
+База данных должна:
+1. Прочитать все строки от начала до OFFSET (например, 10 000 строк)
+2. Отбросить их
+3. Вернуть только следующие 10 строк
+
+Чем больше номер страницы, тем медленнее запрос. На больших таблицах (миллионы строк) разница может быть критической:
+- Страница 1: ~5 мс
+- Страница 100: ~50 мс
+- Страница 10 000: ~5 секунд
+
+**Дополнительные проблемы:**
+
+1. **COUNT запрос** — для определения общего количества страниц выполняется `SELECT COUNT(*)`, который сканирует всю таблицу
+2. **Нестабильность результатов** — при добавлении/удалении данных между запросами страниц можно пропустить или дважды получить одни и те же записи
+3. **Нагрузка на БД** — глубокая пагинация создаёт высокую нагрузку на индексы
+
+**Решение 1: Keyset/Cursor Pagination (Seek Method)**
+
+Вместо OFFSET используйте условие на последний элемент предыдущей страницы:
+
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+    
+    // Первая страница
+    @Query("SELECT u FROM User u ORDER BY u.id ASC")
+    List<User> findFirstPage(Pageable pageable);
+    
+    // Следующие страницы по курсору
+    @Query("SELECT u FROM User u WHERE u.id > :lastId ORDER BY u.id ASC")
+    List<User> findNextPage(@Param("lastId") Long lastId, Pageable pageable);
+}
+
+@Service
+public class UserService {
+    
+    public List<User> getFirstPage(int pageSize) {
+        return userRepository.findFirstPage(PageRequest.of(0, pageSize));
+    }
+    
+    public List<User> getNextPage(Long lastSeenId, int pageSize) {
+        return userRepository.findNextPage(lastSeenId, PageRequest.of(0, pageSize));
+    }
+}
+```
+
+**Преимущества Keyset Pagination:**
+- Постоянная производительность независимо от глубины
+- Использует индекс эффективно (`WHERE id > :lastId` + `ORDER BY id`)
+- Стабильные результаты при параллельных изменениях данных
+
+**Недостатки:**
+- Невозможно перейти на произвольную страницу (только вперёд/назад)
+- Сложнее с составной сортировкой
+- Требует уникальный упорядоченный ключ
+
+**Решение 2: Slice вместо Page**
+
+Если не нужно знать общее количество страниц, используйте `Slice`:
+
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+    Slice<User> findByActive(boolean active, Pageable pageable);
+}
+
+@Service
+public class UserService {
+    public Slice<User> getActiveUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userRepository.findByActive(true, pageable);
+    }
+}
+```
+
+`Slice` не выполняет COUNT запрос, но сообщает, есть ли следующая страница (делает `LIMIT size + 1`).
+
+**Решение 3: Материализованные представления для агрегатов**
+
+Для часто запрашиваемых данных создайте материализованное представление:
+
+```sql
+CREATE MATERIALIZED VIEW user_summary AS
+SELECT id, username, email, created_date
+FROM users
+WHERE active = true
+ORDER BY created_date DESC;
+
+CREATE INDEX idx_user_summary_created ON user_summary(created_date);
+```
+
+Периодически обновляйте представление (например, по расписанию).
+
+**Решение 4: Комбинированный подход с кешированием**
+
+Кешируйте COUNT запрос и первые N страниц:
+
+```java
+@Service
+public class UserService {
+    
+    @Cacheable(value = "userCount", unless = "#result == null")
+    public long getUserCount() {
+        return userRepository.count();
+    }
+    
+    @Cacheable(value = "userPages", key = "#page", unless = "#page > 10")
+    public Page<User> getUsers(int page, int size) {
+        return userRepository.findAll(PageRequest.of(page, size));
+    }
+}
+```
+
+**Решение 5: Ограничение глубины пагинации**
+
+В production системах часто ограничивают максимальную глубину:
+
+```java
+@Service
+public class UserService {
+    private static final int MAX_PAGE = 100;
+    private static final int MAX_SIZE = 100;
+    
+    public Page<User> getUsers(int page, int size) {
+        if (page > MAX_PAGE) {
+            throw new IllegalArgumentException("Page number exceeds maximum allowed: " + MAX_PAGE);
+        }
+        if (size > MAX_SIZE) {
+            size = MAX_SIZE;
+        }
+        return userRepository.findAll(PageRequest.of(page, size));
+    }
+}
+```
+
+**Рекомендации по выбору подхода:**
+
+| Сценарий | Рекомендация |
+|----------|--------------|
+| Небольшие таблицы (<10K записей) | Стандартная Page пагинация |
+| Infinite scroll в UI | Slice или Keyset pagination |
+| API с большими данными | Keyset pagination |
+| Поиск с фильтрами | Ограниченная Page + кеширование COUNT |
+| Отчёты и экспорт | Stream API без пагинации |
+| Публичные API | Cursor-based pagination (RFC 8288) |
+
+**Пример реализации Cursor Pagination для REST API:**
+
+```java
+public class CursorPage<T> {
+    private List<T> content;
+    private String nextCursor;
+    private String prevCursor;
+    private boolean hasNext;
+    private boolean hasPrevious;
+    
+    // constructors, getters
+}
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    
+    @GetMapping
+    public CursorPage<User> getUsers(
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        List<User> users;
+        if (cursor == null) {
+            users = userRepository.findFirstPage(PageRequest.of(0, size + 1));
+        } else {
+            Long lastId = decodeCursor(cursor);
+            users = userRepository.findNextPage(lastId, PageRequest.of(0, size + 1));
+        }
+        
+        boolean hasNext = users.size() > size;
+        if (hasNext) {
+            users = users.subList(0, size);
+        }
+        
+        String nextCursor = hasNext ? encodeCursor(users.get(size - 1).getId()) : null;
+        
+        return new CursorPage<>(users, nextCursor, null, hasNext, false);
+    }
+    
+    private String encodeCursor(Long id) {
+        return Base64.getEncoder().encodeToString(id.toString().getBytes());
+    }
+    
+    private Long decodeCursor(String cursor) {
+        return Long.parseLong(new String(Base64.getDecoder().decode(cursor)));
+    }
+}
+```
+
+**База данных специфичные оптимизации:**
+
+**PostgreSQL:**
+```sql
+-- Использование индексов для быстрой пагинации
+CREATE INDEX idx_users_id ON users(id);
+
+-- Для сложной сортировки
+CREATE INDEX idx_users_created_id ON users(created_date DESC, id DESC);
+```
+
+**MySQL/MariaDB:**
+```sql
+-- Избегайте глубокого OFFSET через подзапрос
+SELECT u.* FROM users u
+INNER JOIN (
+    SELECT id FROM users ORDER BY id LIMIT 10 OFFSET 10000
+) AS subq ON u.id = subq.id;
+```
+
+**SQL Server:**
+```sql
+-- Используйте OFFSET FETCH для эффективной пагинации
+SELECT * FROM Users
+ORDER BY Id
+OFFSET 10000 ROWS
+FETCH NEXT 10 ROWS ONLY;
+```
+
+> **Важно:** Всегда тестируйте производительность пагинации на продакшн-подобных объёмах данных. То, что работает на тестовых 1000 записей, может сломаться на миллионах.
 
 ### Интеграция с аудитом и безопасностью
 
