@@ -40,6 +40,7 @@
   - [Spring Data](spring/03-spring-data.md)
   - [Spring Integration](spring/04-spring-integration.md)
   - [Spring Proxying и AOP](spring/05-spring-proxying.md)
+  - [Реактивное программирование](spring/06-reactive-programming.md)
 
 → [Перейти к материалам по Spring Framework](spring/README.md)
 
