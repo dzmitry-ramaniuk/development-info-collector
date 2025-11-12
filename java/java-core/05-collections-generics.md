@@ -8,17 +8,24 @@
    - [Set](#set)
    - [Queue и Deque](#queue-и-deque)
    - [Map](#map)
-2. [Контракты equals и hashCode](#контракты-equals-и-hashcode)
+2. [Методы для работы с коллекциями](#методы-для-работы-с-коллекциями)
+   - [Утилитные методы класса Collections](#утилитные-методы-класса-collections)
+   - [Методы интерфейса Collection](#методы-интерфейса-collection)
+   - [Методы интерфейса List](#методы-интерфейса-list)
+   - [Методы интерфейса Set](#методы-интерфейса-set)
+   - [Методы интерфейса Map](#методы-интерфейса-map)
+   - [Фабричные методы для создания коллекций](#фабричные-методы-для-создания-коллекций)
+3. [Контракты equals и hashCode](#контракты-equals-и-hashcode)
    - [Контракт equals](#контракт-equals)
    - [Контракт hashCode](#контракт-hashcode)
    - [Связь equals и hashCode в коллекциях](#связь-equals-и-hashcode-в-коллекциях)
    - [Правильная реализация](#правильная-реализация)
    - [Распространённые ошибки](#распространённые-ошибки)
-3. [Generics и типобезопасность](#generics-и-типобезопасность)
-4. [Специализированные коллекции](#специализированные-коллекции)
-5. [Best practices](#best-practices)
-6. [Практические упражнения](#практические-упражнения)
-7. [Вопросы на собеседовании](#вопросы-на-собеседовании)
+4. [Generics и типобезопасность](#generics-и-типобезопасность)
+5. [Специализированные коллекции](#специализированные-коллекции)
+6. [Best practices](#best-practices)
+7. [Практические упражнения](#практические-упражнения)
+8. [Вопросы на собеседовании](#вопросы-на-собеседовании)
 
 ## Каркас коллекций Java
 Стандартный пакет `java.util` задаёт каркас через интерфейсы `Collection`, `List`, `Set`, `Queue`, `Deque`, `Map`. Каждый
@@ -87,6 +94,721 @@
 - **`WeakHashMap`**. Хранит ключи через `WeakReference`. Когда на ключ больше нет сильных ссылок, запись удаляется GC. Использует
   `ReferenceQueue` для очистки. Потокобезопасности нет; для многопоточности применяют внешнюю синхронизацию или `ConcurrentHashMap`
   с обёртками на слабых ссылках из сторонних библиотек.
+
+## Методы для работы с коллекциями
+
+Java предоставляет богатый набор методов для работы с коллекциями как в самих интерфейсах коллекций, так и в утилитном классе 
+`Collections`. Знание этих методов критично для эффективной работы с данными и является частым предметом вопросов на собеседованиях.
+
+### Утилитные методы класса Collections
+
+Класс `java.util.Collections` содержит статические методы для операций над коллекциями.
+
+#### Сортировка и поиск
+
+```java
+// Сортировка списка (требует Comparable или Comparator)
+Collections.sort(list);
+Collections.sort(list, comparator);
+
+// Бинарный поиск (список должен быть отсортирован)
+int index = Collections.binarySearch(list, key);
+int index = Collections.binarySearch(list, key, comparator);
+
+// Перемешивание элементов
+Collections.shuffle(list);
+Collections.shuffle(list, random);
+
+// Реверс списка
+Collections.reverse(list);
+```
+
+**Пример:**
+```java
+List<Integer> numbers = new ArrayList<>(Arrays.asList(5, 2, 8, 1, 9));
+Collections.sort(numbers);  // [1, 2, 5, 8, 9]
+int index = Collections.binarySearch(numbers, 5);  // 2
+```
+
+#### Модификация и заполнение
+
+```java
+// Заполнение всех элементов одним значением
+Collections.fill(list, element);
+
+// Копирование элементов из одного списка в другой
+Collections.copy(dest, src);
+
+// Замена всех вхождений одного элемента другим
+Collections.replaceAll(list, oldVal, newVal);
+
+// Циклический сдвиг элементов
+Collections.rotate(list, distance);
+
+// Обмен двух элементов
+Collections.swap(list, i, j);
+```
+
+**Пример:**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("a", "b", "c", "d"));
+Collections.rotate(list, 2);  // [c, d, a, b]
+Collections.swap(list, 0, 3);  // [b, d, a, c]
+```
+
+#### Поиск экстремумов
+
+```java
+// Максимальный и минимальный элементы
+T max = Collections.max(collection);
+T max = Collections.max(collection, comparator);
+T min = Collections.min(collection);
+T min = Collections.min(collection, comparator);
+
+// Частота встречаемости элемента
+int frequency = Collections.frequency(collection, element);
+```
+
+**Пример:**
+```java
+List<Integer> numbers = Arrays.asList(3, 7, 2, 9, 2, 5, 2);
+int max = Collections.max(numbers);  // 9
+int frequency = Collections.frequency(numbers, 2);  // 3
+```
+
+#### Создание неизменяемых и синхронизированных коллекций
+
+```java
+// Неизменяемые обёртки (read-only view)
+List<T> unmodifiableList = Collections.unmodifiableList(list);
+Set<T> unmodifiableSet = Collections.unmodifiableSet(set);
+Map<K,V> unmodifiableMap = Collections.unmodifiableMap(map);
+
+// Синхронизированные обёртки (потокобезопасные)
+List<T> syncList = Collections.synchronizedList(list);
+Set<T> syncSet = Collections.synchronizedSet(set);
+Map<K,V> syncMap = Collections.synchronizedMap(map);
+
+// Проверенные коллекции (type-safe в runtime)
+List<String> checkedList = Collections.checkedList(list, String.class);
+```
+
+> **Важно**: Неизменяемые обёртки не создают копию коллекции, а лишь запрещают модификацию через wrapper. 
+> Если исходная коллекция изменяется, изменения видны через неизменяемую обёртку.
+
+**Пример потокобезопасности:**
+```java
+List<String> list = new ArrayList<>();
+List<String> syncList = Collections.synchronizedList(list);
+
+// Итерация требует ручной синхронизации
+synchronized(syncList) {
+    for (String item : syncList) {
+        System.out.println(item);
+    }
+}
+```
+
+#### Специальные коллекции
+
+```java
+// Пустые неизменяемые коллекции (singleton instances)
+List<T> emptyList = Collections.emptyList();
+Set<T> emptySet = Collections.emptySet();
+Map<K,V> emptyMap = Collections.emptyMap();
+
+// Singleton коллекции (один элемент, неизменяемые)
+Set<T> singleton = Collections.singleton(element);
+List<T> singletonList = Collections.singletonList(element);
+Map<K,V> singletonMap = Collections.singletonMap(key, value);
+
+// N копий одного элемента (неизменяемый список)
+List<T> nCopies = Collections.nCopies(n, element);
+```
+
+**Пример:**
+```java
+// Эффективная инициализация с повторяющимися значениями
+List<String> tenZeros = Collections.nCopies(10, "0");
+// ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+```
+
+#### Проверка несвязанности коллекций
+
+```java
+// Проверка, что две коллекции не имеют общих элементов
+boolean disjoint = Collections.disjoint(collection1, collection2);
+```
+
+**Пример:**
+```java
+Set<Integer> set1 = new HashSet<>(Arrays.asList(1, 2, 3));
+Set<Integer> set2 = new HashSet<>(Arrays.asList(4, 5, 6));
+boolean noCommon = Collections.disjoint(set1, set2);  // true
+```
+
+### Методы интерфейса Collection
+
+Базовый интерфейс `Collection<E>` определяет общие операции для всех коллекций (кроме Map).
+
+#### Добавление и удаление элементов
+
+```java
+// Добавление одного элемента
+boolean add(E element);
+
+// Добавление всех элементов из другой коллекции
+boolean addAll(Collection<? extends E> c);
+
+// Удаление одного элемента
+boolean remove(Object element);
+
+// Удаление всех элементов из коллекции c
+boolean removeAll(Collection<?> c);
+
+// Удаление элементов, удовлетворяющих условию (Java 8+)
+boolean removeIf(Predicate<? super E> filter);
+
+// Сохранение только элементов, присутствующих в коллекции c
+boolean retainAll(Collection<?> c);
+
+// Удаление всех элементов
+void clear();
+```
+
+**Примеры:**
+```java
+List<Integer> numbers = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6));
+
+// Удаление чётных чисел
+numbers.removeIf(n -> n % 2 == 0);  // [1, 3, 5]
+
+// Сохранение только элементов из другого списка
+List<Integer> keep = Arrays.asList(1, 3, 7);
+numbers.retainAll(keep);  // [1, 3]
+```
+
+#### Проверка содержимого
+
+```java
+// Проверка наличия элемента
+boolean contains(Object element);
+
+// Проверка наличия всех элементов
+boolean containsAll(Collection<?> c);
+
+// Проверка на пустоту
+boolean isEmpty();
+
+// Размер коллекции
+int size();
+```
+
+#### Преобразование в массив
+
+```java
+// Массив Object[]
+Object[] toArray();
+
+// Типизированный массив
+<T> T[] toArray(T[] array);
+
+// Java 11+: функциональная версия
+<T> T[] toArray(IntFunction<T[]> generator);
+```
+
+**Примеры:**
+```java
+List<String> list = Arrays.asList("A", "B", "C");
+
+// Старый способ
+String[] array1 = list.toArray(new String[0]);
+
+// Java 11+: более идиоматичный
+String[] array2 = list.toArray(String[]::new);
+```
+
+#### Итерация и потоковая обработка
+
+```java
+// Итератор
+Iterator<E> iterator();
+
+// forEach с лямбдой (Java 8+)
+void forEach(Consumer<? super E> action);
+
+// Получение стрима (Java 8+)
+Stream<E> stream();
+Stream<E> parallelStream();
+```
+
+**Пример:**
+```java
+List<String> names = Arrays.asList("Alice", "Bob", "Charlie");
+
+// forEach
+names.forEach(name -> System.out.println(name));
+
+// Stream API
+names.stream()
+     .filter(name -> name.startsWith("A"))
+     .map(String::toUpperCase)
+     .forEach(System.out::println);
+```
+
+### Методы интерфейса List
+
+Интерфейс `List<E>` расширяет `Collection<E>` и добавляет методы для работы с индексированным доступом.
+
+#### Доступ по индексу
+
+```java
+// Получение элемента по индексу
+E get(int index);
+
+// Установка элемента по индексу (возвращает старое значение)
+E set(int index, E element);
+
+// Добавление элемента по индексу
+void add(int index, E element);
+
+// Добавление коллекции элементов начиная с индекса
+boolean addAll(int index, Collection<? extends E> c);
+
+// Удаление элемента по индексу (возвращает удалённый элемент)
+E remove(int index);
+```
+
+**Пример:**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("A", "B", "D"));
+list.add(2, "C");  // ["A", "B", "C", "D"]
+String removed = list.set(0, "Z");  // ["Z", "B", "C", "D"], removed = "A"
+```
+
+#### Поиск элементов
+
+```java
+// Индекс первого вхождения элемента (-1 если не найден)
+int indexOf(Object element);
+
+// Индекс последнего вхождения элемента
+int lastIndexOf(Object element);
+```
+
+**Пример:**
+```java
+List<String> list = Arrays.asList("A", "B", "A", "C", "A");
+int first = list.indexOf("A");      // 0
+int last = list.lastIndexOf("A");   // 4
+```
+
+#### Работа с подсписками
+
+```java
+// Создание view на подсписок [fromIndex, toIndex)
+List<E> subList(int fromIndex, int toIndex);
+```
+
+> **Важно**: `subList()` возвращает **view**, а не копию. Изменения в подсписке отражаются на исходном списке и наоборот.
+
+**Пример:**
+```java
+List<Integer> numbers = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5));
+List<Integer> subList = numbers.subList(1, 4);  // [2, 3, 4]
+
+subList.set(0, 10);  // Изменяет исходный список
+// numbers: [1, 10, 3, 4, 5]
+
+subList.clear();  // Удаляет элементы из исходного списка
+// numbers: [1, 5]
+```
+
+#### Специализированные методы (Java 8+)
+
+```java
+// Замена всех элементов результатом применения функции
+void replaceAll(UnaryOperator<E> operator);
+
+// Сортировка с использованием компаратора
+void sort(Comparator<? super E> c);
+```
+
+**Пример:**
+```java
+List<String> words = new ArrayList<>(Arrays.asList("hello", "world", "java"));
+words.replaceAll(String::toUpperCase);  // ["HELLO", "WORLD", "JAVA"]
+words.sort(String::compareTo);  // ["HELLO", "JAVA", "WORLD"]
+```
+
+#### Итерация в обратном порядке
+
+```java
+// ListIterator поддерживает двустороннюю итерацию
+ListIterator<E> listIterator();
+ListIterator<E> listIterator(int index);
+```
+
+**Пример:**
+```java
+List<String> list = Arrays.asList("A", "B", "C");
+ListIterator<String> iter = list.listIterator(list.size());
+
+while (iter.hasPrevious()) {
+    System.out.println(iter.previous());  // C, B, A
+}
+```
+
+### Методы интерфейса Set
+
+Интерфейс `Set<E>` наследует методы `Collection<E>`, но не добавляет специфических методов на уровне базового интерфейса. 
+Однако подинтерфейсы `SortedSet` и `NavigableSet` предоставляют дополнительные возможности.
+
+#### Методы SortedSet
+
+```java
+// Первый (наименьший) элемент
+E first();
+
+// Последний (наибольший) элемент
+E last();
+
+// Подмножество [fromElement, toElement)
+SortedSet<E> subSet(E fromElement, E toElement);
+
+// Элементы строго меньше toElement
+SortedSet<E> headSet(E toElement);
+
+// Элементы >= fromElement
+SortedSet<E> tailSet(E fromElement);
+
+// Компаратор (null если natural ordering)
+Comparator<? super E> comparator();
+```
+
+#### Методы NavigableSet
+
+```java
+// Наименьший элемент >= заданного (или null)
+E ceiling(E element);
+
+// Наибольший элемент <= заданного
+E floor(E element);
+
+// Наименьший элемент > заданного
+E higher(E element);
+
+// Наибольший элемент < заданного
+E lower(E element);
+
+// Удаление и возврат первого элемента
+E pollFirst();
+
+// Удаление и возврат последнего элемента
+E pollLast();
+
+// Обратный view на множество
+NavigableSet<E> descendingSet();
+
+// Итератор в обратном порядке
+Iterator<E> descendingIterator();
+```
+
+**Пример с TreeSet:**
+```java
+NavigableSet<Integer> set = new TreeSet<>(Arrays.asList(1, 3, 5, 7, 9));
+
+int ceiling = set.ceiling(4);   // 5 (наименьший >= 4)
+int floor = set.floor(4);       // 3 (наибольший <= 4)
+int higher = set.higher(5);     // 7 (наименьший > 5)
+int lower = set.lower(5);       // 3 (наибольший < 5)
+
+// Обратная итерация
+set.descendingSet().forEach(System.out::println);  // 9, 7, 5, 3, 1
+```
+
+### Методы интерфейса Map
+
+Интерфейс `Map<K,V>` не является частью иерархии `Collection`, но предоставляет свои методы для работы с парами ключ-значение.
+
+#### Базовые операции
+
+```java
+// Добавление пары ключ-значение (возвращает предыдущее значение или null)
+V put(K key, V value);
+
+// Добавление всех пар из другой Map
+void putAll(Map<? extends K, ? extends V> m);
+
+// Получение значения по ключу (null если нет)
+V get(Object key);
+
+// Удаление по ключу (возвращает удалённое значение)
+V remove(Object key);
+
+// Проверка наличия ключа
+boolean containsKey(Object key);
+
+// Проверка наличия значения
+boolean containsValue(Object value);
+
+// Размер карты
+int size();
+
+// Проверка на пустоту
+boolean isEmpty();
+
+// Удаление всех элементов
+void clear();
+```
+
+#### Методы для получения представлений (Java 8+)
+
+```java
+// Множество ключей (view)
+Set<K> keySet();
+
+// Коллекция значений (view)
+Collection<V> values();
+
+// Множество пар ключ-значение (view)
+Set<Map.Entry<K,V>> entrySet();
+```
+
+> **Важно**: Эти методы возвращают **view** на Map. Изменения в view отражаются на исходной Map и наоборот.
+
+**Пример:**
+```java
+Map<String, Integer> map = new HashMap<>();
+map.put("A", 1);
+map.put("B", 2);
+
+// Удаление через keySet
+map.keySet().remove("A");  // Удаляет пару из Map
+
+// Итерация через entrySet
+for (Map.Entry<String, Integer> entry : map.entrySet()) {
+    System.out.println(entry.getKey() + ": " + entry.getValue());
+}
+```
+
+#### Атомарные операции (Java 8+)
+
+```java
+// Добавить, если ключа нет (возвращает текущее значение)
+V putIfAbsent(K key, V value);
+
+// Удалить только если ключ связан с указанным значением
+boolean remove(Object key, Object value);
+
+// Заменить, если ключ присутствует
+V replace(K key, V value);
+
+// Заменить только если текущее значение совпадает
+boolean replace(K key, V oldValue, V newValue);
+
+// Получить значение или вернуть defaultValue
+V getOrDefault(Object key, V defaultValue);
+```
+
+**Примеры:**
+```java
+Map<String, Integer> map = new HashMap<>();
+map.put("count", 1);
+
+// Безопасное получение с дефолтом
+int value = map.getOrDefault("missing", 0);  // 0
+
+// Добавление только если отсутствует
+map.putIfAbsent("count", 10);  // Не изменит, вернёт 1
+map.putIfAbsent("new", 10);    // Добавит новую пару
+
+// Условная замена
+map.replace("count", 1, 2);  // true, изменит на 2
+map.replace("count", 1, 3);  // false, не изменит (текущее значение 2)
+```
+
+#### Функциональные операции (Java 8+)
+
+```java
+// Применить функцию к каждой паре
+void forEach(BiConsumer<? super K, ? super V> action);
+
+// Заменить все значения результатом функции
+void replaceAll(BiFunction<? super K, ? super V, ? extends V> function);
+
+// Вычислить значение, если ключа нет
+V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
+
+// Вычислить новое значение, если ключ присутствует
+V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+
+// Вычислить новое значение (независимо от наличия ключа)
+V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+
+// Слияние значений при наличии конфликта
+V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction);
+```
+
+**Примеры практического применения:**
+
+**1. Подсчёт частоты слов:**
+```java
+Map<String, Integer> wordCount = new HashMap<>();
+String[] words = {"apple", "banana", "apple", "cherry", "banana", "apple"};
+
+for (String word : words) {
+    wordCount.merge(word, 1, Integer::sum);
+}
+// {apple=3, banana=2, cherry=1}
+```
+
+**2. Группировка с computeIfAbsent:**
+```java
+Map<String, List<String>> grouping = new HashMap<>();
+grouping.computeIfAbsent("fruits", k -> new ArrayList<>()).add("apple");
+grouping.computeIfAbsent("fruits", k -> new ArrayList<>()).add("banana");
+// {fruits=[apple, banana]}
+```
+
+**3. Обновление значений с replaceAll:**
+```java
+Map<String, Integer> prices = new HashMap<>();
+prices.put("apple", 100);
+prices.put("banana", 50);
+
+// Повышение всех цен на 10%
+prices.replaceAll((k, v) -> (int)(v * 1.1));
+// {apple=110, banana=55}
+```
+
+**4. Условное удаление с compute:**
+```java
+Map<String, Integer> inventory = new HashMap<>();
+inventory.put("apple", 5);
+
+// Уменьшить количество на 1, удалить если стало 0
+inventory.compute("apple", (k, v) -> v == null || v <= 1 ? null : v - 1);
+```
+
+#### Методы SortedMap и NavigableMap
+
+Для `TreeMap` доступны дополнительные методы:
+
+```java
+// SortedMap методы (аналогично SortedSet)
+K firstKey();
+K lastKey();
+SortedMap<K,V> subMap(K fromKey, K toKey);
+SortedMap<K,V> headMap(K toKey);
+SortedMap<K,V> tailMap(K fromKey);
+
+// NavigableMap методы (аналогично NavigableSet)
+Map.Entry<K,V> ceilingEntry(K key);
+Map.Entry<K,V> floorEntry(K key);
+Map.Entry<K,V> higherEntry(K key);
+Map.Entry<K,V> lowerEntry(K key);
+K ceilingKey(K key);
+K floorKey(K key);
+K higherKey(K key);
+K lowerKey(K key);
+Map.Entry<K,V> pollFirstEntry();
+Map.Entry<K,V> pollLastEntry();
+NavigableMap<K,V> descendingMap();
+```
+
+**Пример:**
+```java
+NavigableMap<Integer, String> map = new TreeMap<>();
+map.put(1, "one");
+map.put(3, "three");
+map.put(5, "five");
+map.put(7, "seven");
+
+Map.Entry<Integer, String> entry = map.ceilingEntry(4);  // (5, "five")
+Integer key = map.lowerKey(5);  // 3
+```
+
+### Фабричные методы для создания коллекций
+
+Java 9+ предоставляет удобные фабричные методы для создания неизменяемых коллекций.
+
+#### List.of() (Java 9+)
+
+```java
+// Создание неизменяемого списка
+List<String> list = List.of("A", "B", "C");
+
+// Пустой неизменяемый список
+List<String> empty = List.of();
+
+// List.copyOf() создаёт неизменяемую копию
+List<String> copy = List.copyOf(mutableList);
+```
+
+> **Важно**: `List.of()` не допускает `null` элементы и бросает `NullPointerException` при попытке их добавления.
+
+#### Set.of() (Java 9+)
+
+```java
+// Создание неизменяемого множества
+Set<Integer> set = Set.of(1, 2, 3, 4, 5);
+
+// Set.of() бросает исключение при дубликатах
+Set<Integer> invalid = Set.of(1, 2, 2);  // IllegalArgumentException
+
+// Set.copyOf() создаёт неизменяемую копию
+Set<Integer> copy = Set.copyOf(mutableSet);
+```
+
+#### Map.of() и Map.ofEntries() (Java 9+)
+
+```java
+// Для небольших Map (до 10 пар)
+Map<String, Integer> map = Map.of(
+    "A", 1,
+    "B", 2,
+    "C", 3
+);
+
+// Для больших Map используйте Map.ofEntries()
+Map<String, Integer> largeMap = Map.ofEntries(
+    Map.entry("A", 1),
+    Map.entry("B", 2),
+    Map.entry("C", 3),
+    Map.entry("D", 4)
+    // ... можно добавить сколько угодно пар
+);
+
+// Map.copyOf() создаёт неизменяемую копию
+Map<String, Integer> copy = Map.copyOf(mutableMap);
+```
+
+**Пример использования:**
+```java
+// Старый способ (до Java 9)
+Map<String, Integer> oldWay = new HashMap<>();
+oldWay.put("A", 1);
+oldWay.put("B", 2);
+Map<String, Integer> unmodifiable = Collections.unmodifiableMap(oldWay);
+
+// Новый способ (Java 9+)
+Map<String, Integer> newWay = Map.of("A", 1, "B", 2);
+```
+
+#### Сравнение подходов создания неизменяемых коллекций
+
+| Подход | Преимущества | Недостатки |
+|--------|-------------|-----------|
+| `Collections.unmodifiableXxx()` | Работает во всех версиях Java, создаёт view | Исходная коллекция может быть изменена, более многословный |
+| `List.of()`, `Set.of()`, `Map.of()` | Компактный синтаксис, истинно неизменяемые | Только Java 9+, не допускает null |
+| `Arrays.asList()` | Простое создание списка из элементов | Список изменяемый (можно вызывать set), фиксированного размера |
+| `Stream.collect(toUnmodifiableList())` | Удобно при работе со Stream API | Java 10+, более многословный для простых случаев |
+
+**Рекомендации по выбору:**
+- Для новых проектов на Java 9+ используйте `List.of()`, `Set.of()`, `Map.of()`
+- Для совместимости со старыми версиями используйте `Collections.unmodifiableXxx()`
+- Для создания изменяемых коллекций с начальными значениями используйте конструкторы или `new ArrayList<>(Arrays.asList(...))`
 
 ## Контракты equals и hashCode
 
