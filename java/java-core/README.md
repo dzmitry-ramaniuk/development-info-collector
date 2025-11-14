@@ -58,6 +58,14 @@
    - Коллекторы
    - Параллельные стримы
 
+10. [Типы ссылок](10-reference-types.md)
+   - Strong Reference
+   - Weak Reference и WeakHashMap
+   - Soft Reference (memory-sensitive кэши)
+   - Phantom Reference (post-mortem cleanup)
+   - ReferenceQueue
+   - Практические примеры
+
 ## 🎯 Как использовать
 
 ### Для начинающих
