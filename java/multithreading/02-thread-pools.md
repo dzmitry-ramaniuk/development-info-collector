@@ -1,6 +1,14 @@
 # Управление потоками и пулами
 
-### Проблемы создания потоков напрямую
+## Содержание
+
+1. [Проблемы создания потоков напрямую](#проблемы-создания-потоков-напрямую)
+2. [ExecutorService: пулы потоков](#executorservice-пулы-потоков)
+3. [Кастомизация пулов с ThreadPoolExecutor](#кастомизация-пулов-с-threadpoolexecutor)
+4. [Обработка прерываний](#обработка-прерываний)
+5. [Виртуальные потоки (Java 19+)](#виртуальные-потоки-java-19)
+
+## Проблемы создания потоков напрямую
 
 Создание потоков через `new Thread()` имеет серьёзные недостатки:
 
@@ -20,7 +28,7 @@ public void handleRequest(Request request) {
 }
 ```
 
-### ExecutorService: пулы потоков
+## ExecutorService: пулы потоков
 
 `ExecutorService` решает эти проблемы, предоставляя управляемый пул потоков:
 
@@ -144,7 +152,7 @@ public class ParallelSum extends RecursiveTask<Long> {
 }
 ```
 
-### Кастомизация пулов с ThreadPoolExecutor
+## Кастомизация пулов с ThreadPoolExecutor
 
 Для тонкой настройки используйте `ThreadPoolExecutor` напрямую:
 
@@ -174,7 +182,7 @@ ThreadFactory namedThreadFactory = new ThreadFactory() {
 executor.setThreadFactory(namedThreadFactory);
 ```
 
-### Обработка прерываний
+## Обработка прерываний
 
 Корректная обработка `InterruptedException` критически важна:
 
@@ -206,7 +214,7 @@ public void processWithInterruption() {
 }
 ```
 
-### Виртуальные потоки (Java 19+)
+## Виртуальные потоки (Java 19+)
 
 Project Loom ввёл виртуальные потоки — легковесные потоки, управляемые JVM:
 

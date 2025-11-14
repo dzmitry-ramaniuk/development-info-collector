@@ -1,6 +1,16 @@
 # Шаблоны и практические приёмы
 
-### Producer-Consumer Pattern
+## Содержание
+
+1. [Producer-Consumer Pattern](#producer-consumer-pattern)
+2. [Worker Pool Pattern](#worker-pool-pattern)
+3. [Fork/Join Pattern](#forkjoin-pattern)
+4. [Reactive Streams Pattern](#reactive-streams-pattern)
+5. [Double-Checked Locking Pattern](#double-checked-locking-pattern)
+6. [Thread-Per-Message Pattern](#thread-per-message-pattern)
+7. [Параллельные коллекции и Stream API](#параллельные-коллекции-и-stream-api)
+
+## Producer-Consumer Pattern
 
 Классический паттерн для обмена данными между потоками через очередь:
 
@@ -91,7 +101,7 @@ public class BackpressureProducerConsumer {
 }
 ```
 
-### Worker Pool Pattern
+## Worker Pool Pattern
 
 Центральная очередь задач с группой рабочих потоков:
 
@@ -168,7 +178,7 @@ public class WorkerPool {
 }
 ```
 
-### Fork/Join Pattern
+## Fork/Join Pattern
 
 Рекурсивное разделение задач для параллельных вычислений:
 
@@ -254,7 +264,7 @@ public class ParallelMapFilter<T, R> extends RecursiveTask<List<R>> {
 }
 ```
 
-### Reactive Streams Pattern
+## Reactive Streams Pattern
 
 Асинхронная обработка потоков событий с контролем скорости (backpressure):
 
@@ -342,7 +352,7 @@ public class ReactiveExample {
 }
 ```
 
-### Double-Checked Locking Pattern
+## Double-Checked Locking Pattern
 
 Ленивая инициализация с минимизацией синхронизации:
 
@@ -379,7 +389,7 @@ public class Singleton {
 }
 ```
 
-### Thread-Per-Message Pattern
+## Thread-Per-Message Pattern
 
 Создание нового потока для каждого сообщения/запроса:
 
@@ -424,7 +434,7 @@ public class ThreadPerMessageVirtual {
 }
 ```
 
-### Параллельные коллекции и Stream API
+## Параллельные коллекции и Stream API
 
 ```java
 public class ParallelCollectionsExample {
