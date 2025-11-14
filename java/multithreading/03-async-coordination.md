@@ -1,6 +1,12 @@
 # Асинхронные вычисления и координация
 
-### CompletableFuture: асинхронные конвейеры
+## Содержание
+
+1. [CompletableFuture: асинхронные конвейеры](#completablefuture-асинхронные-конвейеры)
+2. [Structured Concurrency (Java 21+)](#structured-concurrency-java-21)
+3. [Future и его ограничения](#future-и-его-ограничения)
+
+## CompletableFuture: асинхронные конвейеры
 
 `CompletableFuture` (Java 8+) предоставляет мощный API для построения асинхронных вычислений:
 
@@ -138,7 +144,7 @@ public class AsyncHttpService {
 }
 ```
 
-### Structured Concurrency (Java 21+)
+## Structured Concurrency (Java 21+)
 
 Structured concurrency упрощает управление группами задач:
 
@@ -180,7 +186,7 @@ public String fetchFromMultipleSources(List<String> urls) throws Exception {
 }
 ```
 
-### Future и его ограничения
+## Future и его ограничения
 
 До `CompletableFuture` существовал интерфейс `Future` с серьёзными ограничениями:
 
