@@ -8,24 +8,45 @@
    - [Set](#set)
    - [Queue и Deque](#queue-и-deque)
    - [Map](#map)
-2. [Методы для работы с коллекциями](#методы-для-работы-с-коллекциями)
+2. [Детали реализации коллекций](#детали-реализации-коллекций)
+   - [Внутреннее устройство ArrayList](#внутреннее-устройство-arraylist)
+   - [Внутреннее устройство LinkedList](#внутреннее-устройство-linkedlist)
+   - [Внутреннее устройство HashMap](#внутреннее-устройство-hashmap)
+   - [Внутреннее устройство TreeMap](#внутреннее-устройство-treemap)
+   - [LinkedHashMap и LRU-кэш](#linkedhashmap-и-lru-кэш)
+3. [Итераторы](#итераторы)
+   - [Iterator и ListIterator](#iterator-и-listiterator)
+   - [Fail-Fast vs Fail-Safe итераторы](#fail-fast-vs-fail-safe-итераторы)
+   - [Spliterator](#spliterator)
+4. [Queue подробно](#queue-подробно)
+   - [PriorityQueue](#priorityqueue)
+   - [ArrayDeque](#arraydeque)
+   - [LinkedList как Deque](#linkedlist-как-deque)
+   - [Блокирующие очереди](#блокирующие-очереди)
+   - [Сравнение реализаций Queue](#сравнение-реализаций-queue)
+5. [Сортировка в коллекциях](#сортировка-в-коллекциях)
+   - [Comparable и Comparator](#comparable-и-comparator)
+   - [Алгоритмы сортировки](#алгоритмы-сортировки)
+   - [Сортировка списков](#сортировка-списков)
+   - [Сортировка с помощью Stream API](#сортировка-с-помощью-stream-api)
+6. [Методы для работы с коллекциями](#методы-для-работы-с-коллекциями)
    - [Утилитные методы класса Collections](#утилитные-методы-класса-collections)
    - [Методы интерфейса Collection](#методы-интерфейса-collection)
    - [Методы интерфейса List](#методы-интерфейса-list)
    - [Методы интерфейса Set](#методы-интерфейса-set)
    - [Методы интерфейса Map](#методы-интерфейса-map)
    - [Фабричные методы для создания коллекций](#фабричные-методы-для-создания-коллекций)
-3. [Контракты equals и hashCode](#контракты-equals-и-hashcode)
+7. [Контракты equals и hashCode](#контракты-equals-и-hashcode)
    - [Контракт equals](#контракт-equals)
    - [Контракт hashCode](#контракт-hashcode)
    - [Связь equals и hashCode в коллекциях](#связь-equals-и-hashcode-в-коллекциях)
    - [Правильная реализация](#правильная-реализация)
    - [Распространённые ошибки](#распространённые-ошибки)
-4. [Generics и типобезопасность](#generics-и-типобезопасность)
-5. [Специализированные коллекции](#специализированные-коллекции)
-6. [Best practices](#best-practices)
-7. [Практические упражнения](#практические-упражнения)
-8. [Вопросы на собеседовании](#вопросы-на-собеседовании)
+8. [Generics и типобезопасность](#generics-и-типобезопасность)
+9. [Специализированные коллекции](#специализированные-коллекции)
+10. [Best practices](#best-practices)
+11. [Практические упражнения](#практические-упражнения)
+12. [Вопросы на собеседовании](#вопросы-на-собеседовании)
 
 ## Каркас коллекций Java
 Стандартный пакет `java.util` задаёт каркас через интерфейсы `Collection`, `List`, `Set`, `Queue`, `Deque`, `Map`. Каждый
@@ -94,6 +115,1302 @@
 - **`WeakHashMap`**. Хранит ключи через `WeakReference`. Когда на ключ больше нет сильных ссылок, запись удаляется GC. Использует
   `ReferenceQueue` для очистки. Потокобезопасности нет; для многопоточности применяют внешнюю синхронизацию или `ConcurrentHashMap`
   с обёртками на слабых ссылках из сторонних библиотек.
+
+## Детали реализации коллекций
+
+Понимание внутреннего устройства коллекций критично для выбора правильной структуры данных и оптимизации производительности. 
+Рассмотрим детали реализации наиболее популярных коллекций.
+
+### Внутреннее устройство ArrayList
+
+`ArrayList` построен на основе динамического массива `Object[] elementData`. Основные характеристики:
+
+**Структура данных:**
+```java
+public class ArrayList<E> {
+    private transient Object[] elementData;
+    private int size;
+    private static final int DEFAULT_CAPACITY = 10;
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+}
+```
+
+**Механизм роста:**
+- При создании без параметров начальная ёмкость = 0 (с Java 7+)
+- При первом добавлении элемента ёмкость становится DEFAULT_CAPACITY (10)
+- При превышении ёмкости создаётся новый массив размером `oldCapacity + (oldCapacity >> 1)` (рост на ~50%)
+- Все элементы копируются в новый массив через `System.arraycopy()`
+
+**Временная сложность операций:**
+- `get(index)`: O(1) — прямой доступ по индексу
+- `add(element)`: амортизированная O(1), O(n) при расширении массива
+- `add(index, element)`: O(n) — требуется сдвиг всех элементов справа
+- `remove(index)`: O(n) — требуется сдвиг элементов для заполнения пустоты
+- `contains(element)`: O(n) — линейный поиск
+
+**Оптимизация памяти:**
+```java
+// Уменьшение размера массива до текущего size
+list.trimToSize();
+
+// Предварительное выделение ёмкости для избежания многократных расширений
+List<String> list = new ArrayList<>(1000);
+```
+
+**Проблемы при многопоточности:**
+```java
+// Проблема: одновременное изменение может привести к ArrayIndexOutOfBoundsException
+// или потере данных из-за race condition при расширении массива
+List<String> list = new ArrayList<>();
+// Поток 1: list.add("A");
+// Поток 2: list.add("B");  // Может возникнуть конфликт
+
+// Решение 1: Синхронизация
+List<String> syncList = Collections.synchronizedList(new ArrayList<>());
+
+// Решение 2: CopyOnWriteArrayList для сценария "много чтений"
+List<String> cowList = new CopyOnWriteArrayList<>();
+```
+
+### Внутреннее устройство LinkedList
+
+`LinkedList` — двусвязный список с узлами, содержащими ссылки на предыдущий и следующий элементы.
+
+**Структура данных:**
+```java
+public class LinkedList<E> {
+    private static class Node<E> {
+        E item;
+        Node<E> next;
+        Node<E> prev;
+    }
+    
+    transient Node<E> first;  // Ссылка на первый узел
+    transient Node<E> last;   // Ссылка на последний узел
+    transient int size = 0;
+}
+```
+
+**Временная сложность операций:**
+- `addFirst()`, `addLast()`: O(1) — добавление в начало/конец
+- `removeFirst()`, `removeLast()`: O(1) — удаление с концов
+- `get(index)`: O(n) — требуется проход от начала или конца (оптимизация: ближайший конец)
+- `add(index, element)`: O(n) — поиск позиции + вставка
+- `contains(element)`: O(n) — линейный поиск
+
+**Использование как Deque:**
+```java
+Deque<String> deque = new LinkedList<>();
+deque.addFirst("A");   // [A]
+deque.addLast("B");    // [A, B]
+deque.removeFirst();   // [B]
+deque.removeLast();    // []
+```
+
+**Потребление памяти:**
+- Каждый элемент требует дополнительно 2 ссылки (prev, next) ≈ 16 байт на 64-битной JVM
+- Для хранения 1000 элементов Integer: ArrayList ≈ 4 КБ, LinkedList ≈ 24 КБ
+
+**Когда использовать LinkedList:**
+- Частые вставки/удаления в начале или конце списка
+- Реализация очереди (Queue) или двусторонней очереди (Deque)
+- Редкий доступ по индексу
+
+**Когда НЕ использовать:**
+- Частый произвольный доступ по индексу (используйте ArrayList)
+- Минимизация потребления памяти
+
+### Внутреннее устройство HashMap
+
+`HashMap` использует массив бакетов (buckets) и хеш-функцию для быстрого доступа к элементам.
+
+**Структура данных:**
+```java
+public class HashMap<K,V> {
+    transient Node<K,V>[] table;  // Массив бакетов
+    transient int size;           // Количество пар ключ-значение
+    int threshold;                // Порог для рехеширования (capacity * loadFactor)
+    final float loadFactor;       // Коэффициент загрузки (по умолчанию 0.75)
+    
+    static class Node<K,V> {
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;  // Следующий узел в цепочке (при коллизии)
+    }
+}
+```
+
+**Механизм работы:**
+
+1. **Вычисление индекса бакета:**
+```java
+int hash = key.hashCode();
+int bucket = (hash ^ (hash >>> 16)) & (table.length - 1);
+```
+
+2. **Обработка коллизий (до Java 8):**
+- Коллизии разрешались только через связные списки
+- При большом количестве коллизий деградация до O(n)
+
+3. **Оптимизация в Java 8+:**
+- Если цепочка в бакете превышает TREEIFY_THRESHOLD (8 элементов), она превращается в красно-чёрное дерево
+- Требуется минимальная ёмкость MIN_TREEIFY_CAPACITY (64)
+- Уменьшает worst-case с O(n) до O(log n)
+
+**Рехеширование (resize):**
+```java
+// Происходит когда size > threshold
+// Новая ёмкость = старая ёмкость * 2
+// Все элементы перераспределяются по новым бакетам
+```
+
+**Пример рехеширования:**
+```java
+Map<String, Integer> map = new HashMap<>(4, 0.75f);
+// Начальная ёмкость: 4, порог: 4 * 0.75 = 3
+map.put("A", 1);  // size=1
+map.put("B", 2);  // size=2
+map.put("C", 3);  // size=3
+map.put("D", 4);  // size=4, triggers resize to capacity=8, threshold=6
+```
+
+**Временная сложность:**
+- `put()`, `get()`, `remove()`: средняя O(1), worst-case O(log n) после Java 8
+- `containsKey()`: средняя O(1)
+
+**Настройка производительности:**
+```java
+// Выбор правильной начальной ёмкости для известного количества элементов
+int expectedSize = 1000;
+int capacity = (int) (expectedSize / 0.75 + 1);
+Map<String, Integer> map = new HashMap<>(capacity);
+
+// Снижение loadFactor уменьшает коллизии, но увеличивает потребление памяти
+Map<String, Integer> lowCollisionMap = new HashMap<>(16, 0.5f);
+```
+
+### Внутреннее устройство TreeMap
+
+`TreeMap` реализован на основе красно-чёрного дерева — самобалансирующегося бинарного дерева поиска.
+
+**Структура данных:**
+```java
+public class TreeMap<K,V> {
+    private transient Entry<K,V> root;
+    private int size = 0;
+    private final Comparator<? super K> comparator;
+    
+    static final class Entry<K,V> {
+        K key;
+        V value;
+        Entry<K,V> left;
+        Entry<K,V> right;
+        Entry<K,V> parent;
+        boolean color = BLACK;
+    }
+}
+```
+
+**Свойства красно-чёрного дерева:**
+1. Каждый узел красный или чёрный
+2. Корень всегда чёрный
+3. Красные узлы не могут иметь красных детей
+4. Все пути от корня до листьев содержат одинаковое количество чёрных узлов
+5. Высота дерева ≤ 2 * log₂(n + 1)
+
+**Балансировка:**
+- При вставке/удалении выполняются вращения (rotations) для сохранения свойств
+- Гарантирует worst-case O(log n) для всех операций
+
+**Временная сложность:**
+- `put()`, `get()`, `remove()`: O(log n)
+- `firstKey()`, `lastKey()`: O(log n) — поиск крайних элементов
+- `subMap()`, `headMap()`, `tailMap()`: O(log n) — создание view
+
+**Сравнение элементов:**
+```java
+// Используется Comparator (если предоставлен) или natural ordering (Comparable)
+TreeMap<String, Integer> map1 = new TreeMap<>();  // Natural ordering
+TreeMap<String, Integer> map2 = new TreeMap<>(Comparator.reverseOrder());  // Обратный порядок
+TreeMap<String, Integer> map3 = new TreeMap<>((a, b) -> a.length() - b.length());  // По длине строки
+```
+
+**Когда использовать TreeMap:**
+- Нужны отсортированные ключи
+- Требуются диапазонные операции (subMap, headMap, tailMap)
+- Необходима навигация (ceilingKey, floorKey, higherKey, lowerKey)
+
+### LinkedHashMap и LRU-кэш
+
+`LinkedHashMap` расширяет `HashMap`, добавляя двусвязный список для поддержания порядка элементов.
+
+**Два режима работы:**
+
+1. **Insertion-order (по умолчанию):**
+```java
+Map<String, Integer> map = new LinkedHashMap<>();
+map.put("A", 1);
+map.put("B", 2);
+map.put("C", 3);
+// Итерация: A -> B -> C (порядок вставки)
+```
+
+2. **Access-order (для LRU):**
+```java
+Map<String, Integer> map = new LinkedHashMap<>(16, 0.75f, true);
+map.put("A", 1);
+map.put("B", 2);
+map.put("C", 3);
+map.get("A");  // A перемещается в конец
+// Итерация: B -> C -> A (порядок доступа)
+```
+
+**Реализация LRU-кэша:**
+
+```java
+public class LRUCache<K, V> extends LinkedHashMap<K, V> {
+    private final int maxEntries;
+    
+    public LRUCache(int maxEntries) {
+        super(16, 0.75f, true);  // access-order = true
+        this.maxEntries = maxEntries;
+    }
+    
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return size() > maxEntries;  // Автоматическое удаление старейшего элемента
+    }
+}
+
+// Использование
+LRUCache<String, String> cache = new LRUCache<>(3);
+cache.put("1", "one");
+cache.put("2", "two");
+cache.put("3", "three");
+cache.get("1");  // "1" становится самым свежим
+cache.put("4", "four");  // "2" удаляется как самый старый
+// Кэш: [3=three, 1=one, 4=four]
+```
+
+**Особенности LRU-кэша:**
+- Метод `removeEldestEntry()` вызывается после каждого `put()`
+- Автоматическое удаление наименее использованных элементов
+- Потокобезопасность требует внешней синхронизации
+
+**Потокобезопасный LRU-кэш:**
+```java
+public class ThreadSafeLRUCache<K, V> {
+    private final int maxEntries;
+    private final Map<K, V> cache;
+    
+    public ThreadSafeLRUCache(int maxEntries) {
+        this.maxEntries = maxEntries;
+        this.cache = Collections.synchronizedMap(
+            new LinkedHashMap<K, V>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+                    return size() > maxEntries;
+                }
+            }
+        );
+    }
+    
+    public V get(K key) {
+        synchronized (cache) {
+            return cache.get(key);
+        }
+    }
+    
+    public void put(K key, V value) {
+        synchronized (cache) {
+            cache.put(key, value);
+        }
+    }
+}
+```
+
+**Альтернативы для production:**
+- **Caffeine** — высокопроизводительная библиотека кэширования с LRU, LFU и другими политиками
+- **Guava Cache** — кэш от Google с поддержкой expiration, weighing, refresh
+- **Ehcache** — enterprise-уровневое решение с распределённым кэшированием
+
+## Итераторы
+
+Итераторы предоставляют унифицированный способ обхода элементов коллекций без раскрытия внутренней структуры.
+
+### Iterator и ListIterator
+
+**Iterator** — базовый интерфейс для обхода коллекций:
+
+```java
+public interface Iterator<E> {
+    boolean hasNext();  // Есть ли следующий элемент
+    E next();          // Получить следующий элемент и переместить курсор
+    void remove();     // Удалить текущий элемент (optional operation)
+}
+```
+
+**Использование Iterator:**
+```java
+List<String> list = Arrays.asList("A", "B", "C", "D");
+Iterator<String> iterator = list.iterator();
+
+while (iterator.hasNext()) {
+    String element = iterator.next();
+    System.out.println(element);
+    
+    // Безопасное удаление во время итерации
+    if (element.equals("B")) {
+        iterator.remove();  // Удаляет "B"
+    }
+}
+```
+
+> **Важно**: Удаление через `iterator.remove()` — единственный безопасный способ удаления элемента во время итерации.
+
+**Проблема удаления напрямую:**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));
+for (String element : list) {
+    if (element.equals("B")) {
+        list.remove(element);  // ConcurrentModificationException!
+    }
+}
+```
+
+**ListIterator** — расширенный итератор для списков с двусторонним обходом:
+
+```java
+public interface ListIterator<E> extends Iterator<E> {
+    boolean hasPrevious();        // Есть ли предыдущий элемент
+    E previous();                 // Получить предыдущий элемент
+    int nextIndex();              // Индекс следующего элемента
+    int previousIndex();          // Индекс предыдущего элемента
+    void set(E e);               // Заменить текущий элемент
+    void add(E e);               // Вставить элемент перед текущей позицией
+}
+```
+
+**Пример использования ListIterator:**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C", "D"));
+ListIterator<String> iterator = list.listIterator();
+
+// Прямой обход
+while (iterator.hasNext()) {
+    System.out.println(iterator.next());
+}
+
+// Обратный обход
+while (iterator.hasPrevious()) {
+    System.out.println(iterator.previous());
+}
+
+// Модификация во время итерации
+ListIterator<String> it = list.listIterator();
+while (it.hasNext()) {
+    String element = it.next();
+    if (element.equals("B")) {
+        it.set("B_modified");  // Замена элемента
+        it.add("B_new");       // Вставка нового элемента после текущего
+    }
+}
+// Результат: [A, B_modified, B_new, C, D]
+```
+
+### Fail-Fast vs Fail-Safe итераторы
+
+Коллекции в Java используют два разных подхода к обработке конкурентных модификаций.
+
+#### Fail-Fast итераторы
+
+**Определение:** Fail-fast итераторы немедленно бросают `ConcurrentModificationException` при обнаружении структурной модификации коллекции после создания итератора.
+
+**Механизм работы:**
+```java
+public class ArrayList<E> {
+    transient int modCount = 0;  // Счётчик модификаций
+    
+    public boolean add(E e) {
+        modCount++;  // Увеличивается при каждом изменении структуры
+        // ...
+    }
+    
+    private class Itr implements Iterator<E> {
+        int expectedModCount = modCount;  // Запоминается при создании итератора
+        
+        public E next() {
+            if (modCount != expectedModCount)
+                throw new ConcurrentModificationException();
+            // ...
+        }
+    }
+}
+```
+
+**Примеры fail-fast коллекций:**
+- `ArrayList`, `LinkedList`, `HashSet`, `HashMap`, `TreeMap`
+
+**Пример проблемы:**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));
+
+for (String item : list) {
+    list.add("D");  // ConcurrentModificationException!
+}
+
+// Решение 1: Использовать Iterator.remove()
+Iterator<String> it = list.iterator();
+while (it.hasNext()) {
+    String item = it.next();
+    if (someCondition(item)) {
+        it.remove();  // Безопасно
+    }
+}
+
+// Решение 2: Собрать элементы для удаления отдельно
+List<String> toRemove = new ArrayList<>();
+for (String item : list) {
+    if (someCondition(item)) {
+        toRemove.add(item);
+    }
+}
+list.removeAll(toRemove);
+
+// Решение 3: Использовать removeIf (Java 8+)
+list.removeIf(item -> someCondition(item));
+```
+
+#### Fail-Safe итераторы
+
+**Определение:** Fail-safe итераторы работают с копией данных или используют специальные механизмы синхронизации, позволяя безопасно модифицировать коллекцию во время итерации.
+
+**Механизм работы:**
+
+1. **Copy-on-Write подход (CopyOnWriteArrayList):**
+```java
+public class CopyOnWriteArrayList<E> {
+    private volatile Object[] array;
+    
+    public boolean add(E e) {
+        synchronized (lock) {
+            Object[] newArray = Arrays.copyOf(array, array.length + 1);
+            newArray[array.length] = e;
+            array = newArray;  // Атомарная замена ссылки
+        }
+        return true;
+    }
+    
+    public Iterator<E> iterator() {
+        return new COWIterator<>(array, 0);  // Работает с snapshot
+    }
+}
+```
+
+2. **Weakly consistent итераторы (ConcurrentHashMap):**
+- Отражают состояние на момент создания или позже
+- Могут пропустить или увидеть новые элементы
+- Никогда не бросают ConcurrentModificationException
+
+**Примеры fail-safe коллекций:**
+- `CopyOnWriteArrayList`, `CopyOnWriteArraySet`
+- `ConcurrentHashMap`, `ConcurrentSkipListMap`, `ConcurrentSkipListSet`
+- `ConcurrentLinkedQueue`, `ConcurrentLinkedDeque`
+
+**Пример использования:**
+```java
+List<String> list = new CopyOnWriteArrayList<>(Arrays.asList("A", "B", "C"));
+
+for (String item : list) {
+    list.add("D");  // Безопасно! Итератор работает со старым snapshot
+    list.remove("A");  // Безопасно! Не влияет на текущую итерацию
+}
+
+// ConcurrentHashMap
+Map<String, Integer> map = new ConcurrentHashMap<>();
+map.put("A", 1);
+map.put("B", 2);
+
+for (Map.Entry<String, Integer> entry : map.entrySet()) {
+    map.put("C", 3);  // Безопасно! Может быть видно или не видно в текущей итерации
+}
+```
+
+**Сравнение подходов:**
+
+| Характеристика | Fail-Fast | Fail-Safe |
+|----------------|-----------|-----------|
+| Исключение | Бросает ConcurrentModificationException | Не бросает исключений |
+| Производительность | Высокая для чтения | Может быть медленнее (копирование) |
+| Гарантии | Обнаруживает модификации | Weakly consistent |
+| Память | Экономна | Дополнительные копии (COW) |
+| Использование | Однопоточные приложения | Многопоточные приложения |
+| Примеры | ArrayList, HashMap | CopyOnWriteArrayList, ConcurrentHashMap |
+
+**Рекомендации по выбору:**
+- **Fail-fast**: Для однопоточных приложений или когда модификации контролируются
+- **Fail-safe**: Для многопоточных приложений с частыми чтениями и редкими записями
+- **CopyOnWrite**: Когда чтений значительно больше, чем записей (listeners, observers)
+- **Concurrent**: Для высоконагруженных многопоточных сценариев
+
+### Spliterator
+
+**Spliterator** (Splitable Iterator) — итератор для параллельной обработки коллекций, введённый в Java 8 для Stream API.
+
+**Основные методы:**
+```java
+public interface Spliterator<T> {
+    boolean tryAdvance(Consumer<? super T> action);  // Обработать следующий элемент
+    Spliterator<T> trySplit();                       // Разделить на две части
+    long estimateSize();                             // Оценка количества элементов
+    int characteristics();                           // Характеристики (ORDERED, SIZED, etc.)
+}
+```
+
+**Характеристики Spliterator:**
+- `ORDERED` — элементы имеют определённый порядок
+- `DISTINCT` — все элементы уникальны
+- `SORTED` — элементы отсортированы
+- `SIZED` — размер известен
+- `NONNULL` — элементы не могут быть null
+- `IMMUTABLE` — коллекция неизменяема
+- `CONCURRENT` — коллекция потокобезопасна
+- `SUBSIZED` — все spliterator'ы после split имеют известный размер
+
+**Пример использования:**
+```java
+List<String> list = Arrays.asList("A", "B", "C", "D", "E", "F");
+Spliterator<String> spliterator = list.spliterator();
+
+// Разделение для параллельной обработки
+Spliterator<String> split1 = spliterator.trySplit();  // Первая половина
+Spliterator<String> split2 = spliterator;              // Вторая половина
+
+// Обработка в двух потоках
+new Thread(() -> split1.forEachRemaining(System.out::println)).start();
+new Thread(() -> split2.forEachRemaining(System.out::println)).start();
+```
+
+**Использование в Stream API:**
+```java
+List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8);
+
+// Stream автоматически использует Spliterator для параллелизации
+int sum = numbers.parallelStream()
+                 .filter(n -> n % 2 == 0)
+                 .mapToInt(Integer::intValue)
+                 .sum();
+```
+
+**Пользовательский Spliterator:**
+```java
+public class RangeSpliterator implements Spliterator<Integer> {
+    private int current;
+    private final int end;
+    
+    public RangeSpliterator(int start, int end) {
+        this.current = start;
+        this.end = end;
+    }
+    
+    @Override
+    public boolean tryAdvance(Consumer<? super Integer> action) {
+        if (current < end) {
+            action.accept(current++);
+            return true;
+        }
+        return false;
+    }
+    
+    @Override
+    public Spliterator<Integer> trySplit() {
+        int mid = (current + end) / 2;
+        if (mid - current < 10) return null;  // Не делим маленькие диапазоны
+        
+        Spliterator<Integer> split = new RangeSpliterator(current, mid);
+        current = mid;
+        return split;
+    }
+    
+    @Override
+    public long estimateSize() {
+        return end - current;
+    }
+    
+    @Override
+    public int characteristics() {
+        return ORDERED | SIZED | SUBSIZED | NONNULL | IMMUTABLE;
+    }
+}
+
+// Использование
+StreamSupport.stream(new RangeSpliterator(0, 100), true)  // parallel=true
+             .forEach(System.out::println);
+```
+
+## Queue подробно
+
+Queue и его подинтерфейсы предоставляют различные реализации очередей для специфических сценариев использования.
+
+### PriorityQueue
+
+**PriorityQueue** — очередь с приоритетами, реализованная на основе двоичной кучи (binary heap).
+
+**Структура данных:**
+```java
+public class PriorityQueue<E> {
+    transient Object[] queue;  // Массив-куча
+    private int size = 0;
+    private final Comparator<? super E> comparator;
+}
+```
+
+**Свойства кучи:**
+- Для узла с индексом `i`:
+  - Родитель: `(i - 1) / 2`
+  - Левый ребёнок: `2 * i + 1`
+  - Правый ребёнок: `2 * i + 2`
+- Min-heap: родитель ≤ детей (по умолчанию)
+- Max-heap: родитель ≥ детей (с Comparator.reverseOrder())
+
+**Временная сложность:**
+- `offer(e)`: O(log n) — вставка с просеиванием вверх (sift-up)
+- `poll()`: O(log n) — удаление корня с просеиванием вниз (sift-down)
+- `peek()`: O(1) — доступ к минимальному элементу
+- `remove(o)`: O(n) — требуется поиск + удаление
+- `contains(o)`: O(n) — линейный поиск
+
+**Примеры использования:**
+
+1. **Natural ordering (min-heap):**
+```java
+PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+minHeap.offer(5);
+minHeap.offer(2);
+minHeap.offer(8);
+minHeap.offer(1);
+
+while (!minHeap.isEmpty()) {
+    System.out.println(minHeap.poll());  // 1, 2, 5, 8
+}
+```
+
+2. **Max-heap с Comparator:**
+```java
+PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Comparator.reverseOrder());
+maxHeap.offer(5);
+maxHeap.offer(2);
+maxHeap.offer(8);
+maxHeap.offer(1);
+
+while (!maxHeap.isEmpty()) {
+    System.out.println(maxHeap.poll());  // 8, 5, 2, 1
+}
+```
+
+3. **Пользовательские объекты:**
+```java
+record Task(String name, int priority) {}
+
+PriorityQueue<Task> taskQueue = new PriorityQueue<>(
+    Comparator.comparingInt(Task::priority)
+);
+
+taskQueue.offer(new Task("Low", 3));
+taskQueue.offer(new Task("High", 1));
+taskQueue.offer(new Task("Medium", 2));
+
+while (!taskQueue.isEmpty()) {
+    Task task = taskQueue.poll();
+    System.out.println(task.name() + ": " + task.priority());
+}
+// High: 1
+// Medium: 2
+// Low: 3
+```
+
+4. **Топ-K элементов (min-heap размера K):**
+```java
+public List<Integer> topK(int[] nums, int k) {
+    PriorityQueue<Integer> minHeap = new PriorityQueue<>(k);
+    
+    for (int num : nums) {
+        minHeap.offer(num);
+        if (minHeap.size() > k) {
+            minHeap.poll();  // Удаляем минимум
+        }
+    }
+    
+    return new ArrayList<>(minHeap);
+}
+```
+
+**Важные особенности:**
+- Итератор не гарантирует порядок элементов (итерация по массиву, не по приоритету)
+- Не потокобезопасна (используйте `PriorityBlockingQueue` для многопоточности)
+- Не допускает `null` элементы
+- Начальная ёмкость по умолчанию: 11
+
+### ArrayDeque
+
+**ArrayDeque** — двусторонняя очередь на основе кольцевого буфера (circular buffer).
+
+**Структура данных:**
+```java
+public class ArrayDeque<E> {
+    transient Object[] elements;
+    transient int head;  // Индекс первого элемента
+    transient int tail;  // Индекс следующей позиции для вставки
+}
+```
+
+**Механизм кольцевого буфера:**
+```
+Начальное состояние: [_, _, _, _]  head=0, tail=0
+
+addLast(A):  [A, _, _, _]  head=0, tail=1
+addLast(B):  [A, B, _, _]  head=0, tail=2
+addFirst(C): [A, B, _, C]  head=3, tail=2
+
+pollFirst(): [A, B, _, _]  head=0, tail=2  (C удалён)
+```
+
+**Временная сложность:**
+- `addFirst()`, `addLast()`: амортизированная O(1)
+- `removeFirst()`, `removeLast()`: O(1)
+- `getFirst()`, `getLast()`: O(1)
+- `remove(o)`: O(n) — линейный поиск
+- `contains(o)`: O(n)
+
+**Рост ёмкости:**
+- При переполнении ёмкость удваивается
+- Элементы копируются в новый массив с нормализацией индексов
+
+**Использование как Stack:**
+```java
+Deque<String> stack = new ArrayDeque<>();
+stack.push("A");
+stack.push("B");
+stack.push("C");
+
+while (!stack.isEmpty()) {
+    System.out.println(stack.pop());  // C, B, A (LIFO)
+}
+```
+
+**Использование как Queue:**
+```java
+Deque<String> queue = new ArrayDeque<>();
+queue.offer("A");
+queue.offer("B");
+queue.offer("C");
+
+while (!queue.isEmpty()) {
+    System.out.println(queue.poll());  // A, B, C (FIFO)
+}
+```
+
+**Преимущества ArrayDeque:**
+- Быстрее LinkedList для операций на концах (нет overhead на Node)
+- Меньше потребление памяти (нет ссылок prev/next)
+- Лучшая locality of reference (элементы в массиве)
+- Рекомендуется для реализации Stack вместо устаревшего класса Stack
+
+**Ограничения:**
+- Не потокобезопасна
+- Не допускает `null` элементы
+- Нет доступа по индексу (в отличие от LinkedList)
+
+### LinkedList как Deque
+
+LinkedList реализует интерфейс Deque, что делает его полноценной двусторонней очередью.
+
+**Методы Deque в LinkedList:**
+```java
+LinkedList<String> deque = new LinkedList<>();
+
+// Операции в начале
+deque.addFirst("A");      // Вставка в начало
+deque.offerFirst("B");    // Вставка в начало (не бросает исключение при ограничении)
+String first = deque.getFirst();     // Получить первый (бросает NoSuchElementException если пуст)
+String first2 = deque.peekFirst();   // Получить первый (возвращает null если пуст)
+deque.removeFirst();      // Удалить первый
+deque.pollFirst();        // Удалить первый (null если пуст)
+
+// Операции в конце
+deque.addLast("C");
+deque.offerLast("D");
+String last = deque.getLast();
+String last2 = deque.peekLast();
+deque.removeLast();
+deque.pollLast();
+
+// Stack операции
+deque.push("E");          // = addFirst()
+String top = deque.pop(); // = removeFirst()
+
+// Queue операции
+deque.offer("F");         // = addLast()
+String element = deque.poll();  // = removeFirst()
+```
+
+**Когда использовать LinkedList как Deque:**
+- Нужен доступ по индексу (хотя медленный O(n))
+- Реализация алгоритмов с частыми вставками/удалениями в середине
+- Совместимость с legacy кодом
+
+**Когда использовать ArrayDeque:**
+- Только операции на концах (Stack/Queue)
+- Важна производительность
+- Минимизация потребления памяти
+
+### Блокирующие очереди
+
+**BlockingQueue** — интерфейс для очередей с блокирующими операциями, используемых в producer-consumer паттерне.
+
+**Типы операций:**
+
+| Операция | Бросает исключение | Возвращает null/false | Блокируется | С таймаутом |
+|----------|-------------------|----------------------|-------------|-------------|
+| Вставка | `add(e)` | `offer(e)` | `put(e)` | `offer(e, timeout)` |
+| Удаление | `remove()` | `poll()` | `take()` | `poll(timeout)` |
+| Просмотр | `element()` | `peek()` | - | - |
+
+**Основные реализации:**
+
+1. **ArrayBlockingQueue** — ограниченная очередь на массиве:
+```java
+BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);  // Ёмкость 10
+
+// Producer
+new Thread(() -> {
+    try {
+        for (int i = 0; i < 20; i++) {
+            queue.put("Item" + i);  // Блокируется если очередь полна
+            System.out.println("Produced: Item" + i);
+        }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+}).start();
+
+// Consumer
+new Thread(() -> {
+    try {
+        while (true) {
+            String item = queue.take();  // Блокируется если очередь пуста
+            System.out.println("Consumed: " + item);
+            Thread.sleep(100);  // Имитация обработки
+        }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+}).start();
+```
+
+2. **LinkedBlockingQueue** — опционально ограниченная очередь на связном списке:
+```java
+// Неограниченная (capacity = Integer.MAX_VALUE)
+BlockingQueue<String> unbounded = new LinkedBlockingQueue<>();
+
+// Ограниченная
+BlockingQueue<String> bounded = new LinkedBlockingQueue<>(100);
+```
+
+3. **PriorityBlockingQueue** — неограниченная очередь с приоритетами:
+```java
+BlockingQueue<Task> queue = new PriorityBlockingQueue<>(10,
+    Comparator.comparingInt(Task::priority)
+);
+```
+
+4. **DelayQueue** — очередь с задержкой:
+```java
+class DelayedTask implements Delayed {
+    private final String name;
+    private final long startTime;
+    
+    public DelayedTask(String name, long delayMs) {
+        this.name = name;
+        this.startTime = System.currentTimeMillis() + delayMs;
+    }
+    
+    @Override
+    public long getDelay(TimeUnit unit) {
+        long diff = startTime - System.currentTimeMillis();
+        return unit.convert(diff, TimeUnit.MILLISECONDS);
+    }
+    
+    @Override
+    public int compareTo(Delayed o) {
+        return Long.compare(this.getDelay(TimeUnit.MILLISECONDS),
+                           o.getDelay(TimeUnit.MILLISECONDS));
+    }
+}
+
+DelayQueue<DelayedTask> queue = new DelayQueue<>();
+queue.put(new DelayedTask("Task1", 1000));  // Выполнится через 1 секунду
+queue.put(new DelayedTask("Task2", 500));   // Выполнится через 0.5 секунды
+
+DelayedTask task = queue.take();  // Блокируется до истечения delay
+```
+
+5. **SynchronousQueue** — очередь без внутренней ёмкости:
+```java
+// Каждая вставка блокируется до получения элемента другим потоком
+BlockingQueue<String> queue = new SynchronousQueue<>();
+
+// Producer блокируется в put() пока Consumer не вызовет take()
+new Thread(() -> {
+    try {
+        queue.put("Item");  // Блокируется здесь
+        System.out.println("Produced");
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+}).start();
+
+Thread.sleep(1000);  // Имитация задержки
+
+// Consumer разблокирует Producer
+String item = queue.take();
+System.out.println("Consumed: " + item);
+```
+
+**Обработка InterruptedException:**
+```java
+try {
+    queue.put(item);
+} catch (InterruptedException e) {
+    // Восстановить флаг прерывания
+    Thread.currentThread().interrupt();
+    // Логирование или другая обработка
+    throw new RuntimeException("Interrupted", e);
+}
+```
+
+### Сравнение реализаций Queue
+
+| Реализация | Ограничена | Порядок | Потокобезопасна | Null | Производительность |
+|------------|------------|---------|-----------------|------|-------------------|
+| `ArrayDeque` | Нет | FIFO | Нет | Нет | Высокая |
+| `LinkedList` | Нет | FIFO | Нет | Да | Средняя |
+| `PriorityQueue` | Нет | Priority | Нет | Нет | O(log n) операции |
+| `ArrayBlockingQueue` | Да | FIFO | Да | Нет | Высокая |
+| `LinkedBlockingQueue` | Опц. | FIFO | Да | Нет | Средняя |
+| `PriorityBlockingQueue` | Нет | Priority | Да | Нет | O(log n) операции |
+| `ConcurrentLinkedQueue` | Нет | FIFO | Да | Нет | Очень высокая (lock-free) |
+| `SynchronousQueue` | 0 | N/A | Да | Нет | Специфична |
+| `DelayQueue` | Нет | Delay | Да | Нет | O(log n) операции |
+
+**Рекомендации по выбору:**
+
+**Однопоточные сценарии:**
+- Stack: `ArrayDeque` (вместо `Stack`)
+- Queue: `ArrayDeque` (вместо `LinkedList`)
+- Priority Queue: `PriorityQueue`
+
+**Многопоточные сценарии:**
+- Producer-Consumer с ограничением: `ArrayBlockingQueue`
+- Producer-Consumer без ограничения: `LinkedBlockingQueue`
+- Высокая конкуренция: `ConcurrentLinkedQueue`
+- Синхронизация потоков: `SynchronousQueue`
+- Планирование задач: `DelayQueue` или `PriorityBlockingQueue`
+
+## Сортировка в коллекциях
+
+Java предоставляет богатый набор инструментов для сортировки коллекций.
+
+### Comparable и Comparator
+
+**Comparable** — интерфейс для определения natural ordering объектов:
+
+```java
+public interface Comparable<T> {
+    int compareTo(T o);
+    // Возвращает: отрицательное (this < o), 0 (this == o), положительное (this > o)
+}
+```
+
+**Пример реализации Comparable:**
+```java
+public class Person implements Comparable<Person> {
+    private String name;
+    private int age;
+    
+    @Override
+    public int compareTo(Person other) {
+        // Natural ordering по возрасту
+        return Integer.compare(this.age, other.age);
+    }
+}
+
+List<Person> people = Arrays.asList(
+    new Person("Alice", 30),
+    new Person("Bob", 25),
+    new Person("Charlie", 35)
+);
+
+Collections.sort(people);  // Сортировка по возрасту
+```
+
+**Comparator** — функциональный интерфейс для пользовательского сравнения:
+
+```java
+@FunctionalInterface
+public interface Comparator<T> {
+    int compare(T o1, T o2);
+}
+```
+
+**Создание Comparator:**
+
+1. **Анонимный класс:**
+```java
+Collections.sort(people, new Comparator<Person>() {
+    @Override
+    public int compare(Person p1, Person p2) {
+        return p1.getName().compareTo(p2.getName());
+    }
+});
+```
+
+2. **Lambda (Java 8+):**
+```java
+Collections.sort(people, (p1, p2) -> p1.getName().compareTo(p2.getName()));
+```
+
+3. **Method reference:**
+```java
+people.sort(Comparator.comparing(Person::getName));
+```
+
+4. **Комбинирование Comparator:**
+```java
+// Сортировка по возрасту, затем по имени
+people.sort(
+    Comparator.comparing(Person::getAge)
+              .thenComparing(Person::getName)
+);
+
+// Обратный порядок
+people.sort(Comparator.comparing(Person::getAge).reversed());
+
+// Null-safe сортировка
+people.sort(Comparator.nullsFirst(Comparator.comparing(Person::getName)));
+people.sort(Comparator.nullsLast(Comparator.comparing(Person::getName)));
+```
+
+5. **Специальные методы Comparator:**
+```java
+// Для int, long, double
+Comparator.comparingInt(Person::getAge);
+Comparator.comparingLong(Person::getId);
+Comparator.comparingDouble(Person::getSalary);
+
+// Natural order
+Comparator.naturalOrder();
+Comparator.reverseOrder();
+```
+
+### Алгоритмы сортировки
+
+**Collections.sort() и Arrays.sort():**
+
+1. **Для объектов (до Java 7):**
+- Использовался Merge Sort
+- Стабильная сортировка: сохраняет относительный порядок равных элементов
+- Временная сложность: O(n log n) в худшем случае
+- Пространственная сложность: O(n)
+
+2. **Для объектов (Java 7+):**
+- Использует TimSort (гибрид Merge Sort и Insertion Sort)
+- Разработан Tim Peters для Python
+- Эффективен на частично отсортированных данных
+- Временная сложность: O(n log n) в худшем, O(n) на отсортированных данных
+
+3. **Для примитивов:**
+- Dual-Pivot Quicksort (Java 7+)
+- Нестабильная сортировка
+- Быстрее на случайных данных
+- Временная сложность: O(n log n) в среднем, O(n²) в худшем
+
+**Параллельная сортировка (Java 8+):**
+```java
+int[] array = new int[1_000_000];
+// ... заполнение массива
+
+// Последовательная сортировка
+Arrays.sort(array);
+
+// Параллельная сортировка (использует Fork/Join framework)
+Arrays.parallelSort(array);
+
+// Для списков параллельная сортировка через Stream
+List<Integer> list = new ArrayList<>();
+list = list.parallelStream()
+           .sorted()
+           .collect(Collectors.toList());
+```
+
+### Сортировка списков
+
+**1. Collections.sort():**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("Charlie", "Alice", "Bob"));
+
+// Natural ordering
+Collections.sort(list);
+System.out.println(list);  // [Alice, Bob, Charlie]
+
+// С компаратором
+Collections.sort(list, Comparator.reverseOrder());
+System.out.println(list);  // [Charlie, Bob, Alice]
+
+// По длине строки
+Collections.sort(list, Comparator.comparingInt(String::length));
+```
+
+**2. List.sort() (Java 8+):**
+```java
+List<String> list = new ArrayList<>(Arrays.asList("Charlie", "Alice", "Bob"));
+
+// Более идиоматичный способ
+list.sort(Comparator.naturalOrder());
+list.sort(Comparator.comparingInt(String::length));
+list.sort(null);  // Natural ordering (если элементы Comparable)
+```
+
+**3. Сортировка с сохранением исходного списка:**
+```java
+List<String> original = Arrays.asList("C", "A", "B");
+List<String> sorted = new ArrayList<>(original);
+sorted.sort(Comparator.naturalOrder());
+// original: [C, A, B]
+// sorted: [A, B, C]
+```
+
+**4. Частичная сортировка (топ-N элементов):**
+```java
+public <T> List<T> topN(List<T> list, int n, Comparator<T> comparator) {
+    return list.stream()
+               .sorted(comparator)
+               .limit(n)
+               .collect(Collectors.toList());
+}
+
+List<Integer> numbers = Arrays.asList(5, 2, 8, 1, 9, 3, 7);
+List<Integer> top3 = topN(numbers, 3, Comparator.naturalOrder());
+// top3: [1, 2, 3]
+```
+
+### Сортировка с помощью Stream API
+
+**1. Базовая сортировка:**
+```java
+List<String> sorted = list.stream()
+                          .sorted()
+                          .collect(Collectors.toList());
+
+// С компаратором
+List<String> sorted = list.stream()
+                          .sorted(Comparator.reverseOrder())
+                          .collect(Collectors.toList());
+```
+
+**2. Сложная сортировка:**
+```java
+List<Person> people = // ...
+
+// Сортировка по нескольким полям
+List<Person> sorted = people.stream()
+    .sorted(Comparator.comparing(Person::getLastName)
+                      .thenComparing(Person::getFirstName)
+                      .thenComparingInt(Person::getAge))
+    .collect(Collectors.toList());
+
+// Сортировка с фильтрацией
+List<Person> adults = people.stream()
+    .filter(p -> p.getAge() >= 18)
+    .sorted(Comparator.comparing(Person::getAge))
+    .collect(Collectors.toList());
+```
+
+**3. Сортировка Map:**
+```java
+Map<String, Integer> map = new HashMap<>();
+map.put("Charlie", 30);
+map.put("Alice", 25);
+map.put("Bob", 35);
+
+// Сортировка по ключу
+Map<String, Integer> sortedByKey = map.entrySet().stream()
+    .sorted(Map.Entry.comparingByKey())
+    .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue,
+        (e1, e2) -> e1,
+        LinkedHashMap::new  // Сохраняет порядок
+    ));
+
+// Сортировка по значению
+Map<String, Integer> sortedByValue = map.entrySet().stream()
+    .sorted(Map.Entry.comparingByValue())
+    .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue,
+        (e1, e2) -> e1,
+        LinkedHashMap::new
+    ));
+
+// Топ-N пар по значению
+Map<String, Integer> top2 = map.entrySet().stream()
+    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+    .limit(2)
+    .collect(Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue,
+        (e1, e2) -> e1,
+        LinkedHashMap::new
+    ));
+```
+
+**4. Сортировка с группировкой:**
+```java
+List<Person> people = // ...
+
+// Группировка по возрасту и сортировка внутри групп
+Map<Integer, List<Person>> groupedAndSorted = people.stream()
+    .collect(Collectors.groupingBy(
+        Person::getAge,
+        Collectors.collectingAndThen(
+            Collectors.toList(),
+            list -> list.stream()
+                       .sorted(Comparator.comparing(Person::getName))
+                       .collect(Collectors.toList())
+        )
+    ));
+```
+
+**5. Производительность:**
+```java
+// Для больших коллекций используйте parallelStream()
+List<Integer> sorted = largeList.parallelStream()
+    .sorted()
+    .collect(Collectors.toList());
+
+// Но будьте осторожны: параллелизм добавляет overhead
+// Эффективен только для больших коллекций (обычно > 10_000 элементов)
+```
+
+**Рекомендации по сортировке:**
+- Для примитивных типов используйте `Arrays.sort()` (DualPivot Quicksort)
+- Для объектов используйте `Collections.sort()` или `List.sort()` (TimSort)
+- Для параллельной сортировки больших массивов используйте `Arrays.parallelSort()`
+- Для топ-N элементов используйте `PriorityQueue` или Stream с `limit()`
+- Для сортировки с фильтрацией/трансформацией используйте Stream API
+- Всегда проверяйте стабильность сортировки для вашего use case
 
 ## Методы для работы с коллекциями
 
@@ -1157,12 +2474,465 @@ class WrongHash {
 ```
 
 ## Generics и типобезопасность
-Generics появились в Java 5 и реализованы через стирание типов (type erasure). Во время компиляции создаётся специализированный
-байт-код, но в рантайме все обобщённые типы приводятся к `Object`. Это позволяет поддерживать обратную совместимость, но влечёт
-ограничения: нельзя создавать массивы обобщённых типов (`new T[]`), нельзя использовать примитивы без обёрток.
 
-Используйте ограниченные параметры (`<T extends Comparable<T>>`), wildcard (`?`, `? extends`, `? super`) для ковариантности и
-контравариантности. Соблюдайте правило PECS (Producer Extends, Consumer Super) при работе с коллекциями.
+Generics (обобщения) добавлены в Java 5 для обеспечения типобезопасности на этапе компиляции и устранения необходимости 
+явного приведения типов.
+
+### Основы Generics
+
+**До Generics (Java 1.4 и ранее):**
+```java
+List list = new ArrayList();
+list.add("String");
+list.add(42);  // Можно добавить любой тип!
+
+String s = (String) list.get(0);  // Явное приведение
+Integer i = (Integer) list.get(1);  // Runtime ошибка если тип не совпадает
+```
+
+**С Generics (Java 5+):**
+```java
+List<String> list = new ArrayList<>();
+list.add("String");
+list.add(42);  // Ошибка компиляции!
+
+String s = list.get(0);  // Приведение не требуется
+```
+
+**Преимущества Generics:**
+1. **Типобезопасность**: Ошибки типов обнаруживаются на этапе компиляции
+2. **Устранение приведений**: Не нужны явные casts
+3. **Переиспользование кода**: Один класс/метод работает с разными типами
+4. **Документация**: Типовые параметры делают код самодокументируемым
+
+### Type Erasure (Стирание типов)
+
+Generics в Java реализованы через **type erasure** — механизм, при котором информация о типе-параметре стирается во время компиляции.
+
+**Процесс type erasure:**
+
+1. **Замена параметров типа:**
+```java
+// Исходный код
+public class Box<T> {
+    private T value;
+    public T getValue() { return value; }
+}
+
+// После компиляции (type erasure)
+public class Box {
+    private Object value;
+    public Object getValue() { return value; }
+}
+```
+
+2. **С ограниченными параметрами:**
+```java
+// Исходный код
+public class Box<T extends Number> {
+    private T value;
+    public T getValue() { return value; }
+}
+
+// После компиляции
+public class Box {
+    private Number value;
+    public Number getValue() { return value; }
+}
+```
+
+3. **Вставка приведений типов:**
+```java
+// Исходный код
+Box<Integer> box = new Box<>();
+Integer value = box.getValue();
+
+// После компиляции
+Box box = new Box();
+Integer value = (Integer) box.getValue();  // Автоматическая вставка cast
+```
+
+**Последствия type erasure:**
+
+1. **Невозможно создать массив обобщённого типа:**
+```java
+// Ошибка компиляции
+T[] array = new T[10];
+List<String>[] lists = new ArrayList<String>[10];
+
+// Обходной путь
+@SuppressWarnings("unchecked")
+T[] array = (T[]) new Object[10];
+
+// Или используйте коллекции
+List<T> list = new ArrayList<>();
+```
+
+2. **Невозможно использовать instanceof с параметризованными типами:**
+```java
+// Ошибка компиляции
+if (obj instanceof List<String>) { }
+
+// Правильно
+if (obj instanceof List) { }
+```
+
+3. **Невозможно создать экземпляр параметра типа:**
+```java
+// Ошибка компиляции
+T instance = new T();
+
+// Обходной путь через Class
+public class Factory<T> {
+    private final Class<T> type;
+    
+    public Factory(Class<T> type) {
+        this.type = type;
+    }
+    
+    public T create() throws Exception {
+        return type.getDeclaredConstructor().newInstance();
+    }
+}
+
+Factory<String> factory = new Factory<>(String.class);
+String s = factory.create();
+```
+
+4. **Статические члены не могут использовать параметры типа класса:**
+```java
+public class Box<T> {
+    // Ошибка компиляции
+    private static T value;
+    
+    // Ошибка компиляции
+    public static T getValue() { }
+}
+```
+
+**Причина type erasure:**
+- Обратная совместимость с кодом до Java 5
+- Отсутствие необходимости изменять JVM
+- Сохранение совместимости байт-кода
+
+### Bounded Type Parameters (Ограниченные параметры типа)
+
+Параметры типа можно ограничивать для доступа к методам суперкласса.
+
+**Upper bound (? extends):**
+```java
+// T должен быть подтипом Number
+public class NumberBox<T extends Number> {
+    private T value;
+    
+    public double doubleValue() {
+        return value.doubleValue();  // Можем вызывать методы Number
+    }
+}
+
+NumberBox<Integer> intBox = new NumberBox<>();  // OK
+NumberBox<Double> doubleBox = new NumberBox<>();  // OK
+NumberBox<String> stringBox = new NumberBox<>();  // Ошибка компиляции
+```
+
+**Множественные границы:**
+```java
+// T должен реализовывать Comparable и Serializable
+public class SortableBox<T extends Comparable<T> & Serializable> {
+    private T value;
+    
+    public int compareTo(T other) {
+        return value.compareTo(other);
+    }
+}
+```
+
+> **Важно**: Первым в списке должен быть класс (если есть), затем интерфейсы.
+
+```java
+// Правильно
+<T extends Number & Comparable<T>>
+
+// Неправильно
+<T extends Comparable<T> & Number>  // Ошибка если Number не интерфейс
+```
+
+### Wildcards (Подстановочные символы)
+
+Wildcards позволяют работать с неизвестными типами и обеспечивают гибкость при работе с обобщёнными типами.
+
+#### Unbounded Wildcard (?)
+
+```java
+// Принимает список любого типа
+public void printList(List<?> list) {
+    for (Object elem : list) {
+        System.out.println(elem);
+    }
+}
+
+printList(new ArrayList<Integer>());
+printList(new ArrayList<String>());
+```
+
+**Ограничения unbounded wildcard:**
+```java
+List<?> list = new ArrayList<String>();
+Object obj = list.get(0);  // OK: читаем как Object
+list.add("String");  // Ошибка компиляции! Не можем добавлять
+list.add(null);  // OK: null можно добавить в любой тип
+```
+
+#### Upper Bounded Wildcard (? extends T)
+
+**Producer Extends**: Коллекция предоставляет (produces) элементы определённого типа или его подтипов.
+
+```java
+// Принимает List<Number> или List<Integer> или List<Double> и т.д.
+public double sumOfList(List<? extends Number> list) {
+    double sum = 0.0;
+    for (Number num : list) {
+        sum += num.doubleValue();  // Читаем как Number
+    }
+    return sum;
+}
+
+List<Integer> integers = Arrays.asList(1, 2, 3);
+List<Double> doubles = Arrays.asList(1.0, 2.0, 3.0);
+
+sumOfList(integers);  // OK
+sumOfList(doubles);   // OK
+```
+
+**Ковариантность для чтения:**
+```java
+List<? extends Number> list = new ArrayList<Integer>();
+Number num = list.get(0);  // OK: читаем как Number
+list.add(42);  // Ошибка компиляции! Не можем добавлять
+list.add(new Integer(42));  // Ошибка компиляции!
+list.add(null);  // OK
+```
+
+**Почему нельзя добавлять?**
+```java
+List<? extends Number> list = new ArrayList<Integer>();
+list.add(new Double(3.14));  // Если бы было можно, Integer список содержал бы Double!
+```
+
+#### Lower Bounded Wildcard (? super T)
+
+**Consumer Super**: Коллекция принимает (consumes) элементы определённого типа или его супертипов.
+
+```java
+// Принимает List<Integer> или List<Number> или List<Object>
+public void addIntegers(List<? super Integer> list) {
+    list.add(42);        // OK: добавляем Integer
+    list.add(100);       // OK
+    Object obj = list.get(0);  // Читаем только как Object
+}
+
+List<Integer> integers = new ArrayList<>();
+List<Number> numbers = new ArrayList<>();
+List<Object> objects = new ArrayList<>();
+
+addIntegers(integers);  // OK
+addIntegers(numbers);   // OK
+addIntegers(objects);   // OK
+```
+
+**Контравариантность для записи:**
+```java
+List<? super Integer> list = new ArrayList<Number>();
+list.add(42);  // OK: добавляем Integer
+list.add(new Integer(100));  // OK
+Integer i = list.get(0);  // Ошибка компиляции!
+Object obj = list.get(0);  // OK: читаем только как Object
+```
+
+### PECS (Producer Extends, Consumer Super)
+
+**Правило PECS** — мнемоника для выбора между `extends` и `super`:
+
+- **Producer Extends**: Если метод читает (produces) элементы из коллекции → используйте `? extends T`
+- **Consumer Super**: Если метод записывает (consumes) элементы в коллекцию → используйте `? super T`
+
+**Примеры из стандартной библиотеки:**
+
+```java
+// Collections.copy - источник produces, назначение consumes
+public static <T> void copy(
+    List<? super T> dest,      // Consumer: принимает элементы
+    List<? extends T> src      // Producer: предоставляет элементы
+) { ... }
+
+// Collections.max - коллекция produces элементы для сравнения
+public static <T extends Object & Comparable<? super T>> T max(
+    Collection<? extends T> coll  // Producer: предоставляет элементы
+) { ... }
+```
+
+**Практический пример:**
+```java
+public class Collections {
+    // Копирование из source в destination
+    public static <T> void copy(List<? super T> dest, List<? extends T> src) {
+        for (int i = 0; i < src.size(); i++) {
+            dest.set(i, src.get(i));
+        }
+    }
+}
+
+List<Integer> integers = Arrays.asList(1, 2, 3);
+List<Number> numbers = new ArrayList<>();
+
+// integers является producer (? extends Number)
+// numbers является consumer (? super Integer)
+Collections.copy(numbers, integers);
+```
+
+**Таблица применения PECS:**
+
+| Сценарий | Wildcard | Пример |
+|----------|----------|--------|
+| Только чтение из коллекции | `? extends T` | `List<? extends Number>` |
+| Только запись в коллекцию | `? super T` | `List<? super Integer>` |
+| Чтение и запись | Точный тип `T` | `List<Integer>` |
+| Неизвестный тип | `?` | `List<?>` |
+
+### Generic Methods (Обобщённые методы)
+
+Методы могут иметь собственные параметры типа, независимые от параметров класса.
+
+**Синтаксис:**
+```java
+public class Utils {
+    // Обобщённый метод
+    public static <T> T getMiddle(T... args) {
+        return args[args.length / 2];
+    }
+}
+
+// Использование
+String middle = Utils.<String>getMiddle("A", "B", "C");  // Явное указание типа
+String middle2 = Utils.getMiddle("A", "B", "C");  // Type inference (вывод типа)
+```
+
+**С ограничениями:**
+```java
+public static <T extends Comparable<T>> T max(T a, T b) {
+    return a.compareTo(b) > 0 ? a : b;
+}
+
+Integer maxInt = max(10, 20);  // 20
+String maxStr = max("Alice", "Bob");  // "Bob"
+```
+
+**Несколько параметров типа:**
+```java
+public static <K, V> Map<K, V> newHashMap() {
+    return new HashMap<>();
+}
+
+public static <T, U> Pair<T, U> makePair(T first, U second) {
+    return new Pair<>(first, second);
+}
+
+Pair<String, Integer> pair = makePair("Age", 30);
+```
+
+### Ограничения Generics
+
+1. **Примитивные типы нельзя использовать:**
+```java
+List<int> list;  // Ошибка компиляции
+List<Integer> list;  // Правильно (используйте wrapper)
+```
+
+2. **Невозможно создавать массивы параметризованных типов:**
+```java
+List<String>[] arrays = new ArrayList<String>[10];  // Ошибка компиляции
+
+// Обходной путь
+@SuppressWarnings("unchecked")
+List<String>[] arrays = (List<String>[]) new ArrayList[10];
+```
+
+3. **Невозможно использовать static контекст с параметрами типа класса:**
+```java
+public class Box<T> {
+    private static T instance;  // Ошибка компиляции
+}
+```
+
+4. **Невозможно использовать instanceof с конкретным параметром:**
+```java
+if (obj instanceof List<String>) { }  // Ошибка компиляции
+if (obj instanceof List<?>) { }  // OK
+```
+
+5. **Перегрузка может быть ограничена из-за type erasure:**
+```java
+public class Overload {
+    public void method(List<String> list) { }
+    public void method(List<Integer> list) { }  // Ошибка! После erasure оба метода идентичны
+}
+```
+
+### Best Practices для Generics
+
+1. **Используйте generics везде, где возможно:**
+```java
+// Плохо
+List list = new ArrayList();
+
+// Хорошо
+List<String> list = new ArrayList<>();
+```
+
+2. **Применяйте PECS:**
+```java
+// Метод читает из коллекции
+public void processNumbers(List<? extends Number> numbers) { }
+
+// Метод пишет в коллекцию
+public void addNumbers(List<? super Integer> list) { }
+```
+
+3. **Предпочитайте List<T> вместо T[]:**
+```java
+// Избегайте
+public <T> T[] toArray(Collection<T> collection) { }
+
+// Предпочитайте
+public <T> List<T> toList(Collection<T> collection) { }
+```
+
+4. **Ограничивайте параметры типа, если нужен доступ к методам:**
+```java
+public <T extends Comparable<T>> T max(T a, T b) {
+    return a.compareTo(b) > 0 ? a : b;
+}
+```
+
+5. **Используйте @SuppressWarnings("unchecked") с осторожностью:**
+```java
+@SuppressWarnings("unchecked")
+public <T> T[] toArray(Class<T> type, List<T> list) {
+    T[] array = (T[]) Array.newInstance(type, list.size());
+    return list.toArray(array);
+}
+```
+
+6. **Документируйте параметры типа:**
+```java
+/**
+ * @param <K> тип ключа
+ * @param <V> тип значения
+ */
+public class Cache<K, V> {
+    // ...
+}
+```
 
 ## Специализированные коллекции
 - **Immutable Collections**: `List.of`, `Set.of`, `Map.of` — неизменяемые структуры. В многопоточном окружении безопасны для
