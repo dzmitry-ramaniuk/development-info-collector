@@ -10,10 +10,13 @@
   - [Управление памятью и сборка мусора](java-core/02-memory-management.md)
   - [Основы языка и синтаксис](java-core/03-language-basics.md)
   - [Объектно-ориентированное программирование](java-core/04-oop-design.md)
-  - [Коллекции и обобщения](java-core/05-collections-generics.md)
+  - [Коллекции](java-core/05-collections.md)
   - [Работа с данными и ввод/вывод](java-core/06-data-io.md)
   - [Функциональные возможности и современные фичи](java-core/07-functional-modern-java.md)
   - [Алгоритмическая сложность и анализ производительности](java-core/08-algorithms-complexity.md)
+  - [Stream API](java-core/09-stream-api.md)
+  - [Типы ссылок](java-core/10-reference-types.md)
+  - [Обобщения (Generics)](java-core/11-generics.md)
 
 → [Перейти к материалам по Java Core](java-core/README.md)
 
