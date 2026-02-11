@@ -4,7 +4,7 @@
 
 ## 📚 Содержание
 
-Материалы организованы в пять основных разделов:
+Материалы организованы в шесть основных разделов:
 
 ### [Java](java/README.md) ☕
 
@@ -59,6 +59,15 @@
   - **[Мониторинг и логирование](kubernetes/05-мониторинг-логирование.md)** — Prometheus, Grafana, EFK/ELK, трассировка
 
 → [Перейти к материалам по Kubernetes](kubernetes/README.md)
+
+### [Паттерны проектирования](паттерны проектирования/README.md) 🏗️
+
+Типовые решения часто встречающихся проблем при проектировании ПО:
+  - **[Порождающие паттерны](паттерны проектирования/порождающие/README.md)** — Singleton, Factory Method, Abstract Factory, Builder, Prototype
+  - **[Структурные паттерны](паттерны проектирования/структурные/README.md)** — Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy
+  - **[Поведенческие паттерны](паттерны проектирования/поведенческие/README.md)** — Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor
+
+→ [Перейти к материалам по паттернам проектирования](паттерны проектирования/README.md)
 
 ## 🎯 Как использовать
 
