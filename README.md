@@ -88,6 +88,7 @@
   - API, сетевое взаимодействие, ретраи, идемпотентность и rate limiting
   - Хранение данных, кэширование, асинхронность и event-driven интеграции
   - Масштабирование, отказоустойчивость, observability и безопасность
+  - Отдельный практический материал по выбору стека метрик: Elastic Stack, open-source observability и Java-инструментирование
   - Разбор популярных задач и подготовка к system design interview
 
 → [Перейти к материалам по System Design](system design/README.md)
