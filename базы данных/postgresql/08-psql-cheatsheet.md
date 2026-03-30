@@ -11,6 +11,10 @@
 6. [6. Администрирование](#6-администрирование)
 7. [7. Журналирование и обслуживание](#7-журналирование-и-обслуживание)
 8. [8. Полезные настройки `psql`](#8-полезные-настройки-psql)
+9. [9. Быстрый troubleshooting workflow](#9-быстрый-troubleshooting-workflow)
+10. [10. Мини-шпаргалка по EXPLAIN/ANALYZE](#10-мини-шпаргалка-по-explainanalyze)
+11. [11. Резервное копирование и восстановление](#11-резервное-копирование-и-восстановление)
+12. [12. Диагностика bloat и роста объектов](#12-диагностика-bloat-и-роста-объектов)
 
 ## 1. Подключение и базовые команды
 - `psql postgresql://user:pass@host:port/dbname` — подключение по URI.
@@ -70,4 +74,100 @@
 - `\encoding UTF8` — кодировка сессии.
 - `\set PROMPT1 '%n@%/%R%# '` — кастомизация приглашения.
 
-Шпаргалка помогает быстро вспомнить команды `psql`, диагностические запросы и администрирование PostgreSQL без обращения к документации.
+## 9. Быстрый troubleshooting workflow
+Если база «тормозит» или приложение жалуется на таймауты, полезно идти коротким маршрутом:
+
+1. Проверить активные запросы:
+   ```sql
+   SELECT pid, usename, state, wait_event_type, wait_event, query
+   FROM pg_stat_activity
+   WHERE state <> 'idle'
+   ORDER BY query_start;
+   ```
+2. Посмотреть блокировки и кто кого ждёт:
+   ```sql
+   SELECT blocked.pid AS blocked_pid,
+          blocking.pid AS blocking_pid,
+          blocked.query AS blocked_query,
+          blocking.query AS blocking_query
+   FROM pg_stat_activity blocked
+   JOIN pg_locks blocked_locks ON blocked.pid = blocked_locks.pid
+   JOIN pg_locks blocking_locks
+     ON blocked_locks.locktype = blocking_locks.locktype
+    AND blocked_locks.database IS NOT DISTINCT FROM blocking_locks.database
+    AND blocked_locks.relation IS NOT DISTINCT FROM blocking_locks.relation
+    AND blocked_locks.page IS NOT DISTINCT FROM blocking_locks.page
+    AND blocked_locks.tuple IS NOT DISTINCT FROM blocking_locks.tuple
+    AND blocked_locks.virtualxid IS NOT DISTINCT FROM blocking_locks.virtualxid
+    AND blocked_locks.transactionid IS NOT DISTINCT FROM blocking_locks.transactionid
+    AND blocked_locks.classid IS NOT DISTINCT FROM blocking_locks.classid
+    AND blocked_locks.objid IS NOT DISTINCT FROM blocking_locks.objid
+    AND blocked_locks.objsubid IS NOT DISTINCT FROM blocking_locks.objsubid
+    AND blocked_locks.pid <> blocking_locks.pid
+   JOIN pg_stat_activity blocking ON blocking.pid = blocking_locks.pid
+   WHERE NOT blocked_locks.granted
+     AND blocking_locks.granted;
+   ```
+3. Проверить, не упирается ли система в последовательные сканирования, VACUUM или WAL:
+   - `SELECT * FROM pg_stat_progress_vacuum;`
+   - `SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables ORDER BY seq_scan DESC LIMIT 20;`
+   - `SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) FROM pg_stat_replication;`
+
+> **Практический совет**: сначала соберите факты из `pg_stat_activity`, `pg_locks` и `pg_stat_database`, а уже потом завершайте сессии через `pg_terminate_backend(pid)`. Иначе легко убрать симптом, но не понять причину.
+
+## 10. Мини-шпаргалка по EXPLAIN/ANALYZE
+- `EXPLAIN SELECT ...;` — только план выполнения без запуска запроса.
+- `EXPLAIN ANALYZE SELECT ...;` — реально выполняет запрос и показывает фактические времена.
+- `EXPLAIN (ANALYZE, BUFFERS) SELECT ...;` — добавляет статистику чтения буферов.
+- `EXPLAIN (ANALYZE, VERBOSE, BUFFERS) SELECT ...;` — подробный вариант для сложной отладки.
+
+Частые сигналы в плане:
+
+| Признак | Что обычно означает | Что проверить |
+|---------|---------------------|---------------|
+| `Seq Scan` на большой таблице | Планировщик не выбрал индекс | Есть ли подходящий индекс, актуальна ли статистика |
+| Большой `Rows Removed by Filter` | Читается много лишних строк | Селективность условий, составной индекс |
+| `Sort` или `Hash` с большим временем | Недостаток памяти или неудачный план | `work_mem`, необходимость индекса |
+| Сильное расхождение `rows=` и `actual rows=` | Устаревшая статистика | `ANALYZE`, автосбор статистики |
+
+> **Важно**: `EXPLAIN ANALYZE` выполняет запрос по-настоящему. Для `UPDATE`, `DELETE` и тяжёлых `SELECT` его нужно запускать осторожно, желательно на staging или в транзакции с `ROLLBACK`.
+
+## 11. Резервное копирование и восстановление
+- `pg_dump -Fc -d dbname -f backup.dump` — логический backup в custom format.
+- `pg_restore -d dbname --clean --if-exists backup.dump` — восстановление из custom backup.
+- `pg_dumpall -g` — выгрузка глобальных объектов (роли, tablespace).
+- `\! pg_dump -t schema.table dbname > table.sql` — запуск команды shell прямо из `psql`.
+
+Полезные сценарии:
+- сделать backup одной схемы: `pg_dump -n schema_name dbname > schema.sql`;
+- восстановить только структуру: `pg_restore --schema-only -d dbname backup.dump`;
+- восстановить только данные: `pg_restore --data-only -d dbname backup.dump`.
+
+## 12. Диагностика bloat и роста объектов
+- Таблицы и индексы со временем разрастаются из-за MVCC, `UPDATE/DELETE` и неидеального VACUUM.
+- Быстрая первичная проверка размера объектов:
+  ```sql
+  SELECT schemaname,
+         relname,
+         pg_size_pretty(pg_total_relation_size(relid)) AS total_size,
+         n_live_tup,
+         n_dead_tup
+  FROM pg_stat_user_tables
+  ORDER BY pg_total_relation_size(relid) DESC
+  LIMIT 20;
+  ```
+- Если `n_dead_tup` стабильно велик, проверьте autovacuum, частоту `UPDATE/DELETE` и длительные транзакции.
+- Для индексов полезно сравнивать размер и частоту использования:
+  ```sql
+  SELECT schemaname,
+         relname,
+         indexrelname,
+         idx_scan,
+         pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
+  FROM pg_stat_user_indexes
+  ORDER BY pg_relation_size(indexrelid) DESC
+  LIMIT 20;
+  ```
+- Если индекс большой и почти не используется, возможно, он только замедляет запись и занимает диск.
+
+Шпаргалка помогает быстро вспомнить команды `psql`, диагностические запросы, эксплуатационные сценарии и администрирование PostgreSQL без обращения к документации.
