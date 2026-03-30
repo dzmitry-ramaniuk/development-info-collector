@@ -11,16 +11,20 @@
    - нефункциональные требования и оценка нагрузки
 
 2. [Сетевое взаимодействие и API](02-сетевое-взаимодействие-и-api.md)
-   - HTTP, gRPC, WebSocket и очереди
-   - идемпотентность, ретраи, таймауты
-   - API gateway, rate limiting, versioning
-   - внешний и внутренний контракт сервиса
+    - HTTP, gRPC, WebSocket и очереди
+    - идемпотентность, ретраи, таймауты
+    - polling, webhooks и push-модели
+    - load balancer, reverse proxy, API gateway
+    - rate limiting, versioning и контракт API
+    - внешний и внутренний контракт сервиса
 
 3. [Хранение данных и выбор базы](03-хранение-данных-и-выбор-базы.md)
-   - SQL vs NoSQL
-   - репликация, шардирование, индексы
-   - CQRS, read/write patterns
-   - транзакции и согласованность данных
+    - SQL vs NoSQL
+    - репликация, шардирование, индексы
+    - consistent hashing и object storage
+    - изоляция, блокировки и contention
+    - CQRS, read/write patterns
+    - транзакции и согласованность данных
 
 4. [Кэширование](04-кэширование.md)
    - cache-aside, write-through, write-behind
@@ -107,6 +111,7 @@
 - Научитесь не просто перечислять компоненты, а объяснять **trade-offs**: почему здесь нужен кэш, а не реплика; почему здесь async лучше sync.
 - Потренируйтесь считать order of magnitude: RPS, размер данных, read/write ratio, peak factor.
 - Разберите типовые паттерны глубже: outbox, saga, CQRS, read replicas, rate limiting, graceful degradation.
+- Добавьте в словарь обязательные distinctions: load balancer vs reverse proxy vs API gateway, polling vs webhooks, object storage vs OLTP database.
 - Связывайте design с эксплуатацией: health checks, retry budgets, alerting, rollback, disaster recovery.
 
 ### Advanced
@@ -128,6 +133,7 @@
 - **Не оптимизируйте всё сразу**: усложнение архитектуры должно окупаться конкретной потребностью.
 - **Проектируйте под отказ**: сети, базы, брокеры и сервисы периодически недоступны.
 - **Следите за данными**: неправильный выбор модели хранения и консистентности бьёт по системе сильнее, чем выбор framework.
+- **Думайте категориями building blocks**: routing, storage, cache, queue, search, object storage, observability и security должны складываться в целостную систему.
 
 ## ⚠️ Важные замечания
 
