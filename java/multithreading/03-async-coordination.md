@@ -1,14 +1,24 @@
 # Асинхронные вычисления и координация
+<script type="module" src="../../assets/mermaid-init.js"></script>
 
 ## Содержание
 
 1. [CompletableFuture: асинхронные конвейеры](#completablefuture-асинхронные-конвейеры)
 2. [Structured Concurrency (Java 21+)](#structured-concurrency-java-21)
 3. [Future и его ограничения](#future-и-его-ограничения)
+4. [Как выбирать подход](#как-выбирать-подход)
 
 ## CompletableFuture: асинхронные конвейеры
 
 `CompletableFuture` (Java 8+) предоставляет мощный API для построения асинхронных вычислений:
+
+```mermaid
+flowchart LR
+    A["supplyAsync()"] --> B["thenApply()"]
+    B --> C["thenCompose()/thenCombine()"]
+    C --> D["handle()/exceptionally()"]
+    D --> E["join()/get()"]
+```
 
 **Базовое создание и получение результата:**
 
@@ -148,6 +158,25 @@ public class AsyncHttpService {
 
 Structured concurrency упрощает управление группами задач:
 
+```mermaid
+sequenceDiagram
+    participant Req as HTTP-запрос
+    participant Scope as StructuredTaskScope
+    participant U as fork: user
+    participant O as fork: orders
+    participant P as fork: preferences
+
+    Req->>Scope: start scope
+    Scope->>U: параллельная задача 1
+    Scope->>O: параллельная задача 2
+    Scope->>P: параллельная задача 3
+    U-->>Scope: result/error
+    O-->>Scope: result/error
+    P-->>Scope: result/error
+    Scope->>Scope: join + throwIfFailed
+    Scope-->>Req: combined result / fail fast
+```
+
 ```java
 import java.util.concurrent.StructuredTaskScope;
 
@@ -219,3 +248,12 @@ try {
 future.cancel(true); // Отменяет, но нет способа узнать об этом асинхронно
 ```
 
+## Как выбирать подход
+
+```mermaid
+flowchart TD
+    A["Нужна композиция и неблокирующие цепочки?"] -->|Да| B["CompletableFuture"]
+    A -->|Нет| C["Нужен структурированный fan-out/fan-in в рамках запроса?"]
+    C -->|Да, Java 21+| D["Structured Concurrency"]
+    C -->|Нет| E["ExecutorService + Future/Callable"]
+```
