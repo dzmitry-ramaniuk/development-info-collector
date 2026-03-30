@@ -1,4 +1,5 @@
 # Kafka Connect
+<script type="module" src="../../assets/mermaid-init.js"></script>
 
 
 ## Содержание
@@ -62,6 +63,18 @@
 ## Архитектура
 
 ### Компоненты
+
+```mermaid
+flowchart LR
+  S[Внешние источники] --> SC[Source Connector Tasks]
+  SC --> K[(Kafka Topics)]
+  K --> SK[Sink Connector Tasks]
+  SK --> D[Внешние приёмники]
+  W[Connect Workers] -. управляют .-> SC
+  W -. управляют .-> SK
+  C[Converters / SMT] -. применяются .-> SC
+  C -. применяются .-> SK
+```
 
 **Workers**
 - Процессы, выполняющие коннекторы и задачи
