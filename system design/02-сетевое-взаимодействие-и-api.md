@@ -1,4 +1,5 @@
 # Сетевое взаимодействие и API
+<script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Содержание
 
