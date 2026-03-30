@@ -14,6 +14,7 @@
   - **[Spring Framework](java/spring/README.md)** — IoC/DI, Spring Boot, Spring Data, реактивное программирование
   - **[Hibernate и JPA](java/04-hibernate.md)** — ORM, маппинг сущностей, кеширование, оптимизация
   - **[Эволюция версий Java](java/05-java-versions.md)** — что добавлялось в каждом релизе до актуальной версии, LTS и рекомендации по апгрейду
+  - **[Тюнинг и мониторинг JVM](java/06-jvm-tuning-monitoring.md)** — GC-метрики, настройка памяти, диагностика и эксплуатация JVM в production
 
 → [Перейти к материалам по Java](java/README.md)
 
