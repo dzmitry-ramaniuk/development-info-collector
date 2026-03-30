@@ -576,19 +576,21 @@ class UserJdbcRepositoryTest {
 <dependency>
     <groupId>org.testcontainers</groupId>
     <artifactId>postgresql</artifactId>
-    <version>1.19.3</version>
+    <version>${testcontainers.version}</version>
     <scope>test</scope>
 </dependency>
 
 <dependency>
     <groupId>org.testcontainers</groupId>
     <artifactId>junit-jupiter</artifactId>
-    <version>1.19.3</version>
+    <version>${testcontainers.version}</version>
     <scope>test</scope>
 </dependency>
 ```
 
 ### Пример с PostgreSQL
+
+> Актуально на **март 2026**: используйте общий `testcontainers.version` и Java 17+ в тестовом контуре.
 
 ```java
 import org.junit.jupiter.api.Test;
