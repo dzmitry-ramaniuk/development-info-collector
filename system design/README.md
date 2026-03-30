@@ -11,20 +11,20 @@
    - нефункциональные требования и оценка нагрузки
 
 2. [Сетевое взаимодействие и API](02-сетевое-взаимодействие-и-api.md)
-    - HTTP, gRPC, WebSocket и очереди
-    - идемпотентность, ретраи, таймауты
-    - polling, webhooks и push-модели
-    - load balancer, reverse proxy, API gateway
-    - rate limiting, versioning и контракт API
-    - внешний и внутренний контракт сервиса
+   - HTTP, gRPC, WebSocket и очереди
+   - идемпотентность, ретраи, таймауты
+   - polling, webhooks и push-модели
+   - load balancer, reverse proxy, API gateway
+   - rate limiting, versioning и контракт API
+   - внешний и внутренний контракт сервиса
 
 3. [Хранение данных и выбор базы](03-хранение-данных-и-выбор-базы.md)
-    - SQL vs NoSQL
-    - репликация, шардирование, индексы
-    - consistent hashing и object storage
-    - изоляция, блокировки и contention
-    - CQRS, read/write patterns
-    - транзакции и согласованность данных
+   - SQL vs NoSQL
+   - репликация, шардирование, индексы
+   - consistent hashing и object storage
+   - изоляция, блокировки и contention
+   - CQRS, read/write patterns
+   - транзакции и согласованность данных
 
 4. [Кэширование](04-кэширование.md)
    - cache-aside, write-through, write-behind
@@ -63,22 +63,22 @@
    - список типовых вопросов и ответов
 
 10. [Multi-region и geo-distributed системы](10-multi-region-и-geo-distributed-системы.md)
-    - active-passive и active-active
-    - routing, data locality, failover
-    - RTO, RPO и межрегиональная репликация
-    - когда multi-region действительно оправдан
+   - active-passive и active-active
+   - routing, data locality, failover
+   - RTO, RPO и межрегиональная репликация
+   - когда multi-region действительно оправдан
 
 11. [CDC, event sourcing и materialized views](11-cdc-event-sourcing-и-materialized-views.md)
-    - change data capture и data propagation
-    - event sourcing и replay
-    - projection/read models
-    - trade-offs между простотой и эволюцией данных
+   - change data capture и data propagation
+   - event sourcing и replay
+   - projection/read models
+   - trade-offs между простотой и эволюцией данных
 
 12. [Эволюция системы и миграции без простоя](12-эволюция-системы-и-миграции-без-простоя.md)
-    - strangler fig и incremental migration
-    - online schema change, backfill, dual-read/dual-write
-    - feature flags и безопасный rollout
-    - как менять архитектуру без остановки бизнеса
+   - strangler fig и incremental migration
+   - online schema change, backfill, dual-read/dual-write
+   - feature flags и безопасный rollout
+   - как менять архитектуру без остановки бизнеса
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
@@ -111,7 +111,7 @@
 - Научитесь не просто перечислять компоненты, а объяснять **trade-offs**: почему здесь нужен кэш, а не реплика; почему здесь async лучше sync.
 - Потренируйтесь считать order of magnitude: RPS, размер данных, read/write ratio, peak factor.
 - Разберите типовые паттерны глубже: outbox, saga, CQRS, read replicas, rate limiting, graceful degradation.
-- Добавьте в словарь обязательные distinctions: load balancer vs reverse proxy vs API gateway, polling vs webhooks, object storage vs OLTP database.
+- Добавьте в словарь обязательные различия: load balancer vs reverse proxy vs API gateway, polling vs webhooks, object storage vs транзакционная БД.
 - Связывайте design с эксплуатацией: health checks, retry budgets, alerting, rollback, disaster recovery.
 
 ### Advanced
@@ -124,7 +124,7 @@
 ### Что изучать после этого раздела
 - Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.md)
 - Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы данных/postgresql/README.md)
-- Для production-развёртывания и операционной устойчивости: [Kubernetes](../kubernetes/README.md)
+- Для развёртывания в production и операционной устойчивости: [Kubernetes](../kubernetes/README.md)
 
 ## 💡 Рекомендации
 
