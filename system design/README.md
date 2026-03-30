@@ -82,6 +82,25 @@
 2. Возвращайтесь к разделам про данные, отказоустойчивость и observability перед запуском в production.
 3. Сравнивайте принятые в команде решения с описанными паттернами и антипаттернами.
 
+## 📈 Как выйти на intermediate/advanced уровень
+
+### Intermediate
+- Научитесь не просто перечислять компоненты, а объяснять **trade-offs**: почему здесь нужен кэш, а не реплика; почему здесь async лучше sync.
+- Потренируйтесь считать order of magnitude: RPS, размер данных, read/write ratio, peak factor.
+- Разберите типовые паттерны глубже: outbox, saga, CQRS, read replicas, rate limiting, graceful degradation.
+- Связывайте design с эксплуатацией: health checks, retry budgets, alerting, rollback, disaster recovery.
+
+### Advanced
+- Изучите multi-region и geo-distributed сценарии: latency-based routing, active-active vs active-passive, RPO/RTO.
+- Углубитесь в data-intensive темы: CDC, stream processing, materialized views, hot partitions, storage internals.
+- Освойте migration patterns: strangler fig, online schema changes, dual write avoidance, backfill.
+- Тренируйтесь обсуждать не только «как построить», но и **как эволюционировать** систему без остановки бизнеса.
+
+### Что изучать после этого раздела
+- Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.md)
+- Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы данных/postgresql/README.md)
+- Для production-развёртывания и операционной устойчивости: [Kubernetes](../kubernetes/README.md)
+
 ## 💡 Рекомендации
 
 - **Сначала требования, потом компоненты**: без понимания нагрузки и ограничений любые схемы бесполезны.
@@ -104,6 +123,9 @@
 - [Очереди](../очереди/README.md)
 - [Kubernetes](../kubernetes/README.md)
 - [Паттерны проектирования](../паттерны проектирования/README.md)
+- [Apache Kafka](../очереди/кафка/README.md) — практический мост к event-driven архитектуре
+- [PostgreSQL](../базы данных/postgresql/README.md) — практический мост к хранению данных, индексам и транзакциям
+- [Kubernetes](../kubernetes/README.md) — практический мост к эксплуатации, масштабированию и observability
 
 ---
 
