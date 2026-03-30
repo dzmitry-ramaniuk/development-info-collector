@@ -1,5 +1,10 @@
 # Эксплуатация и Production Best Practices
 
+## Режимы метаданных: KRaft и ZooKeeper
+
+> Актуально на **март 2026**: для новых инсталляций используйте **KRaft-first** подход.
+> Конфигурации с ZooKeeper в документе отмечены как legacy-сценарии для сопровождения и миграций.
+
 
 ## Содержание
 
@@ -146,11 +151,11 @@ replica.fetch.max.bytes=1048576
 
 ############################# Zookeeper / KRaft #############################
 
-# ZooKeeper connection
+# ZooKeeper connection (legacy)
 zookeeper.connect=zk1:2181,zk2:2181,zk3:2181/kafka
 zookeeper.connection.timeout.ms=18000
 
-# Или KRaft mode (Kafka 3.0+)
+# KRaft mode (рекомендуется для новых кластеров)
 # process.roles=broker,controller
 # node.id=1
 # controller.quorum.voters=1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
@@ -279,9 +284,9 @@ kafka-topics.sh --create \
   --replica-assignment 1:2:3,2:3:1,3:1:2,1:2:3,2:3:1,3:1:2
 ```
 
-#### ZooKeeper Ensemble
+#### ZooKeeper Ensemble (legacy/миграции)
 
-**Production ZooKeeper конфигурация**
+**Production ZooKeeper конфигурация (legacy)**
 ```properties
 # zoo.cfg
 

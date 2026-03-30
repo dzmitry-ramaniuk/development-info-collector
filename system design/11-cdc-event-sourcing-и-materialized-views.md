@@ -24,6 +24,16 @@
 
 ## Что такое CDC и где он полезен
 
+```mermaid
+flowchart LR
+    DB[(OLTP DB)] --> WAL[WAL/Binlog]
+    WAL --> CDC[CDC Connector]
+    CDC --> BUS[Event Bus]
+    BUS --> SEARCH[Search Index]
+    BUS --> DWH[Analytics DWH]
+    BUS --> CACHE[Cache Warmup]
+```
+
 **CDC (Change Data Capture)** — это способ читать изменения из источника данных и превращать их в поток событий или change records.
 
 CDC полезен, когда:
