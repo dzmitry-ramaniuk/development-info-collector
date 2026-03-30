@@ -58,11 +58,30 @@
    - кейсы: URL shortener, chat, news feed, rate limiter
    - список типовых вопросов и ответов
 
+10. [Multi-region и geo-distributed системы](10-multi-region-и-geo-distributed-системы.md)
+    - active-passive и active-active
+    - routing, data locality, failover
+    - RTO, RPO и межрегиональная репликация
+    - когда multi-region действительно оправдан
+
+11. [CDC, event sourcing и materialized views](11-cdc-event-sourcing-и-materialized-views.md)
+    - change data capture и data propagation
+    - event sourcing и replay
+    - projection/read models
+    - trade-offs между простотой и эволюцией данных
+
+12. [Эволюция системы и миграции без простоя](12-эволюция-системы-и-миграции-без-простоя.md)
+    - strangler fig и incremental migration
+    - online schema change, backfill, dual-read/dual-write
+    - feature flags и безопасный rollout
+    - как менять архитектуру без остановки бизнеса
+
 ## 🧭 Рекомендуемые маршруты по разделу
 
 - **Для уверенной базы**: 01 → 02 → 03 → 04 → 06
 - **Для backend-разработчика**: 01 → 02 → 03 → 05 → 06 → 08
 - **Для подготовки к собеседованию**: 01 → 03 → 04 → 05 → 06 → 09
+- **Для advanced-погружения**: 03 → 05 → 06 → 10 → 11 → 12
 - **Для техлида или архитектора**: изучайте весь раздел по порядку, связывая материалы с текущими системами команды
 
 ## 🎯 Как использовать
@@ -95,6 +114,7 @@
 - Углубитесь в data-intensive темы: CDC, stream processing, materialized views, hot partitions, storage internals.
 - Освойте migration patterns: strangler fig, online schema changes, dual write avoidance, backfill.
 - Тренируйтесь обсуждать не только «как построить», но и **как эволюционировать** систему без остановки бизнеса.
+- Для закрепления переходите к страницам [10](10-multi-region-и-geo-distributed-системы.md), [11](11-cdc-event-sourcing-и-materialized-views.md) и [12](12-эволюция-системы-и-миграции-без-простоя.md).
 
 ### Что изучать после этого раздела
 - Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.md)
