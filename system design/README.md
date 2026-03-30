@@ -86,6 +86,11 @@
    - exactly-once границы, idempotency и deduplication
    - operational runbooks для control-plane
 
+14. [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.md)
+   - SLI/SLO и практики метрик для backend-сервисов
+   - Elastic Stack и open-source observability stack
+   - Micrometer, OpenTelemetry, Actuator и Java-инструментирование
+
 ## 🧭 Рекомендуемые маршруты по разделу
 
 - **Для уверенной базы**: 01 → 02 → 03 → 04 → 06
@@ -124,13 +129,15 @@
 - Изучите multi-region и geo-distributed сценарии: latency-based routing, active-active vs active-passive, RPO/RTO.
 - Углубитесь в data-intensive темы: CDC, stream processing, materialized views, hot partitions, storage internals.
 - Освойте migration patterns: strangler fig, online schema changes, dual write avoidance, backfill.
+- Добавьте практику observability-инжиниринга: как выбирать стек метрик, контролировать кардинальность и строить SLO-алерты.
 - Тренируйтесь обсуждать не только «как построить», но и **как эволюционировать** систему без остановки бизнеса.
-- Для закрепления переходите к страницам [10](10-multi-region-и-geo-distributed-системы.md), [11](11-cdc-event-sourcing-и-materialized-views.md), [12](12-эволюция-системы-и-миграции-без-простоя.md) и [13](13-consensus-и-распределенная-координация.md).
+- Для закрепления переходите к страницам [10](10-multi-region-и-geo-distributed-системы.md), [11](11-cdc-event-sourcing-и-materialized-views.md), [12](12-эволюция-системы-и-миграции-без-простоя.md), [13](13-consensus-и-распределенная-координация.md) и [14](14-метрики-стек-и-подходы.md).
 
 ### Что изучать после этого раздела
 - Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.md)
 - Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы данных/postgresql/README.md)
 - Для развёртывания в production и операционной устойчивости: [Kubernetes](../kubernetes/README.md)
+- Для глубокого внедрения observability и метрик: [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.md)
 
 ## 💡 Рекомендации
 
