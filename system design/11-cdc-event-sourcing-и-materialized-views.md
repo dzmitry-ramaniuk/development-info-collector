@@ -1,4 +1,5 @@
 # CDC, event sourcing и materialized views
+<script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Содержание
 

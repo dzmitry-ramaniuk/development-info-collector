@@ -1,4 +1,5 @@
 # Consensus и распределённая координация
+<script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Содержание
 

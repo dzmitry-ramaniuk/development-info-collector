@@ -1,4 +1,5 @@
 # Multi-region и geo-distributed системы
+<script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Содержание
 
