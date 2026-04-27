@@ -32,6 +32,7 @@
   - [Шаблоны и практические приёмы](multithreading/07-patterns.md)
   - [Практические упражнения](multithreading/08-exercises.md)
   - [Вопросы на собеседовании](multithreading/09-interview-questions.md)
+  - [Synchronized: теория и практика](multithreading/10-synchronized.md)
 
 → [Перейти к материалам по Multithreading](multithreading/README.md)
 
