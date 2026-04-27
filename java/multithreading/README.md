@@ -1,6 +1,8 @@
 # Multithreading
 <script type="module" src="../../assets/mermaid-init.js"></script>
 
+[Краткая навигация раздела](../02-multithreading.md)
+
 Многопоточность в Java: модель памяти, синхронизация, конкурентные библиотеки, паттерны и практические приёмы.
 
 ## 📚 Содержание
