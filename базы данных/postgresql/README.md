@@ -12,6 +12,7 @@
 - [Вопросы и ответы для собеседований](07-interview.md)
 - [Шпаргалка по `psql` и полезным командам](08-psql-cheatsheet.md)
 - [Партиционирование и шардинг](09-partitioning-sharding.md)
+- [Оптимизация запросов: инструменты PostgreSQL и синтаксис планов выполнения](10-query-optimization-execution-plans.md)
 
 ## 🎯 Как использовать
 
