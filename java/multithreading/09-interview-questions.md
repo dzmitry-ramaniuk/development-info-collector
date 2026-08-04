@@ -410,16 +410,19 @@ for (int i = 0; i < 1_000_000; i++) {
 3. **Совместимость:** Используют тот же Thread API
 4. **I/O оптимизация:** Блокирующие I/O не блокируют carrier thread
 
-**Structured Concurrency (Java 21+):**
+**Structured Concurrency (не «Java 21+», а меняющийся preview API):** JDK 19–20 — **incubator** (JEP 428/437), JDK 21–24 — первый–четвёртый **preview** (JEP 453/462/480/499), JDK 25 — пятый **preview** с переработанным API (JEP 505), JDK 26 — шестой **preview** (JEP 525). Ни в одной из этих версий API не стал final.
+
+Пример ниже рассчитан **на `javac` из JDK 24**: `javac --release 24 --enable-preview Example.java`; запуск — `java --enable-preview Example`. Preview API привязан к версии JDK, может несовместимо измениться или исчезнуть и не должен становиться production-зависимостью без закреплённого toolchain, тестов и плана миграции.
+
 ```java
 try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-    Future<String> user = scope.fork(() -> fetchUser(userId));
-    Future<String> orders = scope.fork(() -> fetchOrders(userId));
+    StructuredTaskScope.Subtask<String> user = scope.fork(() -> fetchUser(userId));
+    StructuredTaskScope.Subtask<String> orders = scope.fork(() -> fetchOrders(userId));
     
     scope.join();           // Ждём все задачи
     scope.throwIfFailed();  // Проверяем ошибки
     
-    return combineResults(user.resultNow(), orders.resultNow());
+    return combineResults(user.get(), orders.get());
 } // Автоматическая очистка и отмена незавершённых задач
 ```
 
