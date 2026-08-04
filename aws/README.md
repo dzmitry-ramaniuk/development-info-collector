@@ -2,6 +2,10 @@
 
 Раздел по Amazon Web Services для backend- и platform-инженеров: от базовых облачных концепций и IAM до сетей, вычислений, хранилищ и практик эксплуатации в production.
 
+## Версионный baseline
+
+Материалы раздела пересмотрены **4 августа 2026 года** по актуальной на эту дату AWS documentation. AWS не имеет единой версии платформы: managed services развиваются независимо, а feature availability, цены и quotas различаются по региону и аккаунту. Поэтому каждая тематическая страница содержит дату ревизии и прямые ссылки на официальные service documentation, quotas и pricing; числовые значения перед production-развёртыванием необходимо повторно проверить в Service Quotas и AWS Console.
+
 ## 📚 Содержание
 
 1. [Основы AWS для разработчика](01-основы-aws.md)
@@ -23,9 +27,14 @@
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
-- **Если вы только начинаете с AWS**: начните с глобальной инфраструктуры, IAM и сетевой базы (VPC), затем переходите к compute и storage-сервисам.
-- **Если вы backend-разработчик**: сфокусируйтесь на связке IAM + VPC + EC2/ECS/Lambda + RDS/S3 + CloudWatch.
-- **Если готовитесь к интервью**: тренируйтесь объяснять компромиссы между IaaS/PaaS/serverless и варианты построения отказоустойчивых систем в нескольких AZ.
+| Роль / цель | Начать с | Затем изучить | Основной акцент |
+|---|---|---|---|
+| Начинающий AWS-разработчик | [Основы AWS](01-основы-aws.md), [VPC](03-vpc.md) | [EC2](02-ec2.md), [S3](05-s3.md) | Shared Responsibility, IAM, регионы/AZ и стоимость |
+| Backend-разработчик | [Lambda](04-lambda.md), [S3](05-s3.md) | [DynamoDB](06-dynamodb.md), [SQS](07-sqs.md), [SNS](08-sns.md) | Идемпотентность, retries, concurrency и data modeling |
+| Platform / DevOps / SRE | [Основы AWS](01-основы-aws.md), [VPC](03-vpc.md), [EC2](02-ec2.md) | [Lambda](04-lambda.md), [EventBridge](09-eventbridge.md) | Least privilege, quotas, observability, HA и runbooks |
+| Архитектор event-driven систем | [SQS](07-sqs.md), [SNS](08-sns.md), [EventBridge](09-eventbridge.md) | [Lambda](04-lambda.md), [DynamoDB](06-dynamodb.md) | Delivery semantics, ordering, DLQ, schema evolution |
+| Разработчик identity / B2C | [Основы AWS](01-основы-aws.md), [Cognito](10-cognito.md) | [Lambda](04-lambda.md), [S3](05-s3.md) | Federation, токены, MFA и разграничение доступа |
+| Подготовка к интервью | [Основы AWS](01-основы-aws.md) | Все страницы по порядку 2–10 | Компромиссы IaaS/serverless и разбор failure modes |
 
 ## 🔗 Связанные темы
 

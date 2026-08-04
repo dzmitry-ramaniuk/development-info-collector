@@ -1,6 +1,13 @@
 # Основы Kubernetes
 
-> **Проверенный baseline:** Kubernetes **1.34** (стабильный minor-релиз). Все встроенные `apiVersion`, манифесты и команды на этой странице сверены с документацией v1.34. Для кластера с `kube-apiserver` 1.34: `kubectl` поддерживается в диапазоне **1.33–1.35**; `kubelet` не может быть новее API server и поддерживается в диапазоне **1.31–1.34**; `kube-controller-manager`, `kube-scheduler` и `cloud-controller-manager` не должны быть новее `kube-apiserver` и могут отставать не более чем на один minor. В HA control plane версии `kube-apiserver` могут различаться не более чем на один minor. Подробнее: [Version Skew Policy](https://v1-34.docs.kubernetes.io/releases/version-skew-policy/).
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Kubernetes 1.33–1.34
+- **Статус примеров:** `current`
+- **Первичные источники:** [Kubernetes Documentation](https://kubernetes.io/docs/); [Kubernetes Releases](https://kubernetes.io/releases/)
+
+> **Актуальность версий (март 2026):** проверяйте совместимость манифестов и CLI-команд с вашей версией Kubernetes и managed-платформы.
 
 
 ## Содержание

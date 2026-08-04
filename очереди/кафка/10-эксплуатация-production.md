@@ -1,5 +1,12 @@
 # Эксплуатация и Production Best Practices
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Apache Kafka 3.9–4.0
+- **Статус примеров:** `current`
+- **Первичные источники:** [Apache Kafka Documentation](https://kafka.apache.org/documentation/); [Apache Kafka Javadocs](https://kafka.apache.org/documentation/#api)
+
 ## Режимы метаданных: KRaft и ZooKeeper
 
 > Актуально на **март 2026**: для новых инсталляций используйте **KRaft-first** подход.

@@ -1,5 +1,12 @@
 # Template Method (Шаблонный метод)
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** концепция версионно-независима; технические примеры проверены на Java 17–25
+- **Статус примеров:** `current`
+- **Первичные источники:** [Oracle Java Language Specification](https://docs.oracle.com/javase/specs/); [Oracle Java API](https://docs.oracle.com/en/java/javase/25/docs/api/)
+
 ## Содержание
 
 1. [Что решает паттерн](#что-решает-паттерн)
