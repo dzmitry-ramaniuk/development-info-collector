@@ -49,6 +49,7 @@
   - [Spring Integration](spring/04-spring-integration.md)
   - [Spring Proxying и AOP](spring/05-spring-proxying.md)
   - [Реактивное программирование](spring/06-reactive-programming.md)
+  - [Spring Security](spring/07-spring-security.md)
 
 → [Короткая навигация](03-spring.md) · [Подробное оглавление](spring/README.md)
 
