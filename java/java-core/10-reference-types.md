@@ -1,5 +1,41 @@
 # Типы ссылок в Java
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Введение в типы ссылок](#введение-в-типы-ссылок)
+3. [Strong Reference (Сильные ссылки)](#strong-reference-сильные-ссылки)
+4. [Weak Reference (Слабые ссылки)](#weak-reference-слабые-ссылки)
+5. [Soft Reference (Мягкие ссылки)](#soft-reference-мягкие-ссылки)
+6. [Phantom Reference (Фантомные ссылки)](#phantom-reference-фантомные-ссылки)
+7. [ReferenceQueue](#referencequeue)
+8. [Сравнение типов ссылок](#сравнение-типов-ссылок)
+   - [Таблица сравнения](#таблица-сравнения)
+   - [Иерархия силы ссылок](#иерархия-силы-ссылок)
+   - [Жизненный цикл с разными типами ссылок](#жизненный-цикл-с-разными-типами-ссылок)
+9. [Практические примеры](#практические-примеры)
+   - [1. Canonicalizing String Pool](#1-canonicalizing-string-pool)
+   - [2. Image Cache с SoftReference](#2-image-cache-с-softreference)
+   - [3. Listener Registry с WeakReference](#3-listener-registry-с-weakreference)
+   - [4. Resource Cleanup с PhantomReference](#4-resource-cleanup-с-phantomreference)
+10. [Best Practices](#best-practices)
+   - [1. Выбор правильного типа ссылки](#1-выбор-правильного-типа-ссылки)
+   - [2. Всегда очищайте ReferenceQueue](#2-всегда-очищайте-referencequeue)
+   - [3. Используйте try-with-resources вместо PhantomReference где возможно](#3-используйте-try-with-resources-вместо-phantomreference-где-возможно)
+   - [4. Мониторинг reference types](#4-мониторинг-reference-types)
+   - [5. Избегайте воскрешения объектов](#5-избегайте-воскрешения-объектов)
+   - [6. Thread-safety с WeakHashMap](#6-thread-safety-с-weakhashmap)
+11. [Вопросы на собеседовании](#вопросы-на-собеседовании)
+   - [1. В чём разница между Soft и Weak references?](#1-в-чём-разница-между-soft-и-weak-references)
+   - [2. Почему PhantomReference.get() всегда возвращает null?](#2-почему-phantomreferenceget-всегда-возвращает-null)
+   - [3. Как работает WeakHashMap?](#3-как-работает-weakhashmap)
+   - [4. Когда использовать каждый тип reference?](#4-когда-использовать-каждый-тип-reference)
+   - [5. Что такое ReferenceQueue и зачем она нужна?](#5-что-такое-referencequeue-и-зачем-она-нужна)
+   - [6. Почему finalize() считается плохой практикой?](#6-почему-finalize-считается-плохой-практикой)
+   - [7. Как настроить поведение SoftReference?](#7-как-настроить-поведение-softreference)
+   - [8. Может ли WeakReference предотвратить OutOfMemoryError?](#8-может-ли-weakreference-предотвратить-outofmemoryerror)
+   - [9. В чём разница между WeakHashMap и ConcurrentHashMap с WeakReference values?](#9-в-чём-разница-между-weakhashmap-и-concurrenthashmap-с-weakreference-values)
+   - [10. Какой тип reference использует String.intern()?](#10-какой-тип-reference-использует-stringintern)
 
 ## Актуальность материала
 
@@ -7,19 +43,6 @@
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
 - **Статус примеров:** `current`
 - **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
-
-## Содержание
-
-1. [Введение в типы ссылок](#введение-в-типы-ссылок)
-2. [Strong Reference (Сильные ссылки)](#strong-reference-сильные-ссылки)
-3. [Weak Reference (Слабые ссылки)](#weak-reference-слабые-ссылки)
-4. [Soft Reference (Мягкие ссылки)](#soft-reference-мягкие-ссылки)
-5. [Phantom Reference (Фантомные ссылки)](#phantom-reference-фантомные-ссылки)
-6. [ReferenceQueue](#referencequeue)
-7. [Сравнение типов ссылок](#сравнение-типов-ссылок)
-8. [Практические примеры](#практические-примеры)
-9. [Best Practices](#best-practices)
-10. [Вопросы на собеседовании](#вопросы-на-собеседовании)
 
 ## Введение в типы ссылок
 

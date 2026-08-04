@@ -1,5 +1,14 @@
 # SNS: pub/sub, fan-out и гарантии доставки
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Fan-out и подписчики](#fan-out-и-подписчики)
+3. [Сравнение доставки](#сравнение-доставки)
+4. [Ретраи и DLQ](#ретраи-и-dlq)
+5. [Практический baseline для production](#практический-baseline-для-production)
+6. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 > **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
 
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/sns/latest/dg/welcome.html) · [quotas](https://docs.aws.amazon.com/general/latest/gr/sns.html) · [pricing](https://aws.amazon.com/sns/pricing/)
@@ -10,14 +19,6 @@
 - **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
-
-## Содержание
-
-1. [Fan-out и подписчики](#fan-out-и-подписчики)
-2. [Сравнение доставки](#сравнение-доставки)
-3. [Ретраи и DLQ](#ретраи-и-dlq)
-4. [Практический baseline для production](#практический-baseline-для-production)
-5. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Fan-out и подписчики
 

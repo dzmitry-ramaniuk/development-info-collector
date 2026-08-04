@@ -1,4 +1,17 @@
 # CDC, event sourcing и materialized views
+
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Когда одной CRUD-модели уже недостаточно](#когда-одной-crud-модели-уже-недостаточно)
+3. [Что такое CDC и где он полезен](#что-такое-cdc-и-где-он-полезен)
+4. [Event sourcing: сильные стороны и цена](#event-sourcing-сильные-стороны-и-цена)
+5. [Materialized views и projection-модели](#materialized-views-и-projection-модели)
+6. [Schema evolution, replay и operational risks](#schema-evolution-replay-и-operational-risks)
+7. [Когда не стоит использовать эти подходы](#когда-не-стоит-использовать-эти-подходы)
+8. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+9. [Связанные темы](#связанные-темы)
+
 <script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Актуальность материала
@@ -7,17 +20,6 @@
 - **Целевая версия или диапазон:** концепции версионно-независимы; технические примеры и API проверены по состоянию на 2026-08-04
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Architecture Center](https://aws.amazon.com/architecture/); [Google SRE Books](https://sre.google/books/)
-
-## Содержание
-
-1. [Когда одной CRUD-модели уже недостаточно](#когда-одной-crud-модели-уже-недостаточно)
-2. [Что такое CDC и где он полезен](#что-такое-cdc-и-где-он-полезен)
-3. [Event sourcing: сильные стороны и цена](#event-sourcing-сильные-стороны-и-цена)
-4. [Materialized views и projection-модели](#materialized-views-и-projection-модели)
-5. [Schema evolution, replay и operational risks](#schema-evolution-replay-и-operational-risks)
-6. [Когда не стоит использовать эти подходы](#когда-не-стоит-использовать-эти-подходы)
-7. [Вопросы для самопроверки](#вопросы-для-самопроверки)
-8. [Связанные темы](#связанные-темы)
 
 ## Когда одной CRUD-модели уже недостаточно
 

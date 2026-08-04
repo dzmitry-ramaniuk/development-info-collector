@@ -1,5 +1,15 @@
 # Cognito: аутентификация, user pools и federation
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Что решает Cognito](#что-решает-cognito)
+3. [User Pool и токены](#user-pool-и-токены)
+4. [Identity Pool и доступ к AWS ресурсам](#identity-pool-и-доступ-к-aws-ресурсам)
+5. [Federation и социальные логины](#federation-и-социальные-логины)
+6. [Практический baseline для production](#практический-baseline-для-production)
+7. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 > **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
 
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html) · [quotas](https://docs.aws.amazon.com/cognito/latest/developerguide/quotas.html) · [pricing](https://aws.amazon.com/cognito/pricing/)
@@ -9,15 +19,6 @@
 - **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
-
-## Содержание
-
-1. [Что решает Cognito](#что-решает-cognito)
-2. [User Pool и токены](#user-pool-и-токены)
-3. [Identity Pool и доступ к AWS ресурсам](#identity-pool-и-доступ-к-aws-ресурсам)
-4. [Federation и социальные логины](#federation-и-социальные-логины)
-5. [Практический baseline для production](#практический-baseline-для-production)
-6. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Что решает Cognito
 

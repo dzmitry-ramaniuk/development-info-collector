@@ -1,5 +1,21 @@
 # Lambda: serverless-функции и современные паттерны
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Когда выбирать Lambda](#когда-выбирать-lambda)
+3. [Лимиты выполнения](#лимиты-выполнения)
+4. [Runtimes и архитектуры](#runtimes-и-архитектуры)
+5. [Модели concurrency](#модели-concurrency)
+6. [Современные сценарии](#современные-сценарии)
+   - [SnapStart](#snapstart)
+   - [Response streaming](#response-streaming)
+   - [SQS partial batch response](#sqs-partial-batch-response)
+   - [Ретраи event source и destinations](#ретраи-event-source-и-destinations)
+   - [Идемпотентность](#идемпотентность)
+7. [Практический baseline для production](#практический-baseline-для-production)
+8. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 > **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
 
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) · [quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) · [pricing](https://aws.amazon.com/lambda/pricing/)
@@ -10,21 +26,6 @@
 - **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
-
-## Содержание
-
-1. [Когда выбирать Lambda](#когда-выбирать-lambda)
-2. [Лимиты выполнения](#лимиты-выполнения)
-3. [Runtimes и архитектуры](#runtimes-и-архитектуры)
-4. [Модели concurrency](#модели-concurrency)
-5. [Современные сценарии](#современные-сценарии)
-   - [SnapStart](#snapstart)
-   - [Response streaming](#response-streaming)
-   - [SQS partial batch response](#sqs-partial-batch-response)
-   - [Ретраи event source и destinations](#ретраи-event-source-и-destinations)
-   - [Идемпотентность](#идемпотентность)
-6. [Практический baseline для production](#практический-baseline-для-production)
-7. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Когда выбирать Lambda
 

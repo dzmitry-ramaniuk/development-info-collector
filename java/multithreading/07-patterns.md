@@ -1,21 +1,22 @@
 # Шаблоны и практические приёмы
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Producer-Consumer Pattern](#producer-consumer-pattern)
+3. [Worker Pool Pattern](#worker-pool-pattern)
+4. [Fork/Join Pattern](#forkjoin-pattern)
+5. [Reactive Streams Pattern](#reactive-streams-pattern)
+6. [Double-Checked Locking Pattern](#double-checked-locking-pattern)
+7. [Thread-Per-Message Pattern](#thread-per-message-pattern)
+8. [Параллельные коллекции и Stream API](#параллельные-коллекции-и-stream-api)
+
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
 - **Статус примеров:** `current`
 - **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
-
-## Содержание
-
-1. [Producer-Consumer Pattern](#producer-consumer-pattern)
-2. [Worker Pool Pattern](#worker-pool-pattern)
-3. [Fork/Join Pattern](#forkjoin-pattern)
-4. [Reactive Streams Pattern](#reactive-streams-pattern)
-5. [Double-Checked Locking Pattern](#double-checked-locking-pattern)
-6. [Thread-Per-Message Pattern](#thread-per-message-pattern)
-7. [Параллельные коллекции и Stream API](#параллельные-коллекции-и-stream-api)
 
 ## Producer-Consumer Pattern
 
@@ -487,4 +488,3 @@ public class ParallelCollectionsExample {
     }
 }
 ```
-

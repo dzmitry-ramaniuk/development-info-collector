@@ -1,5 +1,25 @@
 # Эксплуатация Apache Kafka 4.0.0 в production
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Режимы метаданных: KRaft и ZooKeeper](#режимы-метаданных-kraft-и-zookeeper)
+3. [Архитектура KRaft-first](#архитектура-kraft-first)
+4. [Production-конфигурация Kafka 4.0.0](#production-конфигурация-kafka-400)
+   - [Dedicated controller](#dedicated-controller)
+   - [Dedicated broker](#dedicated-broker)
+5. [Форматирование storage и запуск](#форматирование-storage-и-запуск)
+6. [Ежедневные операции](#ежедневные-операции)
+   - [Добавление и удаление broker](#добавление-и-удаление-broker)
+   - [Изменение metadata quorum](#изменение-metadata-quorum)
+7. [Восстановление KRaft](#восстановление-kraft)
+8. [Совместимость и rolling upgrade](#совместимость-и-rolling-upgrade)
+   - [Безопасная стратегия](#безопасная-стратегия)
+9. [Legacy migration: ZooKeeper → KRaft](#legacy-migration-zookeeper--kraft)
+10. [Disaster recovery и capacity planning](#disaster-recovery-и-capacity-planning)
+11. [Проблемы и решения](#проблемы-и-решения)
+12. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 > **Версионная база главы — Apache Kafka 4.0.0.** В этой версии режим ZooKeeper удалён; новый и уже мигрировавший кластер работает только в **KRaft**. Миграцию из ZooKeeper нужно завершить на Kafka 3.9.x до обновления до 4.0.0.
 ## Актуальность материала
 
@@ -14,19 +34,6 @@
 > Конфигурации с ZooKeeper в документе отмечены как legacy-сценарии для сопровождения и миграций.
 
 Факты о версии сверены с [release notes Kafka 4.0.0](https://archive.apache.org/dist/kafka/4.0.0/RELEASE_NOTES.html), [KIP-833](https://cwiki.apache.org/confluence/display/KAFKA/KIP-833%3A+Mark+KRaft+as+Production+Ready) и [KIP-896](https://cwiki.apache.org/confluence/display/KAFKA/KIP-896%3A+Remove+ZooKeeper+mode). Это точная учебная база, а не обозначение «4.x»: перед внедрением следующего patch/minor-релиза повторно проверьте release notes.
-
-## Содержание
-
-1. [Архитектура KRaft-first](#архитектура-kraft-first)
-2. [Production-конфигурация Kafka 4.0.0](#production-конфигурация-kafka-400)
-3. [Форматирование storage и запуск](#форматирование-storage-и-запуск)
-4. [Ежедневные операции](#ежедневные-операции)
-5. [Восстановление KRaft](#восстановление-kraft)
-6. [Совместимость и rolling upgrade](#совместимость-и-rolling-upgrade)
-7. [Legacy migration: ZooKeeper → KRaft](#legacy-migration-zookeeper--kraft)
-8. [Disaster recovery и capacity planning](#disaster-recovery-и-capacity-planning)
-9. [Проблемы и решения](#проблемы-и-решения)
-10. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Архитектура KRaft-first
 

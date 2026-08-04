@@ -1,13 +1,12 @@
 # CI/CD
 
-Раздел о том, как провести изменение от коммита до безопасного production-релиза: организовать Git workflow и code review, построить проверяемый pipeline, один раз собрать неизменяемый артефакт и управляемо продвигать его между средами.
-
 ## Содержание
 
-1. [Git workflow и code review](01-git-и-code-review.md) — trunk-based development, GitFlow, небольшие pull request, обязательные проверки, Conventional Commits и SemVer.
-2. [Построение CI pipeline](02-построение-ci-pipeline.md) — переносимый граф стадий и пример GitHub Actions для Java-проекта.
-3. [Артефакты и promotion](03-артефакты-и-promotion.md) — immutable artifacts, provenance, registry, среды и audit trail.
-4. [Релизы и стратегии deployment](04-релизы-и-deployment-strategies.md) — миграции БД, feature flags, rolling, blue-green, canary и rollback.
+1. [Сквозной принцип](#сквозной-принцип)
+2. [Рекомендуемый маршрут](#рекомендуемый-маршрут)
+3. [Связанные разделы](#связанные-разделы)
+
+Раздел о том, как провести изменение от коммита до безопасного production-релиза: организовать Git workflow и code review, построить проверяемый pipeline, один раз собрать неизменяемый артефакт и управляемо продвигать его между средами.
 
 ## Сквозной принцип
 
@@ -20,8 +19,13 @@ CI отвечает на вопрос «можно ли доверять это�
 
 ## Рекомендуемый маршрут
 
-- **Разработчику:** файлы 01 → 02, затем чек-листы из 04.
-- **Platform/DevOps-инженеру:** файлы 02 → 03 → 04.
+1. [Git и Code Review](01-git-и-code-review.md) — workflow, качество изменений и правила ревью.
+2. [Построение CI pipeline](02-построение-ci-pipeline.md) — стадии проверок и воспроизводимая сборка.
+3. [Артефакты и promotion](03-артефакты-и-promotion.md) — immutable artifacts, provenance и продвижение между средами.
+4. [Релизы и deployment strategies](04-релизы-и-deployment-strategies.md) — rollout, rollback и контроль риска.
+
+- **Разработчику:** страницы 01 → 02, затем чек-листы из 04.
+- **Platform/DevOps-инженеру:** страницы 02 → 03 → 04.
 - **Для проектирования процесса:** определите branch policy, quality gates, формат release evidence и только затем выбирайте CI/CD-платформу.
 
 ## Связанные разделы

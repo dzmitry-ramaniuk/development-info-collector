@@ -1,5 +1,24 @@
 # Обобщения (Generics)
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Generics и типобезопасность](#generics-и-типобезопасность)
+   - [Основы Generics](#основы-generics)
+   - [Type Erasure (Стирание типов)](#type-erasure-стирание-типов)
+   - [Bounded Type Parameters (Ограниченные параметры типа)](#bounded-type-parameters-ограниченные-параметры-типа)
+   - [Wildcards (Подстановочные символы)](#wildcards-подстановочные-символы)
+   - [PECS (Producer Extends, Consumer Super)](#pecs-producer-extends-consumer-super)
+   - [Generic Methods (Обобщённые методы)](#generic-methods-обобщённые-методы)
+   - [Ограничения Generics](#ограничения-generics)
+   - [Best Practices для Generics](#best-practices-для-generics)
+3. [Специализированные коллекции](#специализированные-коллекции)
+4. [Best practices](#best-practices)
+5. [Практические упражнения](#практические-упражнения)
+6. [Вопросы на собеседовании](#вопросы-на-собеседовании)
+7. [Best practices](#best-practices-1)
+8. [Практические упражнения](#практические-упражнения-1)
+9. [Вопросы на собеседовании](#вопросы-на-собеседовании-1)
 
 ## Актуальность материала
 
@@ -7,24 +26,6 @@
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
 - **Статус примеров:** `current`
 - **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
-
-## Содержание
-
-1. [Основы Generics](#основы-generics)
-2. [Type Erasure (Стирание типов)](#type-erasure-стирание-типов)
-3. [Ограничения Generics](#ограничения-generics)
-4. [Обобщённые классы и интерфейсы](#обобщённые-классы-и-интерфейсы)
-5. [Обобщённые методы](#обобщённые-методы)
-6. [Bounded Type Parameters](#bounded-type-parameters)
-7. [Wildcards (Подстановочные символы)](#wildcards-подстановочные-символы)
-   - [Unbounded Wildcard (?)](#unbounded-wildcard-)
-   - [Upper Bounded Wildcard (? extends T)](#upper-bounded-wildcard--extends-t)
-   - [Lower Bounded Wildcard (? super T)](#lower-bounded-wildcard--super-t)
-8. [PECS принцип](#pecs-принцип)
-9. [Множественные ограничения](#множественные-ограничения)
-10. [Best practices](#best-practices)
-11. [Практические упражнения](#практические-упражнения)
-12. [Вопросы на собеседовании](#вопросы-на-собеседовании)
 
 ## Generics и типобезопасность
 
@@ -498,7 +499,7 @@ public class Cache<K, V> {
 ## Best practices
 - Выбирайте интерфейсы в сигнатурах (`List` вместо `ArrayList`).
 - Используйте `Collections.unmodifiableList` или неизменяемые коллекции для защиты API.
-- Всегда переопределяйте `equals()` и `hashCode()` в паре для ключей `Map` и элементов `Set` (см. раздел [Контракты equals и hashCode](#контракты-equals-и-hashcode)).
+- Всегда переопределяйте `equals()` и `hashCode()` в паре для ключей `Map` и элементов `Set` (см. раздел [Контракты equals и hashCode](05-collections.md#контракты-equals-и-hashcode)).
 - Для крупных коллекций контролируйте initial capacity (`new HashMap<>(capacity, loadFactor)`).
 
 ## Практические упражнения
