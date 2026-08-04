@@ -1,6 +1,13 @@
 # Работа с данными и ввод/вывод
 
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
+- **Статус примеров:** `current`
+- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+
 ## Содержание
 
 1. [Эволюция I/O API](#эволюция-io-api)
@@ -41,7 +48,7 @@
 ## Работа с сетевыми данными
 - **HTTP**: `HttpClient` (Java 11) поддерживает синхронные и асинхронные запросы, HTTP/2, WebSocket.
 - **Sockets**: `ServerSocket`, `Socket` для блокирующих сценариев; `SocketChannel` — неблокирующий.
-- **gRPC/REST**: используйте DTO, валидацию (`javax.validation`) и логирование запросов.
+- **gRPC/REST**: используйте DTO, валидацию (`jakarta.validation`, baseline Spring Boot 3) и логирование запросов.
 
 ## Производительность и безопасность
 - Используйте `BufferedInputStream`/`BufferedOutputStream` для уменьшения количества системных вызовов.

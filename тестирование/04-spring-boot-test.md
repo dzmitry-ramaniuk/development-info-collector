@@ -1,5 +1,12 @@
 # Spring Boot Test — тестирование Spring-приложений
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+
 Spring Boot Test — мощный инструмент для интеграционного тестирования Spring-приложений. Он позволяет поднимать только нужные части контекста и тестировать взаимодействие между компонентами без полного запуска приложения.
 
 ## Содержание
@@ -285,6 +292,8 @@ void shouldValidateUserInput() throws Exception {
 
 ### Тестирование с аутентификацией
 
+Для baseline Java 17+, Spring Boot 3.x и Spring Security 6 slice-тесту можно передать тестовый бин `SecurityFilterChain`. Это сохраняет те же `authorizeHttpRequests` и `requestMatchers`, что и production-конфигурация, вместо устаревшего наследования от адаптера.
+
 Добавить зависимость:
 ```xml
 <dependency>
@@ -299,7 +308,23 @@ void shouldValidateUserInput() throws Exception {
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 
 @WebMvcTest(AdminController.class)
+@Import(AdminControllerTest.TestSecurityConfig.class)
 class AdminControllerTest {
+
+    @TestConfiguration
+    static class TestSecurityConfig {
+
+        @Bean
+        SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+            http
+                .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .anyRequest().authenticated()
+                )
+                .httpBasic(Customizer.withDefaults());
+            return http.build();
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
