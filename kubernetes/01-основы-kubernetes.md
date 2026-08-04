@@ -20,6 +20,7 @@
 6. [Установка и первые шаги](#установка-и-первые-шаги)
 7. [Первое приложение в Kubernetes](#первое-приложение-в-kubernetes)
 8. [Основные команды kubectl](#основные-команды-kubectl)
+9. [Server-Side Apply](#server-side-apply)
 
 ## Что такое Kubernetes
 
@@ -400,6 +401,23 @@ alias kdp='kubectl describe pod'
 alias kl='kubectl logs'
 alias kex='kubectl exec -it'
 ```
+
+## Server-Side Apply
+
+**Server-Side Apply (SSA)** переносит слияние декларативной конфигурации в API server и записывает владельцев полей в `metadata.managedFields`. Это предпочтительный режим для совместной работы GitOps-контроллеров и операторов: каждому менеджеру задают стабильное имя, а конфликт владения полем сначала анализируют, а не подавляют.
+
+```bash
+# Проверить объект и конфликты без сохранения
+kubectl apply --server-side --dry-run=server --field-manager=platform-team -f deployment.yaml
+
+# Применить от имени конкретного менеджера полей
+kubectl apply --server-side --field-manager=platform-team -f deployment.yaml
+
+# --force-conflicts используйте только при осознанной передаче владения полями
+kubectl apply --server-side --field-manager=platform-team --force-conflicts -f deployment.yaml
+```
+
+Не смешивайте без плана client-side apply и SSA для одних полей. Перед миграцией изучите `kubectl get deployment nginx-deployment -o yaml --show-managed-fields`. См. [Server-Side Apply в v1.34](https://v1-34.docs.kubernetes.io/docs/reference/using-api/server-side-apply/).
 
 ## Практические упражнения
 
