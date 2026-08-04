@@ -1,5 +1,9 @@
 # Cognito: аутентификация, user pools и federation
 
+> **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
+
+**Официальные источники:** [service documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html) · [quotas](https://docs.aws.amazon.com/cognito/latest/developerguide/quotas.html) · [pricing](https://aws.amazon.com/cognito/pricing/)
+
 ## Содержание
 
 1. [Что решает Cognito](#что-решает-cognito)
