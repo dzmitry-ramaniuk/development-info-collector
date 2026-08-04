@@ -59,6 +59,10 @@
   - **[Развёртывание и сервисы](kubernetes/03-деплоймент-сервисы.md)** — Pods, Deployments, Services, Ingress, StatefulSets
   - **[Конфигурация и секреты](kubernetes/04-конфигурация-секреты.md)** — ConfigMaps, Secrets, Volumes, Storage
   - **[Мониторинг и логирование](kubernetes/05-мониторинг-логирование.md)** — Prometheus, Grafana, EFK/ELK, трассировка
+  - **[Безопасность и политики](kubernetes/06-безопасность-и-политики.md)** — RBAC, NetworkPolicy, PSS, encryption и admission policies
+  - **[Scheduling и autoscaling](kubernetes/07-scheduling-и-autoscaling.md)** — ресурсы, probes, размещение, PDB, HPA/VPA и node autoscaling
+  - **[Доставка приложений](kubernetes/08-доставка-приложений.md)** — Helm, Kustomize, GitOps, rollout и rollback
+  - **[Troubleshooting и disaster recovery](kubernetes/09-troubleshooting-и-disaster-recovery.md)** — production runbooks, backup и restore
 
 → [Перейти к материалам по Kubernetes](kubernetes/README.md)
 
@@ -114,7 +118,7 @@
 | [Java feature-релизы](java/05-java-versions.md) | Сопровождающий репозитория | Java 26 | 6 месяцев | 2026-04-27 | 2026-10-27 |
 | [Spring](java/spring/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [Kafka](очереди/кафка/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
-| [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
+| [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | 1.34 | 6 месяцев | — | 2026-08-31 |
 | [PostgreSQL](базы%20данных/postgresql/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
 | [Тестовый стек](тестирование/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
 | [Java Core и multithreading](java/README.md) | Сопровождающий репозитория | Java 21+ | 18 месяцев | — | 2026-08-31 |
