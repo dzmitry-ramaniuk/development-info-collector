@@ -1,4 +1,6 @@
-# Работа с агентами: настройка скиллов, MCP, CLI и сравнение Copilot/Claude/Codex
+# Работа с агентами: скиллы, MCP, CLI и сравнение продуктов
+
+> **Дата ревизии продуктовой матрицы: 4 августа 2026 года.** Стабильные принципы работы отделены от изменчивых свойств продуктов.
 
 ## Содержание
 
@@ -11,8 +13,10 @@
    - [Правила качественного скилла](#правила-качественного-скилла)
 4. [MCP: зачем нужен и как подключать](#mcp-зачем-нужен-и-как-подключать)
 5. [CLI-подход: когда удобнее терминал, а не чат](#cli-подход-когда-удобнее-терминал-а-не-чат)
-6. [Copilot vs Claude vs Codex: основные различия](#copilot-vs-claude-vs-codex-основные-различия)
-7. [Практические сценарии выбора инструмента](#практические-сценарии-выбора-инструмента)
+6. [Продуктовая матрица: что именно сравниваем](#продуктовая-матрица-что-именно-сравниваем)
+   - [Сравнение проверяемых функций](#сравнение-проверяемых-функций)
+   - [Что перепроверить перед выбором](#что-перепроверить-перед-выбором)
+7. [Чек-лист собственной оценки](#чек-лист-собственной-оценки)
 8. [Типичные ошибки и как их избежать](#типичные-ошибки-и-как-их-избежать)
 9. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
@@ -111,22 +115,44 @@ git status --short
 rg "01-работа-с-агентами"
 ```
 
-## Copilot vs Claude vs Codex: основные различия
+## Продуктовая матрица: что именно сравниваем
 
-Ниже — практичное сравнение (без привязки к маркетингу):
+Бренды целиком несравнимы: один поставщик может одновременно предлагать расширение IDE, локальный CLI-агент, удалённый web-agent и API. Здесь сравниваются конкретные поверхности:
 
-| Инструмент | Сильные стороны | Ограничения/риски | Когда выбирать |
-|---|---|---|---|
-| **GitHub Copilot** | Быстрое автодополнение и генерация кода прямо в IDE | Может не держать длинный контекст архитектуры | Когда нужно ускорить ежедневный coding flow в редакторе |
-| **Claude** | Сильная работа с длинным текстом, анализ требований, аккуратные объяснения | Реализация в коде может требовать более жёстких технических рамок | Когда важны анализ, проектирование, документация, RFC |
-| **Codex (agentic CLI/IDE workflow)** | Автономная работа по шагам: чтение файлов, правки, запуск команд и проверок | Требует точных инструкций и критериев приёмки, иначе возможны лишние изменения | Когда нужен полуавтоматический delivery-задач в репозитории |
+- **GitHub Copilot agent mode** — агент в IDE (VS Code, Visual Studio, JetBrains, Eclipse и Xcode; набор функций различается) и **Copilot coding agent** — web-agent в GitHub, который работает в GitHub Actions-окружении и создаёт pull request. Это не один и тот же продуктовый режим ([IDE agent mode](https://docs.github.com/en/copilot/concepts/agents/about-copilot-agents), [coding agent](https://docs.github.com/en/copilot/concepts/agents/about-copilot-coding-agent)).
+- **Claude Code** — агент для репозитория с CLI и интеграциями IDE; здесь не сравнивается обычный чат Claude.ai или Anthropic API ([обзор](https://code.claude.com/docs/en/overview), [IDE integrations](https://code.claude.com/docs/en/ide-integrations)).
+- **OpenAI Codex** — локальные Codex CLI и IDE extension, а также облачный web-agent Codex cloud. OpenAI API и Codex SDK — отдельные программные поверхности и в матрицу не включены ([CLI](https://developers.openai.com/codex/cli), [IDE extension](https://developers.openai.com/codex/ide), [cloud](https://developers.openai.com/codex/cloud)).
 
-## Практические сценарии выбора инструмента
+### Сравнение проверяемых функций
 
-1. **Нужно быстро писать много однотипного кода в IDE** → начните с Copilot.
-2. **Нужно разобрать объёмные требования и выстроить аргументацию** → Claude.
-3. **Нужно внести изменения в проект, прогнать проверки и подготовить PR** → Codex.
-4. **Комбинированный workflow**: анализ в Claude, реализация с проверками в Codex, локальная скорость набора через Copilot.
+| Поверхность | Работа с репозиторием и terminal tools | MCP | Approval model | Custom instructions | Среда |
+|---|---|---|---|---|---|
+| **GitHub Copilot agent mode (IDE)** | Ищет контекст, правит файлы, предлагает и запускает terminal tools в workspace | Да; поддержка и настройка зависят от IDE ([MCP](https://docs.github.com/en/copilot/customizing-copilot/extending-copilot-chat-with-mcp)) | Опасные tools/команды требуют подтверждения; доверие можно настраивать | `.github/copilot-instructions.md`, path-specific instructions и instruction files ([документация](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot)) | Локальная IDE и её terminal; точную матрицу IDE нужно сверять |
+| **GitHub Copilot coding agent (web-agent)** | Клонирует репозиторий, меняет код, запускает commands и открывает PR | Да, но для coding agent есть отдельная конфигурация и allowlist tools ([MCP](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp)) | Агент ограничен GitHub Actions-окружением; результат проходит обычный PR review, а workflow из PR не запускаются без одобрения | Репозиторные Copilot instructions и custom agents | Удалённая GitHub Actions-среда; её можно настроить ([environment](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment)) |
+| **Claude Code (CLI / IDE)** | Читает кодовую базу, правит файлы, запускает shell commands и работает с Git | Да: local, project и user-scoped servers ([MCP](https://code.claude.com/docs/en/mcp)) | Правила allow/ask/deny, permission modes и sandbox для shell/filesystem/network ([permissions](https://code.claude.com/docs/en/permissions), [sandboxing](https://code.claude.com/docs/en/sandboxing)) | `CLAUDE.md`, `.claude/rules/`, settings и hooks ([memory](https://code.claude.com/docs/en/memory)) | Terminal на macOS, Linux и Windows; интеграции VS Code-family и JetBrains |
+| **OpenAI Codex (CLI / IDE extension)** | Инспектирует репозиторий, правит файлы и запускает shell tools | Да; MCP servers задаются в общей конфигурации CLI и IDE ([MCP](https://developers.openai.com/codex/mcp)) | Сочетание sandbox и approval policy для записи вне workspace, сети и команд ([security](https://developers.openai.com/codex/security)) | Иерархия `AGENTS.md`, плюс config и skills ([AGENTS.md](https://developers.openai.com/codex/guides/agents-md)) | CLI: macOS/Linux, Windows имеет особые условия; extension для VS Code-family IDE |
+| **OpenAI Codex cloud (web-agent)** | Работает с подключённым GitHub-репозиторием в изолированном облачном окружении; возвращает diff/PR | Не следует переносить возможности local MCP на cloud без проверки документации | Изолированное environment; доступ к сети во время agent phase отдельно контролируется | `AGENTS.md` и environment setup scripts | Облачный Linux container ([cloud environments](https://developers.openai.com/codex/cloud/environments)) |
+
+> Пустая или ограниченная ячейка не означает, что поставщик в целом не имеет функции: она может быть доступна в другой поверхности. Например, MCP в локальном CLI не доказывает его наличие в web-agent.
+
+### Что перепроверить перед выбором
+
+> **Тарифы, rate limits и квоты, лимиты контекста, доступные модели, региональная доступность и функции конкретного тарифа изменчивы.** Не используйте эту матрицу как прайс-лист: перед покупкой повторно сверьте официальные страницы [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans-for-github-copilot), [Claude Code costs](https://code.claude.com/docs/en/costs) и [Codex pricing](https://developers.openai.com/codex/pricing).
+
+Также уточните у администратора организации: разрешена ли нужная модель, можно ли подключать MCP, доступен ли web-agent для данного репозитория и какие политики data retention используются.
+
+## Чек-лист собственной оценки
+
+Возьмите одинаковую небольшую задачу: исправить дефект в двух-трёх файлах, добавить тест и обновить краткую документацию. Для каждого инструмента зафиксируйте:
+
+- [ ] Увидел ли агент корневые и вложенные custom instructions и соблюл ли границы задачи?
+- [ ] Нашёл ли он связанный код и тесты без ручного перечисления всех файлов?
+- [ ] Запросил ли approval перед опасной командой, доступом к сети или выходом за workspace?
+- [ ] Запустил ли нужные тесты/линтеры и точно ли отчитался об ошибках?
+- [ ] Остался ли diff минимальным, понятным и без посторонних изменений?
+- [ ] Можно ли воспроизвести результат из лога, а время, число итераций и стоимость приемлемы?
+
+Сравнивайте не впечатление от одного ответа, а долю успешных повторов на нескольких сопоставимых задачах.
 
 ## Типичные ошибки и как их избежать
 
@@ -144,5 +170,5 @@ rg "01-работа-с-агентами"
 1. В чём разница между «подсказчиком в IDE» и «автономным агентом»?
 2. Какие три обязательных элемента должны быть в постановке задачи агенту?
 3. Зачем нужен MCP и почему важно ограничивать доступы?
-4. В каком случае лучше выбрать Copilot, а в каком — Codex?
+4. Почему нельзя сравнивать бренды без указания поверхности: IDE extension, CLI, web-agent или API?
 5. Как организовать процесс, чтобы результат агента был воспроизводимым и проверяемым?
