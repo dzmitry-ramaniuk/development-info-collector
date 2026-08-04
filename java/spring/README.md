@@ -87,6 +87,7 @@
 
 - **Java Core**: Рефлексия, аннотации, прокси
 - **Базы данных**: JDBC, JPA, транзакции
+- **Redis**: [Spring Cache, RedisTemplate, Lettuce и сериализация](../../базы%20данных/redis/04-java-и-spring.md)
 - **Тестирование**: Spring Test, MockMvc, Testcontainers
 - **Многопоточность**: Асинхронность в Spring (@Async, @Scheduled)
 
