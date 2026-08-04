@@ -122,6 +122,7 @@ Baseline зафиксирован намеренно: перед переход�
 - [AWS](../aws/README.md) — облачная инфраструктура, IAM, сеть, storage и managed Kubernetes-контекст
 - [CI/CD и GitOps](08-доставка-приложений.md#supply-chain-и-cicd) — pipeline, promotion, progressive delivery и rollback
 - [Troubleshooting и disaster recovery](09-troubleshooting-и-disaster-recovery.md) — связь архитектурных RTO/RPO с эксплуатационными runbooks
+- [CI/CD: релизы и deployment strategies](../ci-cd/04-релизы-и-deployment-strategies.md) — rolling, blue-green, canary, health gates и rollback
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## 📚 Содержание
 
-Материалы организованы в девять основных разделов:
+Материалы организованы в десять основных разделов:
 
 ### [Java](java/README.md) ☕
 
@@ -22,8 +22,10 @@
 
 Материалы по СУБД, проектированию и оптимизации:
   - **[PostgreSQL](базы данных/postgresql/README.md)** — архитектура, индексы, транзакции, производительность, партиционирование
-  - Проектирование схем и нормализация
-  - Оптимизация запросов и планы выполнения
+  - **[Реляционная модель и нормализация](базы данных/01-реляционная-модель-и-нормализация.md)** — ключи, 1NF–BCNF и моделирование связей
+  - **[Практический SQL](базы данных/02-практический-sql.md)** — JOIN, CTE, окна, агрегаты и `NULL`
+  - **[Миграции схемы](базы данных/03-миграции-схемы.md)** — Flyway/Liquibase, expand/contract и backfill; продолжение в [zero-downtime эволюции](system%20design/12-эволюция-системы-и-миграции-без-простоя.md)
+  - Связь реляционной модели с **[Hibernate/JPA](java/04-hibernate.md)**
 
 → [Перейти к материалам по базам данных](базы данных/README.md)
 
@@ -47,9 +49,23 @@
   - **Mockito** — создание тестовых двойников
   - **Testcontainers** — интеграционное тестирование с Docker
   - **Spring Boot Test** — тестирование Spring-приложений
+  - **[Контрактное тестирование](тестирование/07-contract-testing.md)** — CDC и совместимость схем
+  - **[API и E2E](тестирование/08-api-e2e-testing.md)** — HTTP-контракт, негативные сценарии и сквозные journeys
+  - **[Performance testing](тестирование/09-performance-testing.md)** — workload, latency, throughput и saturation
+  - **[Security testing](тестирование/10-security-testing.md)** — SCA, SAST/DAST, access control и OWASP API risks
   - Best practices и подготовка к собеседованиям
 
 → [Перейти к материалам по тестированию](тестирование/README.md)
+
+### [Docker](docker/README.md) 🐳
+
+Контейнеризация приложений от базовых механизмов до безопасной эксплуатации:
+  - **[Основы контейнеров](docker/01-основы-контейнеров.md)** — image/container, namespaces, cgroups и OCI Registry
+  - **[Dockerfile и сборка](docker/02-dockerfile-и-сборка-образов.md)** — layers, cache, multi-stage и Spring Boot
+  - **[Compose, сети и хранилища](docker/03-compose-сети-и-хранилища.md)** — PostgreSQL, Redis, volumes и health checks
+  - **[Безопасность и production](docker/04-безопасность-и-production-practices.md)** — SBOM, scanning, secrets и resource limits
+
+→ [Перейти к материалам по Docker](docker/README.md)
 
 ### [Kubernetes](kubernetes/README.md) ☸️
 
@@ -74,6 +90,16 @@
   - **Compute / Storage / Databases** — выбор между EC2, ECS/EKS, Lambda, S3, RDS и DynamoDB
 
 → [Перейти к материалам по AWS](aws/README.md)
+
+### [CI/CD](ci-cd/README.md) 🔄
+
+Практики безопасной доставки изменений от Git до production:
+  - **[Git workflow и code review](ci-cd/01-git-и-code-review.md)** — trunk-based development, GitFlow, небольшие PR, обязательные проверки, Conventional Commits и SemVer
+  - **[Построение CI pipeline](ci-cd/02-построение-ci-pipeline.md)** — compile, анализ, тесты, packaging, image build, security checks и publication
+  - **[Артефакты и promotion](ci-cd/03-артефакты-и-promotion.md)** — immutable artifacts, provenance, SBOM и audit trail
+  - **[Релизы и deployment strategies](ci-cd/04-релизы-и-deployment-strategies.md)** — миграции БД, flags, rolling, blue-green, canary и rollback
+
+→ [Перейти к материалам по CI/CD](ci-cd/README.md)
 
 ### [Паттерны проектирования](паттерны проектирования/README.md) 🏗️
 
@@ -115,11 +141,15 @@
 |---|---|---|---:|---|---|
 | [AI-агенты](ai-агенты/README.md) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
 | [AWS](aws/README.md) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
+| [CI/CD](ci-cd/README.md) | Сопровождающий репозитория | Java 21, Kubernetes 1.34, SemVer 2.0.0 | 6 месяцев | 2026-08-04 | 2027-02-04 |
 | [Java feature-релизы](java/05-java-versions.md) | Сопровождающий репозитория | Java 26 | 6 месяцев | 2026-04-27 | 2026-10-27 |
 | [Spring](java/spring/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [Kafka](очереди/кафка/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | 1.34 | 6 месяцев | — | 2026-08-31 |
+| [Docker](docker/README.md) | Сопровождающий репозитория | Docker Engine 28.x; Compose v2; OCI 1.1 | 6 месяцев | 2026-08-04 | 2027-02-04 |
+| [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [PostgreSQL](базы%20данных/postgresql/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
+| [Redis](базы%20данных/redis/README.md) | Сопровождающий репозитория | Redis Open Source 8.2.x | 6 месяцев | 2026-08-04 | 2027-02-04 |
 | [Тестовый стек](тестирование/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
 | [Java Core и multithreading](java/README.md) | Сопровождающий репозитория | Java 21+ | 18 месяцев | — | 2026-08-31 |
 | [Базы данных: общие концепции](базы%20данных/README.md) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
@@ -142,6 +172,7 @@
 | Дата | Раздел | Что перепроверено | Issue / PR |
 |---|---|---|---|
 | 2026-08-04 | Весь репозиторий | Введён процесс ревизий; технические утверждения разделов в этом изменении не перепроверялись | — |
+| 2026-08-04 | CI/CD | Создан раздел; сверены Git/Maven/GitHub Actions, OCI/SLSA/SBOM, Kubernetes 1.34, Flyway 11.x, SemVer и Conventional Commits | — |
 
 ## 🧭 Рекомендуемые траектории изучения
 
@@ -151,7 +182,9 @@
 3. [Базы данных](базы данных/README.md) — закрепить SQL, транзакции, индексы и производительность
 4. [Spring Framework](java/spring/README.md) и [Hibernate/JPA](java/04-hibernate.md) — перейти к прикладной backend-разработке
 5. [Тестирование](тестирование/README.md) — научиться проверять код и инфраструктурные сценарии
-6. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
+6. [CI/CD](ci-cd/README.md) — связать review, проверки, артефакты и безопасный релиз
+6. [Docker](docker/README.md) — упаковать Spring Boot, настроить зависимости и безопасный runtime
+7. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
 
 ### Если цель — подготовка к собеседованию
 - Начните с [Java Core](java/java-core/README.md) и [многопоточности](java/multithreading/README.md): это база для большинства технических интервью
@@ -161,6 +194,8 @@
 
 ### Если цель — расширить кругозор по архитектуре и эксплуатации
 - Изучите [очереди](очереди/README.md), чтобы понять event-driven подход и интеграцию сервисов
+- Пройдите [CI/CD](ci-cd/README.md), чтобы связать изменение кода с проверяемым артефактом, rollout и rollback
+- Начните с [Docker](docker/README.md), чтобы освоить сборку, сети, хранилища и ограничения контейнера
 - Перейдите к [Kubernetes](kubernetes/README.md), чтобы связать разработку с эксплуатацией и production-развёртыванием
 - Используйте [паттерны проектирования](паттерны проектирования/README.md) как мост между кодом, архитектурой и обсуждением решений на интервью
 - Добавьте [System Design](system design/README.md), чтобы перейти от отдельных инструментов к проектированию end-to-end систем
