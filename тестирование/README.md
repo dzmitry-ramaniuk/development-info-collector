@@ -1,6 +1,6 @@
 # Тестирование
 
-Материалы по различным аспектам тестирования программного обеспечения: модульное тестирование, интеграционное тестирование, моки, best practices и подготовка к собеседованиям.
+Материалы от модульных и интеграционных тестов до проверок контрактов, API/E2E, производительности и безопасности.
 
 ## 📚 Содержание
 
@@ -49,11 +49,32 @@
    - Практические задачи
    - Короткие формулировки для собеседования
 
+7. [Контрактное тестирование](07-contract-testing.md)
+   - Consumer-driven contracts и provider verification
+   - Schema compatibility и expand/contract
+   - Граница с integration/E2E и пирамида/«соты»
+
+8. [API- и E2E-тестирование](08-api-e2e-testing.md)
+   - HTTP-контракт и негативные сценарии
+   - Идемпотентность, authentication и authorization
+   - Risk-based E2E и выбор вида теста
+
+9. [Нагрузочное и performance-тестирование](09-performance-testing.md)
+   - Workload model, latency, throughput и saturation
+   - Warm-up, coordinated omission, baseline и stop criteria
+   - Воспроизводимый пример Grafana k6
+
+10. [Security testing](10-security-testing.md)
+   - Dependency/SBOM scanning, SAST, DAST и secret scanning
+   - Тесты контроля доступа
+   - OWASP API Security Top 10 — 2023 и обработка секретов
+
 ## 🧭 Рекомендуемые маршруты по разделу
 
 - **Для уверенного старта**: [JUnit](01-junit.md) → [Mockito](03-mockito.md) → [Spring Boot Test](04-spring-boot-test.md) → [Testcontainers](02-testcontainers.md)
 - **Для подготовки к собеседованию**: повторите [лучшие практики](05-best-practices.md), затем пройдите [интервью-гайд](06-interview-guide.md) и проговорите ответы вслух
 - **Для улучшения качества текущего проекта**: используйте раздел как чек-лист — изоляция тестов, реалистичные интеграционные сценарии, читаемость и скорость тестового набора
+- **Для проектирования quality gates**: [контракты](07-contract-testing.md) → [API/E2E](08-api-e2e-testing.md) → [performance](09-performance-testing.md) → [security](10-security-testing.md)
 
 ## 🧪 Быстрый выбор инструмента
 
@@ -63,6 +84,10 @@
 | Проверить интеграцию с БД, брокером или внешним сервисом | [Testcontainers](02-testcontainers.md) | Реалистичные зависимости вместо in-memory замен |
 | Протестировать Spring MVC, JPA или весь контекст | [Spring Boot Test](04-spring-boot-test.md) | Позволяет выбрать подходящий test slice |
 | Найти антипаттерны и сделать тесты стабильнее | [Лучшие практики](05-best-practices.md) | Собирает типовые ошибки и способы их избежать |
+| Защитить независимые релизы сервисов | [Контрактное тестирование](07-contract-testing.md) | Проверяет потребности consumer без общего E2E-окружения |
+| Проверить HTTP и критический journey | [API/E2E](08-api-e2e-testing.md) | Разделяет быстрые API-проверки и малый E2E smoke |
+| Проверить SLO под нагрузкой | [Performance testing](09-performance-testing.md) | Связывает workload, latency, throughput и saturation |
+| Проверить security controls и supply chain | [Security testing](10-security-testing.md) | Сочетает access tests, SAST/DAST/SCA и секреты |
 
 ## 🎯 Как использовать
 
@@ -98,7 +123,7 @@
 - **Пишите тесты вместе с кодом** (TDD/BDD подход) для лучшего дизайна
 - **Стремитесь к высокому покрытию** критичных участков кода, но не гонитесь за 100%
 - **Делайте тесты читаемыми** — используйте @DisplayName, AAA паттерн, выразительные имена
-- **Следуйте пирамиде тестирования**: 70% юнит-тесты, 20% интеграционные, 10% E2E
+- **Следуйте пирамиде и «сотам»**: держите быстрых узких тестов больше, но выбирайте покрытие по риску, а не фиксированной пропорции
 - **Избегайте хрупких тестов** — проверяйте результат, а не внутреннюю реализацию
 - **Оптимизируйте производительность** — используйте slice-тесты, статические контейнеры, параллельное выполнение
 
