@@ -1,5 +1,12 @@
 # Реактивное программирование в Java
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
+
 ## Содержание
 
 1. [Введение в реактивное программирование](#введение-в-реактивное-программирование)

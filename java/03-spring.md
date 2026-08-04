@@ -13,15 +13,10 @@ Spring — это экосистема фреймворков для постр�
 
 ## Актуальность материала
 
-- **Последняя проверка:** **27 апреля 2026**.
-- **Фокус ревизии:** подтверждена релевантность структуры раздела для современных версий Spring и JDK.
-
-### Что проверять при каждом обновлении
-
-- новые LTS/feature-релизы Java;
-- изменения в GC/диагностике/JFR/виртуальных потоках;
-- рекомендации по migration path;
-- совместимость Spring/Hibernate с новыми JDK.
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
 
 ## Структура раздела
 - [Spring Core](spring/01-spring-core.md) — принципы IoC/DI, контекст приложения и жизненный цикл бинов.

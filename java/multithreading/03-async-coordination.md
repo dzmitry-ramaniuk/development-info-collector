@@ -1,10 +1,17 @@
 # Асинхронные вычисления и координация
 <script type="module" src="../../assets/mermaid-init.js"></script>
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
+- **Статус примеров:** `current`
+- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+
 ## Содержание
 
 1. [CompletableFuture: асинхронные конвейеры](#completablefuture-асинхронные-конвейеры)
-2. [Structured Concurrency (Java 21+)](#structured-concurrency-java-21)
+2. [Structured Concurrency: матрица JDK](#structured-concurrency-матрица-jdk)
 3. [Future и его ограничения](#future-и-его-ограничения)
 4. [Как выбирать подход](#как-выбирать-подход)
 
@@ -154,7 +161,20 @@ public class AsyncHttpService {
 }
 ```
 
-## Structured Concurrency (Java 21+)
+## Structured Concurrency: матрица JDK
+
+| JDK | JEP и статус возможности | Совместимость API |
+|---|---|---|
+| 19 | JEP 428, **incubator** | Первая инкубация. |
+| 20 | JEP 437, второй **incubator** | Инкубационный API. |
+| 21 | JEP 453, первый **preview** | Нужен preview-режим. |
+| 22 | JEP 462, второй **preview** | Нужен preview-режим. |
+| 23 | JEP 480, третий **preview** | Нужен preview-режим. |
+| 24 | JEP 499, четвёртый **preview** | Последняя версия API с `StructuredTaskScope.ShutdownOnFailure`. |
+| 25 | JEP 505, пятый **preview** | API переработан вокруг `StructuredTaskScope.open(...)` и `Joiner`; примеры для JDK 24 требуют переписывания. |
+| 26 | JEP 525, шестой **preview** | Всё ещё не final API; нужен preview-режим. |
+
+Пример ниже написан **точно для компилятора JDK 24**. Компиляция: `javac --release 24 --enable-preview Example.java`; запуск: `java --enable-preview Example`. Preview API может измениться или исчезнуть, требует той же версии runtime, что и компилятор, и не рекомендуется как стабильная production-зависимость без плана миграции, закреплённого toolchain и тестирования на каждом обновлении JDK.
 
 Structured concurrency упрощает управление группами задач:
 
@@ -185,9 +205,9 @@ public String fetchUserData(String userId) throws Exception {
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
         
         // Запускаем несколько параллельных задач
-        Future<String> user = scope.fork(() -> fetchUser(userId));
-        Future<String> orders = scope.fork(() -> fetchOrders(userId));
-        Future<String> preferences = scope.fork(() -> fetchPreferences(userId));
+        StructuredTaskScope.Subtask<String> user = scope.fork(() -> fetchUser(userId));
+        StructuredTaskScope.Subtask<String> orders = scope.fork(() -> fetchOrders(userId));
+        StructuredTaskScope.Subtask<String> preferences = scope.fork(() -> fetchPreferences(userId));
         
         // Ждём завершения всех или первой ошибки
         scope.join();
@@ -195,9 +215,9 @@ public String fetchUserData(String userId) throws Exception {
         
         // Все задачи успешно завершены
         return combineResults(
-            user.resultNow(),
-            orders.resultNow(),
-            preferences.resultNow()
+            user.get(),
+            orders.get(),
+            preferences.get()
         );
     } // Автоматическая очистка и отмена незавершённых задач
 }
@@ -254,6 +274,6 @@ future.cancel(true); // Отменяет, но нет способа узнат�
 flowchart TD
     A["Нужна композиция и неблокирующие цепочки?"] -->|Да| B["CompletableFuture"]
     A -->|Нет| C["Нужен структурированный fan-out/fan-in в рамках запроса?"]
-    C -->|Да, Java 21+| D["Structured Concurrency"]
+    C -->|Да, подходящий preview JDK| D["Structured Concurrency: сверить матрицу API"]
     C -->|Нет| E["ExecutorService + Future/Callable"]
 ```

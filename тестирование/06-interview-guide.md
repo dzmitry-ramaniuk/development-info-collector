@@ -1,5 +1,12 @@
 # Интервью-гайд по тестированию — вопросы и ответы
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+
 Этот раздел предназначен для подготовки к техническим собеседованиям на позиции Java-разработчика. Он включает типичные вопросы и краткие формулировки ответов, которые можно использовать при устных интервью.
 
 ## Содержание

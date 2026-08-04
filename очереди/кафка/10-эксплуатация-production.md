@@ -1,6 +1,17 @@
 # Эксплуатация Apache Kafka 4.0.0 в production
 
 > **Версионная база главы — Apache Kafka 4.0.0.** В этой версии режим ZooKeeper удалён; новый и уже мигрировавший кластер работает только в **KRaft**. Миграцию из ZooKeeper нужно завершить на Kafka 3.9.x до обновления до 4.0.0.
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Apache Kafka 3.9–4.0
+- **Статус примеров:** `current`
+- **Первичные источники:** [Apache Kafka Documentation](https://kafka.apache.org/documentation/); [Apache Kafka Javadocs](https://kafka.apache.org/documentation/#api)
+
+## Режимы метаданных: KRaft и ZooKeeper
+
+> Актуально на **март 2026**: для новых инсталляций используйте **KRaft-first** подход.
+> Конфигурации с ZooKeeper в документе отмечены как legacy-сценарии для сопровождения и миграций.
 
 Факты о версии сверены с [release notes Kafka 4.0.0](https://archive.apache.org/dist/kafka/4.0.0/RELEASE_NOTES.html), [KIP-833](https://cwiki.apache.org/confluence/display/KAFKA/KIP-833%3A+Mark+KRaft+as+Production+Ready) и [KIP-896](https://cwiki.apache.org/confluence/display/KAFKA/KIP-896%3A+Remove+ZooKeeper+mode). Это точная учебная база, а не обозначение «4.x»: перед внедрением следующего patch/minor-релиза повторно проверьте release notes.
 

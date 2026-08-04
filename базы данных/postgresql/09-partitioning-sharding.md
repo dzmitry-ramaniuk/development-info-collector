@@ -1,5 +1,12 @@
 # Партиционирование и шардинг в PostgreSQL
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** PostgreSQL 16–18
+- **Статус примеров:** `current`
+- **Первичные источники:** [PostgreSQL Documentation](https://www.postgresql.org/docs/); [PostgreSQL Release Notes](https://www.postgresql.org/docs/release/)
+
 ## Содержание
 
 1. [Введение](#введение)
