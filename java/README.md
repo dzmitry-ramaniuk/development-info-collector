@@ -36,6 +36,10 @@
 
 → [Короткая навигация](02-multithreading.md) · [Подробное оглавление](multithreading/README.md)
 
+> `02-multithreading.md` — обзор и рекомендуемый маршрут по теме, а каталог
+> `multithreading/` содержит отдельные подробные главы. Это один раздел, а не два
+> независимых набора материалов.
+
 ### [Spring Framework](03-spring.md)
 
 Экосистема Spring Framework и ключевые проекты:
@@ -45,6 +49,7 @@
   - [Spring Integration](spring/04-spring-integration.md)
   - [Spring Proxying и AOP](spring/05-spring-proxying.md)
   - [Реактивное программирование](spring/06-reactive-programming.md)
+  - [Spring Security](spring/07-spring-security.md)
 
 → [Короткая навигация](03-spring.md) · [Подробное оглавление](spring/README.md)
 

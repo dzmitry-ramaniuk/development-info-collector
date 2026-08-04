@@ -39,9 +39,13 @@
 ## 🔗 Связанные темы
 
 - [Kubernetes](../kubernetes/README.md) — запуск контейнерных приложений и orchestration-паттерны
+- [Scheduling и autoscaling Kubernetes](../kubernetes/07-scheduling-и-autoscaling.md) — связь requests, HPA и node autoscaling с облачной capacity
+- [Безопасность и политики Kubernetes](../kubernetes/06-безопасность-и-политики.md) — сопоставление ServiceAccount/RBAC, сетевой изоляции и KMS с облачными controls
+- [Доставка приложений в Kubernetes](../kubernetes/08-доставка-приложений.md) — CI/CD, GitOps и progressive delivery поверх облачной инфраструктуры
 - [System Design](../system design/README.md) — архитектурные компромиссы, масштабирование и отказоустойчивость
 - [Базы данных](../базы данных/README.md) — выбор и эксплуатация хранилищ данных
 - [Очереди](../очереди/README.md) — асинхронные интеграции и event-driven взаимодействие
+- [CI/CD](../ci-cd/README.md) — promotion immutable artifacts и безопасные deployment strategies в облаке
 
 ---
 

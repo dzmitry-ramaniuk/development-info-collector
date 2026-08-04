@@ -43,11 +43,31 @@ Baseline зафиксирован намеренно: перед переход�
    - EFK/ELK стеки
    - Трассировка и observability
 
+6. [Безопасность и политики](06-безопасность-и-политики.md)
+   - ServiceAccount и least-privilege RBAC
+   - NetworkPolicy и Pod Security Standards
+   - Шифрование Secrets и policy engines
+
+7. [Scheduling, ресурсы и autoscaling](07-scheduling-и-autoscaling.md)
+   - Requests, limits, QoS и probes
+   - PDB, affinity, topology spread, taints/tolerations
+   - HPA, VPA и Cluster Autoscaler
+
+8. [Доставка приложений](08-доставка-приложений.md)
+   - Helm, Kustomize, GitOps и CI/CD
+   - Rolling, canary и blue-green rollout
+   - Проверяемый безопасный rollback
+
+9. [Troubleshooting и disaster recovery](09-troubleshooting-и-disaster-recovery.md)
+   - Runbooks для workloads, DNS/сети и storage
+   - Диагностика деградации control plane
+   - RTO/RPO, backup и регулярная проверка restore
+
 ## 🧭 Рекомендуемые маршруты по разделу
 
 - **Если начинаете с нуля**: идите строго по порядку файлов — от базовых концепций и архитектуры к deployment-паттернам, конфигурации и observability
-- **Если уже деплоили приложения, но хотите лучше понимать production**: сосредоточьтесь на архитектуре, ресурсах, секретах, мониторинге и troubleshooting
-- **Если готовитесь к DevOps/SRE-интервью**: дополнительно проговаривайте отличия между Deployment, StatefulSet, Service, Ingress, ConfigMap и Secret на практических примерах
+- **Если уже деплоили приложения, но хотите лучше понимать production**: сосредоточьтесь на архитектуре, ресурсах, безопасности, доставке, мониторинге и [операционных runbooks](09-troubleshooting-и-disaster-recovery.md)
+- **Если готовитесь к DevOps/SRE-интервью**: разберите scheduling/autoscaling, [границы security-механизмов](06-безопасность-и-политики.md) и отрепетируйте troubleshooting по симптомам
 
 ## 🎯 Как использовать
 
@@ -99,6 +119,10 @@ Baseline зафиксирован намеренно: перед переход�
 - [System Design](../system design/README.md) — общий контекст масштабирования, observability и проектирования production-ready систем
 - [Масштабирование, надёжность и отказоустойчивость](../system design/06-масштабирование-надежность-и-отказоустойчивость.md) — связь между архитектурными решениями и оркестрацией
 - [Наблюдаемость, безопасность и эксплуатация](../system design/08-наблюдаемость-безопасность-и-эксплуатация.md) — как использовать метрики, алерты и security practices до и после деплоя
+- [AWS](../aws/README.md) — облачная инфраструктура, IAM, сеть, storage и managed Kubernetes-контекст
+- [CI/CD и GitOps](08-доставка-приложений.md#supply-chain-и-cicd) — pipeline, promotion, progressive delivery и rollback
+- [Troubleshooting и disaster recovery](09-troubleshooting-и-disaster-recovery.md) — связь архитектурных RTO/RPO с эксплуатационными runbooks
+- [CI/CD: релизы и deployment strategies](../ci-cd/04-релизы-и-deployment-strategies.md) — rolling, blue-green, canary, health gates и rollback
 
 ---
 
