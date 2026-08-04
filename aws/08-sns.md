@@ -4,6 +4,13 @@
 
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/sns/latest/dg/welcome.html) · [quotas](https://docs.aws.amazon.com/general/latest/gr/sns.html) · [pricing](https://aws.amazon.com/sns/pricing/)
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
+- **Статус примеров:** `current`
+- **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
+
 ## Содержание
 
 1. [Fan-out и подписчики](#fan-out-и-подписчики)

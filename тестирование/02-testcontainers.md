@@ -1,5 +1,12 @@
 # Testcontainers — интеграционное тестирование с Docker-контейнерами
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+
 Testcontainers — это Java-библиотека, которая позволяет запускать Docker-контейнеры непосредственно из тестов. Это решение особенно полезно для интеграционного тестирования, когда требуется взаимодействие с реальными базами данных, брокерами сообщений, кэшами и другими внешними зависимостями.
 
 ## Содержание

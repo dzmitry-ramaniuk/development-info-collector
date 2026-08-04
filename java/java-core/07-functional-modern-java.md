@@ -1,6 +1,13 @@
 # Функциональные возможности и современные фичи Java
 
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
+- **Статус примеров:** `current`
+- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+
 ## Содержание
 
 1. [Lambda-выражения и функциональные интерфейсы](#lambda-выражения-и-функциональные-интерфейсы)
@@ -594,7 +601,7 @@ List<String> result = names.stream()
   `Executor`, чтобы контролировать потоки.
 - **Reactive Streams**: Flow API (Java 9) содержит `Publisher`, `Subscriber`, `Processor`. Популярные реализации — Project
   Reactor, RxJava.
-- **Structured Concurrency** (Incubator в Java 21) — координация подзадач и автоматическое управление отменой.
+- **Structured Concurrency** — координация подзадач и автоматическое управление отменой, но не final API. Матрица: JDK 19–20 — **incubator** (JEP 428/437); JDK 21–24 — первый–четвёртый **preview** (JEP 453/462/480/499); JDK 25 — пятый **preview** с переработанным API (JEP 505); JDK 26 — шестой **preview** (JEP 525). Preview-код компилируйте компилятором конкретной версии, например для исходников JDK 24: `javac --release 24 --enable-preview Example.java`, и запускайте `java --enable-preview Example`. Такой API может измениться или исчезнуть и требует закреплённого toolchain, тестов миграции и осознанного решения перед production-использованием.
 
 ## Инструменты для функционального стиля
 - Используйте `Collectors.teeing`, `Collectors.flatMapping` для сложных агрегатов.

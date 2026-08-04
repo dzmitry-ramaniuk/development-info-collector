@@ -1,5 +1,12 @@
 # Mockito — фреймворк для создания тестовых двойников
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+
 Mockito — это фреймворк для создания тестовых двойников (mock objects), который позволяет изолировать тестируемый код от его зависимостей. Благодаря простоте API и интеграции с JUnit 5, он стал стандартом де-факто для юнит-тестирования в Java.
 
 ## Содержание

@@ -4,6 +4,13 @@
 
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) · [quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html) · [pricing](https://aws.amazon.com/lambda/pricing/)
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
+- **Статус примеров:** `current`
+- **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
+
 ## Содержание
 
 1. [Когда выбирать Lambda](#когда-выбирать-lambda)
