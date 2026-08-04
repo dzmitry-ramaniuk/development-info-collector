@@ -26,6 +26,12 @@
 
 → [Перейти к материалам по PostgreSQL](postgresql/README.md)
 
+### [Redis](redis/README.md)
+
+Практический маршрут по Redis Open Source 8.2: структуры данных, кэширование, persistence, отказоустойчивость, Cluster и интеграция с Java/Spring.
+
+→ [Перейти к материалам по Redis](redis/README.md)
+
 ## 🧭 Рекомендуемые маршруты по разделу
 
 - **Если база знаний по SQL ещё неустойчива**: изучите [реляционную модель](01-реляционная-модель-и-нормализация.md) и [практический SQL](02-практический-sql.md), затем переходите к PostgreSQL
@@ -59,14 +65,15 @@
 
 - **[Hibernate/JPA](../java/04-hibernate.md)**: объектно-реляционный маппинг, JDBC и границы ответственности ORM
 - **Очереди**: Интеграция БД с Kafka, CDC (Change Data Capture)
-- **Тестирование**: Testcontainers для интеграционных тестов с БД
+- **Тестирование**: [Testcontainers](../тестирование/02-testcontainers.md) для интеграционных тестов с БД
+- **System Design**: [паттерны кэширования](../system%20design/04-кэширование.md) и архитектурные компромиссы
 
 ## 🔜 Планируется добавить
 
 В будущем планируется расширение раздела материалами по:
 
 - **MySQL/MariaDB**: Особенности и отличия от PostgreSQL
-- **NoSQL**: MongoDB, Redis, Cassandra
+- **NoSQL**: MongoDB, Cassandra
 - **NewSQL**: CockroachDB, YugabyteDB
 
 ## 💡 Рекомендации по изучению
