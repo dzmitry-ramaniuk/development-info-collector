@@ -36,6 +36,10 @@
 
 → [Короткая навигация](02-multithreading.md) · [Подробное оглавление](multithreading/README.md)
 
+> `02-multithreading.md` — обзор и рекомендуемый маршрут по теме, а каталог
+> `multithreading/` содержит отдельные подробные главы. Это один раздел, а не два
+> независимых набора материалов.
+
 ### [Spring Framework](03-spring.md)
 
 Экосистема Spring Framework и ключевые проекты:
