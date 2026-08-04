@@ -2,6 +2,8 @@
 
 Комплексный учебный курс по Apache Kafka — распределённой платформе потоковой обработки данных.
 
+> **Версионная база production-главы — Apache Kafka 4.0.0.** В 4.0.0 ZooKeeper mode удалён, поэтому новые и уже мигрировавшие кластеры работают только в KRaft. ZooKeeper упоминается только в сценарии legacy-миграции на Kafka 3.9.x, которую нужно завершить до обновления до 4.0.0.
+
 ## 📚 Содержание
 
 ### Основы
@@ -54,12 +56,11 @@ Production deployment и операционные практики:
 
 10. [Эксплуатация и Production Best Practices](10-эксплуатация-production.md)
     - Sizing и capacity planning
-    - Production конфигурация (broker, OS, JVM)
-    - Высокая доступность (HA)
+    - KRaft-конфигурация Kafka 4.0.0: broker, controller и metadata quorum
+    - Форматирование storage и восстановление
     - Disaster recovery (MirrorMaker, backup)
-    - Обслуживание: upgrade, добавление/удаление брокеров
-    - Производительность и тюнинг
-    - Troubleshooting
+    - Совместимость client/broker/protocol и rolling upgrade
+    - Legacy migration из ZooKeeper на Kafka 3.9.x
 
 ## 🎯 Как использовать
 
@@ -102,4 +103,4 @@ Production deployment и операционные практики:
 [← Назад к разделу Очереди](../README.md)
 
 
-> Актуально на **март 2026**: для новых Kafka-кластеров ориентируйтесь на KRaft-first подход.
+> Production-материал зафиксирован на **Kafka 4.0.0**; перед переходом на другой patch/minor-релиз сверяйте release и upgrade notes.

@@ -1,795 +1,213 @@
-# Эксплуатация и Production Best Practices
+# Эксплуатация Apache Kafka 4.0.0 в production
 
-## Режимы метаданных: KRaft и ZooKeeper
+> **Версионная база главы — Apache Kafka 4.0.0.** В этой версии режим ZooKeeper удалён; новый и уже мигрировавший кластер работает только в **KRaft**. Миграцию из ZooKeeper нужно завершить на Kafka 3.9.x до обновления до 4.0.0.
 
-> Актуально на **март 2026**: для новых инсталляций используйте **KRaft-first** подход.
-> Конфигурации с ZooKeeper в документе отмечены как legacy-сценарии для сопровождения и миграций.
-
+Факты о версии сверены с [release notes Kafka 4.0.0](https://archive.apache.org/dist/kafka/4.0.0/RELEASE_NOTES.html), [KIP-833](https://cwiki.apache.org/confluence/display/KAFKA/KIP-833%3A+Mark+KRaft+as+Production+Ready) и [KIP-896](https://cwiki.apache.org/confluence/display/KAFKA/KIP-896%3A+Remove+ZooKeeper+mode). Это точная учебная база, а не обозначение «4.x»: перед внедрением следующего patch/minor-релиза повторно проверьте release notes.
 
 ## Содержание
 
-1. [Production Deployment](#production-deployment)
-   - [Sizing и Capacity Planning](#sizing-и-capacity-planning)
-   - [Конфигурация Production кластера](#конфигурация-production-кластера)
-   - [Высокая доступность (HA)](#высокая-доступность-ha)
-   - [Disaster Recovery](#disaster-recovery)
-   - [Операции обслуживания](#операции-обслуживания)
-   - [Производительность и тюнинг](#производительность-и-тюнинг)
-   - [Квоты и Rate Limiting](#квоты-и-rate-limiting)
-   - [Troubleshooting](#troubleshooting)
-2. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+1. [Архитектура KRaft-first](#архитектура-kraft-first)
+2. [Production-конфигурация Kafka 4.0.0](#production-конфигурация-kafka-400)
+3. [Форматирование storage и запуск](#форматирование-storage-и-запуск)
+4. [Ежедневные операции](#ежедневные-операции)
+5. [Восстановление KRaft](#восстановление-kraft)
+6. [Совместимость и rolling upgrade](#совместимость-и-rolling-upgrade)
+7. [Legacy migration: ZooKeeper → KRaft](#legacy-migration-zookeeper--kraft)
+8. [Disaster recovery и capacity planning](#disaster-recovery-и-capacity-planning)
+9. [Проблемы и решения](#проблемы-и-решения)
+10. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
-## Production Deployment
+## Архитектура KRaft-first
 
-### Sizing и Capacity Planning
+**Broker** хранит реплики партиций и обслуживает producer/consumer API. **Controller** не обслуживает данные: он хранит metadata log и участвует в Raft-quorum. Один controller — active leader, остальные — voters/followers. Кворум из трёх controllers переносит отказ одного; из пяти — двух.
 
-#### Расчет требований к ресурсам
+| Роль | `process.roles` | Назначение |
+|------|-----------------|------------|
+| Broker | `broker` | Клиентский трафик и реплики партиций |
+| Controller | `controller` | Metadata log, выбор leader и управление кластером |
+| Combined | `broker,controller` | Только dev/малый кластер; сбой узла одновременно уменьшает data- и metadata-capacity |
 
-**Хранилище (Disk)**
-```
-Размер = (throughput_mb_per_sec × retention_seconds) × replication_factor × (1 + overhead)
+Production-база: три нечётных dedicated controller в разных failure domains и не менее трёх brokers. `node.id` уникален среди всех controllers и brokers. Каждый ID из `controller.quorum.voters` должен совпадать с `node.id` соответствующего controller, а hostname/port — с его `CONTROLLER` listener.
 
-Пример:
-- Throughput: 100 MB/s
-- Retention: 7 дней (604800 секунд)
-- Replication: 3
-- Overhead: 0.2 (20% на индексы, сегменты)
+## Production-конфигурация Kafka 4.0.0
 
-Размер = 100 × 604800 × 3 × 1.2 = 217 TB
-```
+### Dedicated controller
 
-**Network**
-```
-Peak bandwidth = throughput × replication_factor × 2
-
-Пример:
-- Throughput: 100 MB/s
-- Replication: 3
-- ×2 для produce + consume
-
-Peak bandwidth = 100 × 3 × 2 = 600 MB/s
-```
-
-**Memory**
-- Page cache: ~75% RAM для page cache
-- Heap: 4-6 GB для JVM heap (не больше!)
-- Минимум: 32 GB RAM на broker
-- Оптимально: 64-128 GB RAM
-
-**CPU**
-- Минимум: 8 cores
-- Оптимально: 16-32 cores
-- Compression увеличивает CPU usage
-
-#### Количество партиций
-
-**Рекомендации**
-```
-Max partitions per broker = 4000 (консервативно)
-Max partitions per cluster = 200000
-
-Партиций на топик = max(
-    throughput_required / throughput_per_partition,
-    max_consumers_needed,
-    storage_required / max_partition_size
-)
-
-Пример:
-- Требуется 1 GB/s throughput
-- Одна партиция обрабатывает ~50 MB/s
-- Партиций = 1000 / 50 = 20 партиций
-```
-
-### Конфигурация Production кластера
-
-**Broker конфигурация**
 ```properties
-# server.properties
-
-############################# Server Basics #############################
-
-# Unique ID для каждого брокера
-broker.id=1
-
-############################# Socket Server Settings #############################
-
-# Listeners
-listeners=PLAINTEXT://0.0.0.0:9092,SSL://0.0.0.0:9093
-advertised.listeners=PLAINTEXT://broker1.example.com:9092,SSL://broker1.example.com:9093
-
-# Сетевые потоки
-num.network.threads=8
-num.io.threads=16
-
-# Размеры буферов
-socket.send.buffer.bytes=102400
-socket.receive.buffer.bytes=102400
-socket.request.max.bytes=104857600
-
-############################# Log Basics #############################
-
-# Директории для данных (RAID-10 или отдельные диски)
-log.dirs=/data/kafka-logs-1,/data/kafka-logs-2,/data/kafka-logs-3
-
-# Партиций по умолчанию для новых топиков
-num.partitions=3
-
-# Recovery threads
-num.recovery.threads.per.data.dir=2
-
-############################# Log Retention Policy #############################
-
-# Retention по времени
-log.retention.hours=168  # 7 дней
-log.retention.check.interval.ms=300000
-
-# Retention по размеру (опционально)
-# log.retention.bytes=1073741824
-
-# Размер сегмента
-log.segment.bytes=1073741824  # 1 GB
-
-############################# Replication #############################
-
-# Минимальные ISR для приёма записи
-min.insync.replicas=2
-
-# Replication фактор по умолчанию
-default.replication.factor=3
-
-# Timeout для реплик
-replica.lag.time.max.ms=30000
-
-# Размер fetch для follower реплик
-replica.fetch.max.bytes=1048576
-
-############################# Log Flush Policy #############################
-
-# Не форсировать flush, полагаться на OS page cache
-# log.flush.interval.messages=10000
-# log.flush.interval.ms=1000
-
-############################# Zookeeper / KRaft #############################
-
-# ZooKeeper connection (legacy)
-zookeeper.connect=zk1:2181,zk2:2181,zk3:2181/kafka
-zookeeper.connection.timeout.ms=18000
-
-# KRaft mode (рекомендуется для новых кластеров)
-# process.roles=broker,controller
-# node.id=1
-# controller.quorum.voters=1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
-
-############################# Group Coordinator Settings #############################
-
-# Offset retention
-offsets.retention.minutes=10080  # 7 дней
-
-# Transaction timeout
-transaction.state.log.replication.factor=3
-transaction.state.log.min.isr=2
-
-############################# Performance Tuning #############################
-
-# Compression
-compression.type=producer  # использовать producer compression
-
-# Background threads
-background.threads=10
-
-# Replica fetcher threads
-num.replica.fetchers=4
-
-# Auto create topics
-auto.create.topics.enable=false  # отключить в production
-
-# Leader imbalance
-auto.leader.rebalance.enable=true
-leader.imbalance.per.broker.percentage=10
-
-############################# Quotas #############################
-
-# Producer quotas (bytes/sec)
-# quota.producer.default=10485760  # 10 MB/s
-
-# Consumer quotas (bytes/sec)
-# quota.consumer.default=20971520  # 20 MB/s
-```
-
-**OS тюнинг (Linux)**
-
-```bash
-# /etc/sysctl.conf
-
-# Увеличить файловые дескрипторы
-fs.file-max = 500000
-
-# Сетевые буферы
-net.core.rmem_max = 134217728
-net.core.wmem_max = 134217728
-net.ipv4.tcp_rmem = 4096 87380 67108864
-net.ipv4.tcp_wmem = 4096 65536 67108864
-
-# TCP settings
-net.ipv4.tcp_window_scaling = 1
-net.ipv4.tcp_max_syn_backlog = 10000
-net.core.netdev_max_backlog = 10000
-
-# Memory overcommit
-vm.overcommit_memory = 1
-
-# Swap usage (минимизировать)
-vm.swappiness = 1
-
-# Dirty pages (для большого RAM)
-vm.dirty_ratio = 80
-vm.dirty_background_ratio = 5
-
-# Apply
-sysctl -p
-```
-
-**Limits для Kafka пользователя**
-```bash
-# /etc/security/limits.conf
-
-kafka soft nofile 100000
-kafka hard nofile 100000
-kafka soft nproc 32768
-kafka hard nproc 32768
-```
-
-**JVM настройки**
-```bash
-# kafka-server-start.sh или systemd
-
-export KAFKA_HEAP_OPTS="-Xms6g -Xmx6g"  # НЕ больше 6-8 GB!
-export KAFKA_JVM_PERFORMANCE_OPTS="-server \
-    -XX:+UseG1GC \
-    -XX:MaxGCPauseMillis=20 \
-    -XX:InitiatingHeapOccupancyPercent=35 \
-    -XX:G1HeapRegionSize=16M \
-    -XX:MinMetaspaceFreeRatio=50 \
-    -XX:MaxMetaspaceFreeRatio=80 \
-    -XX:+ExplicitGCInvokesConcurrent"
-
-# GC логирование
-export KAFKA_GC_LOG_OPTS="-Xlog:gc*:file=/var/log/kafka/gc.log:time,tags:filecount=10,filesize=100M"
-
-# JMX для мониторинга
-export JMX_PORT=9999
-```
-
-### Высокая доступность (HA)
-
-#### Multi-broker кластер
-
-**Минимальная конфигурация HA**
-- 3 брокера
-- Replication factor = 3
-- min.insync.replicas = 2
-- acks = all
-
-**Rack awareness**
-```properties
-# Распределение реплик по rack (DC, availability zones)
-broker.rack=rack1
-
-# Топики с rack awareness
-kafka-topics.sh --create \
-  --topic orders \
-  --partitions 6 \
-  --replication-factor 3 \
-  --config min.insync.replicas=2 \
-  --replica-assignment 1:2:3,2:3:1,3:1:2,1:2:3,2:3:1,3:1:2
-```
-
-#### ZooKeeper Ensemble (legacy/миграции)
-
-**Production ZooKeeper конфигурация (legacy)**
-```properties
-# zoo.cfg
-
-# Data directory
-dataDir=/var/lib/zookeeper
-
-# Transaction log directory (отдельный диск!)
-dataLogDir=/var/lib/zookeeper-logs
-
-# Client port
-clientPort=2181
-
-# Cluster configuration
-initLimit=10
-syncLimit=5
-
-# Servers
-server.1=zk1:2888:3888
-server.2=zk2:2888:3888
-server.3=zk3:2888:3888
-
-# Auto purge
-autopurge.snapRetainCount=3
-autopurge.purgeInterval=24
-
-# Performance
-maxClientCnxns=0
-tickTime=2000
-```
-
-**Мониторинг ZooKeeper**
-```bash
-# Health check
-echo ruok | nc localhost 2181
-# Ответ: imok
-
-# Statistics
-echo stat | nc localhost 2181
-
-# Watch count
-echo wchs | nc localhost 2181
-```
-
-#### KRaft Mode (без ZooKeeper)
-
-**Controller конфигурация**
-```properties
-# Kafka 3.3+ production
-
+# controller-1.properties; для controller-2/3 меняются node.id и listener address
 process.roles=controller
 node.id=1
-controller.quorum.voters=1@controller1:9093,2@controller2:9093,3@controller3:9093
 controller.listener.names=CONTROLLER
-listeners=CONTROLLER://0.0.0.0:9093
-
-# Metadata log directory
-metadata.log.dir=/var/lib/kafka-metadata
-
-# Quorum configuration
-controller.quorum.election.timeout.ms=1000
-controller.quorum.fetch.timeout.ms=2000
+listeners=CONTROLLER://controller1.example.net:9093
+listener.security.protocol.map=CONTROLLER:SSL
+controller.quorum.voters=1@controller1.example.net:9093,2@controller2.example.net:9093,3@controller3.example.net:9093
+metadata.log.dir=/var/lib/kafka/metadata
 ```
 
-**Combined broker+controller**
+### Dedicated broker
+
 ```properties
-process.roles=broker,controller
-node.id=1
-controller.quorum.voters=1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
-
-listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-advertised.listeners=PLAINTEXT://kafka1:9092
-
+# broker-101.properties
+process.roles=broker
+node.id=101
 controller.listener.names=CONTROLLER
-inter.broker.listener.name=PLAINTEXT
+controller.quorum.voters=1@controller1.example.net:9093,2@controller2.example.net:9093,3@controller3.example.net:9093
 
-metadata.log.dir=/var/lib/kafka-metadata
-log.dirs=/var/lib/kafka-data
+listeners=INTERNAL://0.0.0.0:9092
+advertised.listeners=INTERNAL://broker101.example.net:9092
+inter.broker.listener.name=INTERNAL
+listener.security.protocol.map=CONTROLLER:SSL,INTERNAL:SSL
+
+log.dirs=/data/kafka-1,/data/kafka-2
+broker.rack=az-a
+num.partitions=6
+default.replication.factor=3
+min.insync.replicas=2
+unclean.leader.election.enable=false
+auto.create.topics.enable=false
+
+offsets.topic.replication.factor=3
+transaction.state.log.replication.factor=3
+transaction.state.log.min.isr=2
 ```
 
-### Disaster Recovery
+> TLS/SASL-параметры, ACL и secret paths добавляются под конкретную PKI. Не копируйте example hostnames в production.
 
-#### Backup стратегии
+## Форматирование storage и запуск
 
-**MirrorMaker 2.0**
-```properties
-# mm2.properties
-
-# Source and target clusters
-clusters=source, target
-source.bootstrap.servers=source-cluster:9092
-target.bootstrap.servers=target-cluster:9092
-
-# Replication flows
-source->target.enabled=true
-source->target.topics=.*  # или specific topics
-
-# Consumer group replication
-sync.group.offsets.enabled=true
-sync.group.offsets.interval.seconds=60
-
-# Topic configuration sync
-sync.topic.configs.enabled=true
-sync.topic.acls.enabled=true
-
-# Heartbeat
-emit.heartbeats.enabled=true
-emit.heartbeats.interval.seconds=5
-
-# Checkpoints
-emit.checkpoints.enabled=true
-emit.checkpoints.interval.seconds=60
-```
-
-**Запуск MirrorMaker 2.0**
-```bash
-connect-mirror-maker.sh mm2.properties
-```
-
-**Kafka Connect для backup в S3**
-```json
-{
-  "name": "s3-backup-sink",
-  "config": {
-    "connector.class": "io.confluent.connect.s3.S3SinkConnector",
-    "tasks.max": "10",
-    "topics.regex": ".*",
-    "s3.region": "us-east-1",
-    "s3.bucket.name": "kafka-backup",
-    "flush.size": "10000",
-    "format.class": "io.confluent.connect.s3.format.parquet.ParquetFormat",
-    "partitioner.class": "io.confluent.connect.storage.partitioner.TimeBasedPartitioner",
-    "partition.duration.ms": "3600000",
-    "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH",
-    "storage.class": "io.confluent.connect.s3.storage.S3Storage",
-    "rotate.interval.ms": "3600000"
-  }
-}
-```
-
-#### Failover procedures
-
-**Active-Passive setup**
-```bash
-# 1. Мониторим primary cluster
-# 2. При сбое переключаемся на secondary
-# 3. Обновляем DNS или load balancer
-# 4. Клиенты переподключаются к secondary
-
-# Ручное переключение
-# Обновить bootstrap.servers в приложениях
-# Или использовать DNS failover
-```
-
-**Active-Active (multi-DC)**
-```
-Primary DC ←→ Secondary DC
-    ↓              ↓
-MirrorMaker 2  MirrorMaker 2
-    ↓              ↓
-Bi-directional replication
-```
-
-### Операции обслуживания
-
-#### Обновление версии Kafka
-
-**Rolling upgrade процедура**
-```bash
-# 1. Прочитать release notes и совместимость
-# 2. Обновить конфигурацию (если требуется)
-
-# 3. По одному брокеру:
-# a. Остановить брокер
-systemctl stop kafka
-
-# b. Обновить бинарники
-tar -xzf kafka_2.13-3.5.0.tgz -C /opt/kafka
-
-# c. Запустить брокер
-systemctl start kafka
-
-# d. Проверить логи и метрики
-tail -f /var/log/kafka/server.log
-kafka-broker-api-versions.sh --bootstrap-server localhost:9092
-
-# e. Подождать восстановления ISR
-kafka-topics.sh --describe --bootstrap-server localhost:9092 --under-replicated-partitions
-
-# f. Повторить для следующего брокера
-
-# 4. После обновления всех брокеров обновить inter.broker.protocol.version и log.message.format.version
-```
-
-#### Добавление брокера в кластер
+Один `cluster.id` создаётся **один раз** и используется на всех узлах. Форматирование записывает `meta.properties`, но не создаёт кластер в запущенном quorum.
 
 ```bash
-# 1. Установить и сконфигурировать новый брокер
-# Уникальный broker.id
-# Те же настройки что и у других брокеров
+# Выполнить один раз и сохранить ID в inventory/secret storage
+CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
+printf '%s\n' "$CLUSTER_ID"
 
-# 2. Запустить брокер
-systemctl start kafka
+# На каждом controller и broker — его собственный config
+bin/kafka-storage.sh format --cluster-id "$CLUSTER_ID" --config config/controller-1.properties
+bin/kafka-storage.sh format --cluster-id "$CLUSTER_ID" --config config/broker-101.properties
 
-# 3. Создать reassignment plan
-kafka-topics.sh --bootstrap-server localhost:9092 --topics-to-move-json-file topics.json --broker-list "1,2,3,4" --generate
+# Сначала controllers, затем brokers
+bin/kafka-server-start.sh -daemon config/controller-1.properties
+bin/kafka-server-start.sh -daemon config/broker-101.properties
 
-# topics.json
-{
-  "version": 1,
-  "topics": [
-    {"topic": "orders"},
-    {"topic": "customers"}
-  ]
-}
-
-# 4. Выполнить reassignment
-kafka-reassign-partitions.sh --bootstrap-server localhost:9092 --reassignment-json-file reassignment.json --execute
-
-# 5. Проверить прогресс
-kafka-reassign-partitions.sh --bootstrap-server localhost:9092 --reassignment-json-file reassignment.json --verify
+# Проверка metadata quorum через broker endpoint
+bin/kafka-metadata-quorum.sh --bootstrap-server broker101.example.net:9092 describe --status
+bin/kafka-metadata-quorum.sh --bootstrap-server broker101.example.net:9092 describe --replication
 ```
 
-#### Удаление брокера
+**Нельзя** повторно запускать `format` для «починки» узла: новый cluster/node identity может отделить его от кластера. `--ignore-formatted` нужен лишь в специальных bootstrap-сценариях, когда часть путей уже отформатирована; это не штатная команда восстановления.
+
+## Ежедневные операции
+
+### Добавление и удаление broker
+
+Новому broker назначают уникальный `node.id`, форматируют storage с **тем же** `cluster.id`, запускают и переносят на него реплики. Kafka не перебалансирует существующие партиции автоматически.
 
 ```bash
-# 1. Создать reassignment план БЕЗ удаляемого брокера
-kafka-topics.sh --topics-to-move-json-file topics.json --broker-list "1,2,3" --generate
+# topics.json: {"version":1,"topics":[{"topic":"orders"},{"topic":"customers"}]}
+bin/kafka-reassign-partitions.sh --bootstrap-server broker101.example.net:9092 \
+  --topics-to-move-json-file topics.json --broker-list '101,102,103' --generate
 
-# 2. Выполнить reassignment
-kafka-reassign-partitions.sh --reassignment-json-file reassignment.json --execute
-
-# 3. Дождаться завершения
-kafka-reassign-partitions.sh --reassignment-json-file reassignment.json --verify
-
-# 4. Остановить брокер
-systemctl stop kafka
-
-# 5. Удалить из ZooKeeper (если необходимо)
-zookeeper-shell.sh localhost:2181 rmr /brokers/ids/4
+# Проверить generated JSON, сохранить proposed assignment в reassignment.json
+bin/kafka-reassign-partitions.sh --bootstrap-server broker101.example.net:9092 \
+  --reassignment-json-file reassignment.json --execute
+bin/kafka-reassign-partitions.sh --bootstrap-server broker101.example.net:9092 \
+  --reassignment-json-file reassignment.json --verify
 ```
 
-#### Rebalancing партиций
+Для удаления broker:
 
-**Preferred replica election**
+1. Сгенерировать/проверить assignment, в котором нет удаляемого ID.
+2. Выполнить и дождаться `--verify`.
+3. Убедиться, что broker не содержит реплик и не является leader, затем остановить его.
+4. Удалить его из inventory/monitoring.
+
+> В KRaft **нет** ZooKeeper znode и нет шага `zookeeper-shell ... rmr /brokers/ids/...`. Не стирайте диски, пока reassignment не завершён.
+
+### Изменение metadata quorum
+
+Пример выше использует **статический** `controller.quorum.voters`. Для него нет безопасной admin-команды «удалить voter на лету»: замену controller выполняют по документированной для релиза процедуре, сохраняя majority. Не следует выдавать broker reassignment за изменение quorum: это разные операции.
+
+Kafka 4.0 также поддерживает dynamic quorum с `controller.quorum.bootstrap.servers` и `kafka-metadata-quorum.sh add-controller/remove-controller`. Его надо выбирать при проектировании кластера, а не смешивать с static voters. Перед `remove-controller` всегда проверяйте текущий leader, lag и что после операции останется majority.
+
+## Восстановление KRaft
+
+| Сбой | Правильное действие | Опасное действие |
+|------|---------------------|--------------------|
+| Broker потерян, реплики здоровы | Заменить узел с новым `node.id`, перераспределить реплики | Форматировать оставшиеся data dirs |
+| Потерян один controller из трёх | Оставить quorum в работе; восстанавливать/заменять только по release runbook | Останавливать ещё controller или менять `cluster.id` |
+| Нет majority controllers | Остановить изменения, сохранить все копии metadata log, следовать disaster-recovery документации именно Kafka 4.0.0 | Создавать новый cluster ID, пускать пустой quorum поверх data dirs |
+
+В runbook зафиксируйте `cluster.id`, `node.id`, voter topology, пути, security settings и inventory. Снимки metadata log не заменяют бэкап полезных данных: Kafka replication — не backup, а metadata не содержат payload партиций.
+
+## Совместимость и rolling upgrade
+
+Нужно различать три независимые плоскости:
+
+| Плоскость | Что проверять |
+|-----------|----------------|
+| Broker ↔ broker/controller | Допустимый upgrade path, порядок controllers/brokers и `metadata.version` |
+| Client ↔ broker | Версии Java client и broker не обязаны совпадать: client согласует API versions, но нужно проверить матрицу конкретной client library и необходимые API/features |
+| Record/protocol | В KRaft compatibility фиксирует `metadata.version`; это не то же самое, что формат пользовательских records |
+
+В Kafka 4.0 KRaft не нужно следовать старой инструкции «после всех brokers поднять `inter.broker.protocol.version` и `log.message.format.version`». Для KRaft feature level управляется `metadata.version`.
+
+### Безопасная стратегия
+
+1. Прочитать release/upgrade notes **исходной и целевой** версий; не перескакивать неподдерживаемые промежуточные шаги.
+2. Снять baseline: quorum status/lag, offline partitions, under-replicated partitions, consumer lag; проверить rollback на staging.
+3. Обновлять dedicated controllers по одному, не теряя majority, и проверять quorum после каждого.
+4. Обновлять brokers по одному: controlled shutdown, старт, API check, восстановление ISR; не переходить к следующему при URP/offline partitions.
+5. Не поднимать `metadata.version`, пока все узлы не обновлены и rollback ещё нужен. Затем проверить финальный feature level и отдельно поднять его только по upgrade notes.
+6. Обновлять clients отдельно по волнам/canary; новый broker не делает автоматически безопасным любой старый client.
+
 ```bash
-# Auto (включено по умолчанию)
-auto.leader.rebalance.enable=true
-
-# Вручную для всех топиков
-kafka-leader-election.sh --bootstrap-server localhost:9092 --election-type PREFERRED --all-topic-partitions
-
-# Для конкретного топика
-kafka-leader-election.sh --bootstrap-server localhost:9092 --election-type PREFERRED --topic orders
+bin/kafka-metadata-quorum.sh --bootstrap-server broker101.example.net:9092 describe --status
+bin/kafka-topics.sh --bootstrap-server broker101.example.net:9092 --describe --under-replicated-partitions
+bin/kafka-broker-api-versions.sh --bootstrap-server broker101.example.net:9092
+bin/kafka-features.sh --bootstrap-server broker101.example.net:9092 describe
 ```
 
-**Manual reassignment**
-```bash
-# 1. Текущее распределение
-kafka-topics.sh --describe --topic orders --bootstrap-server localhost:9092
+## Legacy migration: ZooKeeper → KRaft
 
-# 2. Создать reassignment JSON
-{
-  "version": 1,
-  "partitions": [
-    {"topic": "orders", "partition": 0, "replicas": [1,2,3]},
-    {"topic": "orders", "partition": 1, "replicas": [2,3,1]},
-    {"topic": "orders", "partition": 2, "replicas": [3,1,2]}
-  ]
-}
+> **Только для существующих legacy-кластеров. ZooKeeper нельзя выбирать для нового кластера, а Kafka 4.0.0 не умеет запускать ZooKeeper mode или выполнять исходную миграцию.**
 
-# 3. Выполнить
-kafka-reassign-partitions.sh --execute --reassignment-json-file reassignment.json --bootstrap-server localhost:9092
+Целевая цепочка: поддерживаемая исходная версия → Kafka 3.9.x в ZooKeeper mode → online migration в KRaft на 3.9.x → завершение migration и удаление ZooKeeper settings → rolling upgrade KRaft-кластера до 4.0.0.
 
-# 4. Throttle для минимизации влияния
-kafka-configs.sh --alter --add-config 'leader.replication.throttled.rate=10485760,follower.replication.throttled.rate=10485760' --entity-type brokers --entity-name 1 --bootstrap-server localhost:9092
-```
+1. Проверить KRaft limitations, security mappings, `metadata.version`, plugins и supported upgrade path; сделать rollback rehearsal.
+2. На 3.9.x создать три dedicated KRaft controllers с единым cluster ID и migration settings из официальной инструкции 3.9; дождаться копирования metadata.
+3. Rolling restart brokers 3.9.x в migration mode. В переходной фазе ZooKeeper ещё нужен; не выключать его раньше времени.
+4. После валидации перевести brokers в KRaft-only конфигурацию, отключить migration flag по documented state machine и только после завершения вывести ZooKeeper.
+5. Зафиксировать необратимую точку в runbook. Затем выполнить обычный KRaft rolling upgrade до 4.0.0.
 
-#### Управление дисками
+Конкретные migration properties намеренно не помещены в production 4.0.0 configs: они применимы только к переходной 3.9.x и должны быть взяты из [документации Kafka 3.9](https://kafka.apache.org/39/documentation/zk2kraft.html) для точной топологии. `zookeeper.connect` и `zookeeper-shell.sh` не применимы к KRaft-only кластеру.
 
-**Добавление нового диска**
-```bash
-# 1. Примонтировать новый диск
-mkdir /data/kafka-logs-4
-mount /dev/sdd1 /data/kafka-logs-4
+## Disaster recovery и capacity planning
 
-# 2. Обновить конфигурацию
-log.dirs=/data/kafka-logs-1,/data/kafka-logs-2,/data/kafka-logs-3,/data/kafka-logs-4
+Считайте диск как `ingress bytes/s × retention seconds × replication factor × reserve`. Отдельно учитывайте network replication, rebalance headroom, page cache, compaction и failure одной AZ. При `replication.factor=3`, `min.insync.replicas=2` и `acks=all` кластер может пережить отказ одной реплики без потери уже подтверждённых записей, но потеря capacity может остановить новые записи.
 
-# 3. Перезапустить брокер
-systemctl restart kafka
+Для DR используйте отдельный кластер и MirrorMaker 2/replication service. Тестируйте failover, offset translation, ACL/config replication, DNS/client bootstrap и failback. Ни metadata quorum, ни три реплики в одном failure domain не заменяют межкластерный DR.
 
-# 4. Новые партиции будут создаваться на всех дисках
-# Существующие партиции можно переместить с помощью reassignment
-```
+## Проблемы и решения
 
-**Замена диска**
-```bash
-# 1. Идентифицировать партиции на диске
-ls -la /data/kafka-logs-broken/
-
-# 2. Переместить партиции на другие брокеры
-kafka-reassign-partitions.sh --execute ...
-
-# 3. После завершения reassignment остановить брокер
-systemctl stop kafka
-
-# 4. Заменить диск
-# 5. Очистить директорию или создать новую
-# 6. Запустить брокер
-systemctl start kafka
-```
-
-### Производительность и тюнинг
-
-#### Producer оптимизация
-
-```java
-Properties props = new Properties();
-
-// Батчинг для throughput
-props.put(ProducerConfig.BATCH_SIZE_CONFIG, 32768);  // 32 KB
-props.put(ProducerConfig.LINGER_MS_CONFIG, 10);
-
-// Compression
-props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4");
-
-// Для высокого throughput
-props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 67108864);  // 64 MB
-
-// Idempotence и exactly-once
-props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-props.put(ProducerConfig.ACKS_CONFIG, "all");
-props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
-
-// Retry настройки
-props.put(ProducerConfig.RETRIES_CONFIG, Integer.MAX_VALUE);
-props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 100);
-props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000);
-```
-
-#### Consumer оптимизация
-
-```java
-Properties props = new Properties();
-
-// Fetch size для throughput
-props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, 1024);  // 1 KB
-props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 500);
-props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 1048576);  // 1 MB
-
-// Poll настройки
-props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 500);
-props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000);  // 5 минут
-
-// Session timeout
-props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 30000);
-props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, 3000);
-
-// Auto commit (или manual)
-props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-
-// Isolation level для transactional reads
-props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
-```
-
-#### Broker тюнинг
-
-```properties
-# Размер replica fetch
-replica.fetch.max.bytes=1048576
-replica.fetch.min.bytes=1
-
-# Сетевые потоки
-num.network.threads=8
-num.io.threads=16
-
-# Request queue
-queued.max.requests=500
-
-# Log cleaner
-log.cleaner.threads=2
-log.cleaner.dedupe.buffer.size=134217728
-
-# Compression
-compression.type=producer
-
-# Message size
-message.max.bytes=1000012
-replica.fetch.max.bytes=1048588
-```
-
-### Квоты и Rate Limiting
-
-**Producer quotas**
-```bash
-# Установить квоту для пользователя
-kafka-configs.sh --bootstrap-server localhost:9092 \
-  --alter \
-  --add-config 'producer_byte_rate=1048576,consumer_byte_rate=2097152' \
-  --entity-type users \
-  --entity-name alice
-
-# Квота для client.id
-kafka-configs.sh --bootstrap-server localhost:9092 \
-  --alter \
-  --add-config 'producer_byte_rate=1048576' \
-  --entity-type clients \
-  --entity-name producer-app
-
-# Квота по умолчанию
-kafka-configs.sh --bootstrap-server localhost:9092 \
-  --alter \
-  --add-config 'producer_byte_rate=10485760,consumer_byte_rate=20971520' \
-  --entity-type users \
-  --entity-default
-```
-
-**Request quotas**
-```bash
-# Ограничение request rate
-kafka-configs.sh --bootstrap-server localhost:9092 \
-  --alter \
-  --add-config 'request_percentage=50' \
-  --entity-type users \
-  --entity-name bob
-```
-
-### Troubleshooting
-
-**Under-replicated partitions**
-```bash
-# Найти URP
-kafka-topics.sh --describe --under-replicated-partitions --bootstrap-server localhost:9092
-
-# Причины:
-# - Медленный follower
-# - Сетевые проблемы
-# - Disk I/O проблемы
-# - Недостаточно replica.fetch.max.bytes
-
-# Решения:
-# - Проверить broker метрики
-# - Увеличить replica.lag.time.max.ms
-# - Добавить capacity
-```
-
-**High consumer lag**
-```bash
-# Проверить lag
-kafka-consumer-groups.sh --describe --group my-group --bootstrap-server localhost:9092
-
-# Причины:
-# - Медленная обработка
-# - Недостаточно consumers
-# - Большие сообщения
-
-# Решения:
-# - Масштабировать consumer group
-# - Оптимизировать обработку
-# - Увеличить max.poll.records
-# - Уменьшить max.poll.interval.ms
-```
-
-**Disk full**
-```bash
-# Очистить старые логи
-kafka-configs.sh --alter --add-config 'retention.ms=86400000' --topic large-topic --bootstrap-server localhost:9092
-
-# Удалить неиспользуемые топики
-kafka-topics.sh --delete --topic old-topic --bootstrap-server localhost:9092
-
-# Добавить диски
-# См. раздел "Управление дисками"
-```
+| Симптом | Проверка | Действие |
+|---------|----------|----------|
+| Quorum lag растёт | `kafka-metadata-quorum.sh ... describe --replication`, disk/network controller | Вернуть controller capacity; не перезапускать majority одновременно |
+| Under-replicated partitions | Broker health, ISR, disk/network, replica fetch | Устранить capacity/сетевую причину до maintenance |
+| Consumer lag | Processing time, partition count, rebalances | Масштабировать consumers до числа партиций, оптимизировать handler |
+| Disk full | Retention, compaction lag, skew | Освободить capacity контролируемо; не удалять файлы партиций вручную |
 
 ## Вопросы для самопроверки
 
-1. **Как рассчитать требуемое дисковое пространство?**
-   - throughput × retention × replication_factor × (1 + overhead)
-
-2. **Сколько RAM нужно для Kafka broker?**
-   - Минимум 32 GB, оптимально 64-128 GB, JVM heap не более 6 GB
-
-3. **Как выполнить rolling upgrade кластера?**
-   - По одному брокеру: stop → upgrade → start → проверить ISR → следующий
-
-4. **Что такое preferred replica election?**
-   - Восстановление равномерного распределения лидеров партиций по брокерам
-
-5. **Как добавить новый брокер в кластер?**
-   - Установить, запустить, выполнить partition reassignment
-
-6. **Зачем нужен MirrorMaker?**
-   - Репликация данных между кластерами для DR или multi-DC setup
-
-7. **Какие JVM флаги важны для Kafka?**
-   - G1GC, heap size 6GB max, GC logging, MaxGCPauseMillis
-
-8. **Как ограничить throughput для пользователя?**
-   - Через quotas: producer_byte_rate, consumer_byte_rate
-
-9. **Что делать при under-replicated partitions?**
-   - Проверить broker health, сеть, disk I/O, добавить capacity
-
-10. **Как организовать multi-DC setup?**
-    - MirrorMaker 2.0 для репликации, stretch cluster или active-passive
+1. **Какой metadata mode доступен в Kafka 4.0.0?**
+   Только KRaft; ZooKeeper mode удалён.
+2. **Чем broker отличается от controller?**
+   Broker обслуживает records и clients, controller реплицирует metadata log и управляет метаданными.
+3. **Почему нельзя повторять `kafka-storage.sh format` при сбое?**
+   Форматирование задаёт cluster/node identity; это bootstrap, а не repair.
+4. **Как удалить KRaft broker?**
+   Перенести все его реплики partition reassignment, проверить завершение и остановить; ZooKeeper-команд нет.
+5. **Когда можно поднять `metadata.version`?**
+   После обновления всех узлов, проверок и когда rollback больше не нужен; точно по upgrade notes целевого релиза.
+6. **Где выполнять ZooKeeper → KRaft migration?**
+   На Kafka 3.9.x; до перехода на 4.0.0.
