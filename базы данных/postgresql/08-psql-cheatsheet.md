@@ -51,10 +51,19 @@
 - `SELECT datname, numbackends, xact_commit, blks_read, blks_hit FROM pg_stat_database;` — общие показатели по БД.
 - `SELECT relname, seq_scan, idx_scan FROM pg_stat_user_tables ORDER BY seq_scan DESC LIMIT 20;` — таблицы с частыми последовательными сканированиями.
 - `SELECT pid, wait_event_type, wait_event FROM pg_stat_activity WHERE wait_event IS NOT NULL;` — ожидания.
+- `SELECT * FROM pg_stat_io;` — агрегированная статистика I/O (**PostgreSQL 16+**; времена требуют `track_io_timing`/`track_wal_io_timing` там, где применимо).
+- `SELECT * FROM pg_stat_checkpointer;` — checkpoint/restartpoint-метрики (**PostgreSQL 17+**); в PostgreSQL 16 и старше соответствующие поля находятся в `pg_stat_bgwriter`.
+
+> **Версионное примечание:** начиная с PostgreSQL 15 накопительные счётчики
+> находятся в shared memory, отдельного процесса `stats collector` нет. Внутри
+> транзакции их снимок кешируется; перед повторным измерением завершите транзакцию
+> или выполните `SELECT pg_stat_clear_snapshot();`. В PostgreSQL 18 в
+> `pg_stat_io` появились `read_bytes`, `write_bytes` и `extend_bytes`, которых нет
+> в версиях 16–17.
 
 ## 5. Работа с конфигурацией
 - `SHOW ALL;` — текущие параметры.
-- `SHOW work_mem;` / `SET work_mem = '256MB';` — чтение и установка параметров (в пределах сессии).
+- `SHOW work_mem;` / `SET work_mem = '256MB';` — чтение и пример установки параметра в пределах сессии; значение из примера нельзя переносить в production без оценки конкурентности и лимита памяти.
 - `ALTER SYSTEM SET log_min_duration_statement = '500ms';` — изменение конфигурации на уровне кластера.
 - `SELECT pg_reload_conf();` — перезагрузка конфигурации без рестарта.
 - `SELECT current_setting('parameter', true);` — получить значение параметра с учётом конфигураций.
@@ -134,7 +143,7 @@
 |---------|---------------------|---------------|
 | `Seq Scan` на большой таблице | Планировщик не выбрал индекс | Есть ли подходящий индекс, актуальна ли статистика |
 | Большой `Rows Removed by Filter` | Читается много лишних строк | Селективность условий, составной индекс |
-| `Sort` или `Hash` с большим временем | Недостаток памяти или неудачный план | `work_mem`, необходимость индекса |
+| `Sort` или `Hash` с большим временем | Временные файлы, неверная оценка строк или неудачный план | Фактические temp I/O, локальный `work_mem`, оценка строк, необходимость индекса |
 | Сильное расхождение `rows=` и `actual rows=` | Устаревшая статистика | `ANALYZE`, автосбор статистики |
 
 > **Важно**: `EXPLAIN ANALYZE` выполняет запрос по-настоящему. Для `UPDATE`, `DELETE` и тяжёлых `SELECT` его нужно запускать осторожно, желательно на staging или в транзакции с `ROLLBACK`.

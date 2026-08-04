@@ -26,8 +26,8 @@
 ## 1. Управление конфигурацией
 - **Файлы настроек**: `postgresql.conf`, `pg_hba.conf`, `pg_ident.conf`. Используйте `ALTER SYSTEM` для программного изменения параметров и `SELECT pg_reload_conf();` для применения.
 - **Точки контроля изменений**: храните конфигурацию в git, используйте `include_dir` для окружений (dev, stage, prod).
-- **Параметры запуска**: `shared_buffers`, `work_mem`, `maintenance_work_mem`, `effective_cache_size`, `wal_level`, `max_connections`, `checkpoint_timeout` — база для тюнинга.
-- **Профили нагрузок**: для OLTP — высокая конкурентность, минимальные задержки; для OLAP — долгие запросы, крупные `work_mem` и параллелизм.
+- **Параметры запуска**: `shared_buffers`, `work_mem`, `maintenance_work_mem`, `effective_cache_size`, `wal_level`, `max_connections`, `checkpoint_timeout` — кандидаты для тюнинга, а не универсальный профиль. Начальные значения проверяйте нагрузочным тестом с учётом workload, файлового кеша и лимитов ОС/контейнера, конкурентности и режима пула соединений.
+- **Профили нагрузок**: для OLTP типичны высокая конкурентность и малые задержки; для OLAP — долгие запросы и параллелизм. Более высокий локальный `work_mem` для отдельных OLAP-запросов допустим только после оценки пикового суммарного потребления.
 
 ## 2. Резервное копирование
 ### 2.1 Логические бэкапы
@@ -69,12 +69,12 @@
 - **Мониторинг диска**: `pg_tablespace_size`, `pg_total_relation_size`, `pgstattuple` для оценки плотности данных.
 
 ## 6. Настройка производительности
-- **Память**: баланс между `shared_buffers` и потребностями ОС. `work_mem` учитывает количество параллельных запросов.
+- **Память**: начальный `shared_buffers` проверяйте вместе с потребностями файлового кеша ОС и лимитом контейнера. Оценивая `work_mem`, учитывайте конкурентные запросы, несколько Sort/Hash-узлов в одном плане, параллельных воркеров и `hash_mem_multiplier`.
 - **IO**: `effective_io_concurrency`, `random_page_cost`, `seq_page_cost` — адаптируйте под тип хранилища (SSD vs HDD).
 - **WAL и контрольные точки**: `max_wal_size`, `checkpoint_timeout`, `checkpoint_completion_target`, `wal_compression`, `wal_writer_delay`.
 - **Параллелизм**: `max_worker_processes`, `max_parallel_workers_per_gather`, `parallel_leader_participation`.
 - **Логирование**: `log_checkpoints`, `log_lock_waits`, `log_temp_files`, `log_autovacuum_min_duration`.
-- **Параметры для OLAP**: увеличенные `work_mem`, `temp_file_limit`, использование `parallel query`.
+- **Параметры для OLAP**: обоснованный измерениями локальный `work_mem`, защитный `temp_file_limit`, использование `parallel query`.
 
 ## 7. Безопасность и соответствие требованиям
 - **Контроль доступа**: роли, `GRANT`/`REVOKE`, схемы для разделения объектов.
