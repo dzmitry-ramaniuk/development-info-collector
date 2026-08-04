@@ -1,7 +1,9 @@
 # Kubernetes
 
-> **Актуальность версий (март 2026):** проверяйте совместимость манифестов и CLI-команд с вашей версией Kubernetes и managed-платформы.
+> **Проверенный baseline:** Kubernetes **1.34** (стабильный minor-релиз). Все встроенные `apiVersion`, манифесты и команды на этой странице сверены с документацией v1.34. Для кластера с `kube-apiserver` 1.34: `kubectl` поддерживается в диапазоне **1.33–1.35**; `kubelet` не может быть новее API server и поддерживается в диапазоне **1.31–1.34**; `kube-controller-manager`, `kube-scheduler` и `cloud-controller-manager` не должны быть новее `kube-apiserver` и могут отставать не более чем на один minor. В HA control plane версии `kube-apiserver` могут различаться не более чем на один minor. Подробнее: [Version Skew Policy](https://v1-34.docs.kubernetes.io/releases/version-skew-policy/).
 
+
+Baseline зафиксирован намеренно: перед переходом на другой minor повторно проверьте [deprecated/removed API](https://v1-34.docs.kubernetes.io/reference/using-api/deprecation-guide/), feature gates и документацию поставщика managed-кластера. Диапазон skew — это поддерживаемая совместимость, а не рекомендация откладывать обновления узлов.
 
 Полное руководство по Kubernetes — системе оркестрации контейнеров для автоматизации развёртывания, масштабирования и управления контейнеризированными приложениями.
 
