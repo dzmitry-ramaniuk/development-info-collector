@@ -48,7 +48,7 @@
 ## Работа с сетевыми данными
 - **HTTP**: `HttpClient` (Java 11) поддерживает синхронные и асинхронные запросы, HTTP/2, WebSocket.
 - **Sockets**: `ServerSocket`, `Socket` для блокирующих сценариев; `SocketChannel` — неблокирующий.
-- **gRPC/REST**: используйте DTO, валидацию (`javax.validation`) и логирование запросов.
+- **gRPC/REST**: используйте DTO, валидацию (`jakarta.validation`, baseline Spring Boot 3) и логирование запросов.
 
 ## Производительность и безопасность
 - Используйте `BufferedInputStream`/`BufferedOutputStream` для уменьшения количества системных вызовов.

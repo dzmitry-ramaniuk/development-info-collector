@@ -920,8 +920,12 @@ Product product = em.find(Product.class, 1L, LockModeType.PESSIMISTIC_READ);
 
 // С таймаутом
 em.find(Product.class, 1L, LockModeType.PESSIMISTIC_WRITE, 
-    Collections.singletonMap("javax.persistence.lock.timeout", 5000));
+    Collections.singletonMap("jakarta.persistence.lock.timeout", 5000));
 ```
+
+> Для Jakarta Persistence 3.0+ актуальный стандартный hint — `jakarta.persistence.lock.timeout`.
+> Hibernate 6 также распознаёт старый `javax.persistence.lock.timeout` для миграционной совместимости,
+> но это legacy-ключ JPA 2.2 (Hibernate 5.x / Spring Boot 2.x), на который нельзя полагаться с другим провайдером.
 
 **Типы пессимистичных блокировок:**
 - `PESSIMISTIC_READ` — разделяемая блокировка (другие могут читать)
@@ -981,7 +985,7 @@ public class User {
 // Использование
 EntityGraph<?> graph = em.getEntityGraph("User.orders");
 Map<String, Object> hints = new HashMap<>();
-hints.put("javax.persistence.fetchgraph", graph);
+hints.put("jakarta.persistence.fetchgraph", graph);
 User user = em.find(User.class, 1L, hints);
 ```
 
@@ -991,9 +995,13 @@ EntityGraph<User> graph = em.createEntityGraph(User.class);
 graph.addAttributeNodes("orders", "profile");
 
 Map<String, Object> hints = new HashMap<>();
-hints.put("javax.persistence.fetchgraph", graph);
+hints.put("jakarta.persistence.fetchgraph", graph);
 User user = em.find(User.class, 1L, hints);
 ```
+
+> В Jakarta Persistence 3.0+ стандартный ключ графа — `jakarta.persistence.fetchgraph`.
+> Hibernate 6 сохраняет распознавание legacy-ключа `javax.persistence.fetchgraph`, использовавшегося в JPA 2.2
+> и Hibernate 5.x, однако переносимый современный код должен передавать ключ с префиксом `jakarta`.
 
 ### Статистика Hibernate
 

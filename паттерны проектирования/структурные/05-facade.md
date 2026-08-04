@@ -1102,7 +1102,7 @@ class User {
 ### EntityManager (JPA)
 
 ```java
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Service
 public class JpaFacadeExample {
@@ -1608,4 +1608,3 @@ public class ApiGatewayFacade {
 ---
 
 [← Назад к разделу Структурные паттерны](README.md)
-
