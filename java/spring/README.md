@@ -53,6 +53,13 @@
    - WebClient
    - Backpressure и тестирование
 
+7. [Spring Security](07-spring-security.md)
+   - SecurityFilterChain, Authentication и SecurityContext
+   - Session-based и token-based authentication
+   - OAuth 2.0 Resource Server, OIDC и JWT validation
+   - RBAC, method security, CSRF, CORS и secure headers
+   - Refresh-токены, ротация ключей, logout и revocation
+
 ## 🎯 Как использовать
 
 ### Для начинающих
@@ -62,7 +69,7 @@
 Сосредоточьтесь на понимании жизненного цикла бинов, механизмов DI, транзакций и AOP. Эти темы часто обсуждаются на собеседованиях.
 
 ### Для опытных разработчиков
-Изучите продвинутые темы: механизмы проксирования, интеграционные паттерны, оптимизация производительности Spring-приложений.
+Изучите продвинутые темы: механизмы проксирования, интеграционные паттерны, безопасность и оптимизация производительности Spring-приложений.
 
 ## 💡 Рекомендации
 
@@ -72,6 +79,7 @@
 - Понимайте ограничения AOP и проксирования (self-invocation problem)
 - Используйте Spring Boot для быстрого старта проектов
 - Применяйте Spring Data для упрощения работы с БД
+- Настраивайте Spring Security декларативно через `SecurityFilterChain` и тестируйте негативные сценарии доступа
 
 ## ⚠️ Важные замечания
 
@@ -93,7 +101,6 @@
 
 ## 🔜 Планируется добавить
 
-- **Spring Security**: Аутентификация и авторизация
 - **Spring Cloud**: Микросервисы и распределённые системы
 - **Spring Batch**: Batch processing
 
