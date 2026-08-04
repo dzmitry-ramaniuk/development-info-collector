@@ -99,6 +99,7 @@ Baseline зафиксирован намеренно: перед переход�
 - [System Design](../system design/README.md) — общий контекст масштабирования, observability и проектирования production-ready систем
 - [Масштабирование, надёжность и отказоустойчивость](../system design/06-масштабирование-надежность-и-отказоустойчивость.md) — связь между архитектурными решениями и оркестрацией
 - [Наблюдаемость, безопасность и эксплуатация](../system design/08-наблюдаемость-безопасность-и-эксплуатация.md) — как использовать метрики, алерты и security practices до и после деплоя
+- [CI/CD: релизы и deployment strategies](../ci-cd/04-релизы-и-deployment-strategies.md) — rolling, blue-green, canary, health gates и rollback
 
 ---
 

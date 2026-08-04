@@ -42,6 +42,7 @@
 - [System Design](../system design/README.md) — архитектурные компромиссы, масштабирование и отказоустойчивость
 - [Базы данных](../базы данных/README.md) — выбор и эксплуатация хранилищ данных
 - [Очереди](../очереди/README.md) — асинхронные интеграции и event-driven взаимодействие
+- [CI/CD](../ci-cd/README.md) — promotion immutable artifacts и безопасные deployment strategies в облаке
 
 ---
 
