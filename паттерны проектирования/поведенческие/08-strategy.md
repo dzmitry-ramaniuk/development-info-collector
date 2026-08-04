@@ -420,11 +420,16 @@ names.sort((s1, s2) -> s1.compareTo(s2));
 names.sort(Comparator.comparingInt(String::length));
 ```
 
-### Из javax.servlet
+### Из Jakarta Servlet
 
-`Filter` в Servlet API — это Strategy для обработки HTTP-запросов:
+`jakarta.servlet.Filter` в Servlet API 5.0+ (Spring Boot 3) — это Strategy для обработки HTTP-запросов:
 
 ```java
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+
 public class AuthenticationFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, 
@@ -617,7 +622,7 @@ List<Integer> greaterThanThree = numbers.stream()
 *Ответ:* 
 - `java.util.Comparator` — стратегия сравнения объектов
 - `java.io.FileFilter` — стратегия фильтрации файлов
-- `javax.servlet.Filter` — стратегия обработки HTTP-запросов
+- `jakarta.servlet.Filter` — стратегия обработки HTTP-запросов (Servlet 5.0+, Spring Boot 3)
 - `java.awt.LayoutManager` — стратегия размещения компонентов
 
 **4. В чём разница между Strategy и State?**
