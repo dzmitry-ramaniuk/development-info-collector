@@ -87,6 +87,16 @@
 
 → [Перейти к материалам по AWS](aws/README.md)
 
+### [CI/CD](ci-cd/README.md) 🔄
+
+Практики безопасной доставки изменений от Git до production:
+  - **[Git workflow и code review](ci-cd/01-git-и-code-review.md)** — trunk-based development, GitFlow, небольшие PR, обязательные проверки, Conventional Commits и SemVer
+  - **[Построение CI pipeline](ci-cd/02-построение-ci-pipeline.md)** — compile, анализ, тесты, packaging, image build, security checks и publication
+  - **[Артефакты и promotion](ci-cd/03-артефакты-и-promotion.md)** — immutable artifacts, provenance, SBOM и audit trail
+  - **[Релизы и deployment strategies](ci-cd/04-релизы-и-deployment-strategies.md)** — миграции БД, flags, rolling, blue-green, canary и rollback
+
+→ [Перейти к материалам по CI/CD](ci-cd/README.md)
+
 ### [Паттерны проектирования](паттерны проектирования/README.md) 🏗️
 
 Типовые решения часто встречающихся проблем при проектировании ПО:
@@ -127,6 +137,7 @@
 |---|---|---|---:|---|---|
 | [AI-агенты](ai-агенты/README.md) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
 | [AWS](aws/README.md) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
+| [CI/CD](ci-cd/README.md) | Сопровождающий репозитория | Java 21, Kubernetes 1.34, SemVer 2.0.0 | 6 месяцев | 2026-08-04 | 2027-02-04 |
 | [Java feature-релизы](java/05-java-versions.md) | Сопровождающий репозитория | Java 26 | 6 месяцев | 2026-04-27 | 2026-10-27 |
 | [Spring](java/spring/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [Kafka](очереди/кафка/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
@@ -156,6 +167,7 @@
 | Дата | Раздел | Что перепроверено | Issue / PR |
 |---|---|---|---|
 | 2026-08-04 | Весь репозиторий | Введён процесс ревизий; технические утверждения разделов в этом изменении не перепроверялись | — |
+| 2026-08-04 | CI/CD | Создан раздел; сверены Git/Maven/GitHub Actions, OCI/SLSA/SBOM, Kubernetes 1.34, Flyway 11.x, SemVer и Conventional Commits | — |
 
 ## 🧭 Рекомендуемые траектории изучения
 
@@ -165,6 +177,7 @@
 3. [Базы данных](базы данных/README.md) — закрепить SQL, транзакции, индексы и производительность
 4. [Spring Framework](java/spring/README.md) и [Hibernate/JPA](java/04-hibernate.md) — перейти к прикладной backend-разработке
 5. [Тестирование](тестирование/README.md) — научиться проверять код и инфраструктурные сценарии
+6. [CI/CD](ci-cd/README.md) — связать review, проверки, артефакты и безопасный релиз
 6. [Docker](docker/README.md) — упаковать Spring Boot, настроить зависимости и безопасный runtime
 7. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
 
@@ -176,6 +189,7 @@
 
 ### Если цель — расширить кругозор по архитектуре и эксплуатации
 - Изучите [очереди](очереди/README.md), чтобы понять event-driven подход и интеграцию сервисов
+- Пройдите [CI/CD](ci-cd/README.md), чтобы связать изменение кода с проверяемым артефактом, rollout и rollback
 - Начните с [Docker](docker/README.md), чтобы освоить сборку, сети, хранилища и ограничения контейнера
 - Перейдите к [Kubernetes](kubernetes/README.md), чтобы связать разработку с эксплуатацией и production-развёртыванием
 - Используйте [паттерны проектирования](паттерны проектирования/README.md) как мост между кодом, архитектурой и обсуждением решений на интервью

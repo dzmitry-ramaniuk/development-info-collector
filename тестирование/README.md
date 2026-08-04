@@ -146,6 +146,7 @@
 - [Java Core](../java/01-java-core.md) — основы языка для понимания тестируемого кода
 - [Spring Framework](../java/03-spring.md) — знание Spring для понимания Spring Boot Test
 - [PostgreSQL](../базы данных/postgresql/README.md) — для использования с Testcontainers
+- [CI/CD](../ci-cd/README.md) — как встроить unit- и integration-тесты в обязательные quality gates
 - [Redis с Java/Spring](../базы%20данных/redis/04-java-и-spring.md#testcontainers) — TTL, сериализация и fault-сценарии с настоящим Redis
 
 ---
