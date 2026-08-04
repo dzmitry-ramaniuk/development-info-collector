@@ -47,6 +47,10 @@
   - **Mockito** — создание тестовых двойников
   - **Testcontainers** — интеграционное тестирование с Docker
   - **Spring Boot Test** — тестирование Spring-приложений
+  - **[Контрактное тестирование](тестирование/07-contract-testing.md)** — CDC и совместимость схем
+  - **[API и E2E](тестирование/08-api-e2e-testing.md)** — HTTP-контракт, негативные сценарии и сквозные journeys
+  - **[Performance testing](тестирование/09-performance-testing.md)** — workload, latency, throughput и saturation
+  - **[Security testing](тестирование/10-security-testing.md)** — SCA, SAST/DAST, access control и OWASP API risks
   - Best practices и подготовка к собеседованиям
 
 → [Перейти к материалам по тестированию](тестирование/README.md)
