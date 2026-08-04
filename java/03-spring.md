@@ -25,11 +25,13 @@ Spring — это экосистема фреймворков для постр�
 - [Spring Integration](spring/04-spring-integration.md) — messaging, адаптеры и построение интеграционных потоков.
 - [Проксирование бинов](spring/05-spring-proxying.md) — JDK Dynamic Proxy, CGLIB, механизмы AOP и работа с прокси.
 - [Реактивное программирование](spring/06-reactive-programming.md) — Reactive Streams, Project Reactor, RxJava, Spring WebFlux и WebClient.
+- [Spring Security](spring/07-spring-security.md) — `SecurityFilterChain`, аутентификация, OAuth 2.0/OIDC, JWT и многоуровневая авторизация.
 
 ## Как использовать материалы
 1. Начните с раздела по Spring Core, чтобы понять базовые строительные блоки фреймворка.
 2. Освойте Spring Boot для быстрого старта и конфигурирования приложений.
 3. Изучите Spring Data, чтобы эффективно работать с базами данных и внешними хранилищами.
 4. Перейдите к Spring Integration для построения асинхронных и событийных архитектур.
+5. Завершите маршрут Spring Security: настройте request- и method-level защиту и закрепите её негативными тестами.
 
 > По мере изучения дополняйте конспекты заметками о практическом опыте и ссылками на документацию. Это поможет поддерживать раздел в актуальном состоянии.
