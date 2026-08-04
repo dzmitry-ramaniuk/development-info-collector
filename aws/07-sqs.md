@@ -1,5 +1,8 @@
 # SQS: очереди, ретраи, DLQ и идемпотентность
 
+> **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
+
+**Официальные источники:** [service documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html) · [quotas](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html) · [pricing](https://aws.amazon.com/sqs/pricing/)
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
@@ -9,47 +12,48 @@
 
 ## Содержание
 
-1. [Зачем использовать SQS](#зачем-использовать-sqs)
-2. [Standard и FIFO](#standard-и-fifo)
+1. [Standard и FIFO](#standard-и-fifo)
+2. [Сравнение доставки](#сравнение-доставки)
 3. [Ретраи и DLQ](#ретраи-и-dlq)
-4. [Идемпотентность и порядок](#идемпотентность-и-порядок)
-5. [Практический baseline для production](#практический-baseline-для-production)
-6. [Вопросы для самопроверки](#вопросы-для-самопроверки)
-
-## Зачем использовать SQS
-
-**SQS** декуплирует сервисы, сглаживает пики нагрузки и повышает устойчивость систем к частичным сбоям.
+4. [Практический baseline для production](#практический-baseline-для-production)
+5. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Standard и FIFO
 
-- **Standard**: максимум throughput, at-least-once, порядок не гарантирован.
-- **FIFO**: порядок в пределах message group и дедупликация.
+**SQS Standard** даёт практически неограниченный throughput, at-least-once delivery и best-effort ordering. **SQS FIFO** упорядочивает сообщения внутри `MessageGroupId` и дедуплицирует send requests; разные groups обрабатываются параллельно. Даже с FIFO side effects делайте идемпотентными: сбой после эффекта, но до delete/ack, вызывает повторную доставку.
+
+## Сравнение доставки
+
+На 4 августа 2026 года размеры и retry quotas ниже зависят от региона, endpoint и аккаунта; перед проектированием проверяйте официальные quotas каждого сервиса.
+
+| Свойство | SQS | SNS | EventBridge |
+|---|---|---|---|
+| Delivery | Standard: at-least-once; FIFO: exactly-once processing в пределах 5-минутного окна дедупликации, но consumer всё равно проектируют идемпотентным | At-least-once для поддерживаемых durable endpoints; поведение зависит от transport | At-least-once до target |
+| Ordering | Standard не гарантирует; FIFO строго внутри `MessageGroupId` | Standard не гарантирует; FIFO topic сохраняет порядок внутри message group только с FIFO SQS/Lambda endpoints | Глобальный порядок не гарантируется |
+| Retries | Visibility timeout и redrive policy; consumer/Lambda event source управляет повторами | Delivery policy зависит от endpoint; server-side/client-side backoff, затем subscription DLQ | Target retry policy: по умолчанию до 24 часов и 185 попыток, затем DLQ/потеря события |
+| DLQ | Redrive в SQS DLQ после `maxReceiveCount` | SQS DLQ привязывается к subscription и хранит недоставленные сообщения | SQS DLQ привязывается к rule target; для event bus есть отдельная DLQ шифрования/permissions |
+| Максимальный event/message size | 1 MiB | 256 KB, включая attributes | 256 KB для event entry |
+
+Для payload больше 1 MiB (SQS) либо 256 KB (SNS/EventBridge) храните данные в S3 и отправляйте ссылку; проверьте security и lifecycle объекта. Числовые пределы проверены 4 августа 2026 года и могут быть изменены AWS.
 
 ## Ретраи и DLQ
 
-- Настраивайте visibility timeout под среднее время обработки.
-- Используйте DLQ для «ядовитых» сообщений.
-- Определяйте max receive count, после которого сообщение уходит в DLQ.
+`VisibilityTimeout` должен превышать ожидаемое время обработки; heartbeat может продлевать его. После ошибки сообщение снова становится видимым, а redrive policy переносит его в DLQ после `maxReceiveCount`. Retention DLQ должна позволять расследование; source и DLQ должны быть одного типа (Standard или FIFO). Redrive запускайте контролируемо, устранив причину poison message.
 
-## Идемпотентность и порядок
-
-- Потребитель должен безопасно обрабатывать дубликаты.
-- Не привязывайте бизнес-логику к «идеальному» порядку в Standard Queue.
-- Для строгого порядка используйте FIFO и message group id.
+Для Lambda используйте partial batch response: возвращайте только failed message IDs. Идемпотентность стройте по бизнес-ключу, а не по receive count.
 
 ## Практический baseline для production
 
-1. DLQ обязательна.
-2. Метрики age of oldest message, queue depth, failures.
-3. Alarm при росте DLQ.
-4. Backoff/jitter в consumers.
-5. Runbook по re-drive сообщений из DLQ.
+1. DLQ, alarm по `ApproximateAgeOfOldestMessage` и runbook redrive.
+2. Visibility timeout, batch size/window и concurrency согласованы с downstream capacity.
+3. Идемпотентный consumer, exponential backoff с jitter и bounded retries.
+4. FIFO только при реальном требовании порядка; `MessageGroupId` выбирайте без hot group.
 
 ## Вопросы для самопроверки
 
-1. Почему at-least-once требует идемпотентности?
-2. Как выбрать visibility timeout?
-3. Когда FIFO действительно оправдана?
+1. Почему FIFO не отменяет идемпотентность consumer?
+2. Чем visibility timeout отличается от message retention?
+3. Где хранить payload, превышающий лимит сообщения?
 
 ---
 

@@ -1,5 +1,8 @@
 # VPC: сеть, подсети, маршрутизация и безопасность
 
+> **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
+
+**Официальные источники:** [service documentation](https://docs.aws.amazon.com/vpc/) · [quotas](https://docs.aws.amazon.com/vpc/latest/userguide/amazon-vpc-limits.html) · [pricing](https://aws.amazon.com/vpc/pricing/)
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
