@@ -2,6 +2,13 @@
 <script type="module" src="../assets/mermaid-init.js"></script>
 
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
+- **Статус примеров:** `current`
+- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+
 ## Содержание
 
 1. [Историческая справка](#историческая-справка)

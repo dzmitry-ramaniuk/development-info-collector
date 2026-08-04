@@ -65,15 +65,10 @@
 
 ## Актуальность материала
 
-- **Последняя проверка:** **27 апреля 2026**.
-- **Фокус ревизии:** отмечены требования к проверке совместимости Hibernate/JPA со свежими JDK.
-
-### Что проверять при каждом обновлении
-
-- новые LTS/feature-релизы Java;
-- изменения в GC/диагностике/JFR/виртуальных потоках;
-- рекомендации по migration path;
-- совместимость Spring/Hibernate с новыми JDK.
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, Jakarta Persistence 3.2, Hibernate ORM 6.6–7.1
+- **Статус примеров:** `current`
+- **Первичные источники:** [Jakarta Persistence Specification](https://jakarta.ee/specifications/persistence/); [Hibernate ORM documentation](https://hibernate.org/orm/documentation/)
 
 ## Введение
 

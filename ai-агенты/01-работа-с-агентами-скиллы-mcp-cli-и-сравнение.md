@@ -1,5 +1,12 @@
 # Работа с агентами: настройка скиллов, MCP, CLI и сравнение Copilot/Claude/Codex
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** инструменты и интерфейсы, доступные на 2026-08-04
+- **Статус примеров:** `current`
+- **Первичные источники:** [OpenAI Documentation](https://platform.openai.com/docs/); [Model Context Protocol specification](https://modelcontextprotocol.io/specification/)
+
 ## Содержание
 
 1. [Введение](#введение)
