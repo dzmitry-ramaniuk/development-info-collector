@@ -47,6 +47,7 @@
 10. [Безопасность с Spring Security](#безопасность-с-spring-security)
    - [Базовая настройка](#базовая-настройка)
    - [Кастомная конфигурация](#кастомная-конфигурация)
+   - [Legacy: Spring Boot 2 / Spring Security 5](#legacy-spring-boot-2--spring-security-5)
    - [JWT Authentication](#jwt-authentication)
 11. [Тестирование Spring Boot приложений](#тестирование-spring-boot-приложений)
    - [Unit-тесты сервисов](#unit-тесты-сервисов)
@@ -636,20 +637,28 @@ management:
       show-details: always
 ```
 
-**Безопасность:** В production ограничьте доступ к Actuator через Spring Security:
+**Безопасность:** В production ограничьте доступ к Actuator через Spring Security. Для baseline **Java 17+, Spring Boot 3.x и Spring Security 6** конфигурация объявляется как бин `SecurityFilterChain`; `EndpointRequest.toAnyEndpoint()` остаётся специальным matcher для всех Actuator endpoints:
 
 ```java
 @Configuration
-public class ActuatorSecurityConfig extends WebSecurityConfigurerAdapter {
-    
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.requestMatcher(EndpointRequest.toAnyEndpoint())
-            .authorizeRequests()
-            .anyRequest().hasRole("ADMIN");
+public class ActuatorSecurityConfig {
+
+    @Bean
+    @Order(1)
+    SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher(EndpointRequest.toAnyEndpoint())
+            .authorizeHttpRequests(authorize -> authorize
+                .anyRequest().hasRole("ADMIN")
+            )
+            .httpBasic(Customizer.withDefaults());
+
+        return http.build();
     }
 }
 ```
+
+`@Order(1)` проверяет эту цепочку до основной цепочки приложения. Для `/actuator/health` можно добавить отдельное правило с `EndpointRequest.to(HealthEndpoint.class).permitAll()` перед `anyRequest()`, если политика эксплуатации разрешает публичную readiness/liveness-проверку.
 
 ### Custom Health Indicators
 
@@ -1076,6 +1085,8 @@ Spring Boot автоматически поддерживает JSON (Jackson) �
 
 ## Безопасность с Spring Security
 
+Актуальный baseline этого раздела — **Java 17+, Spring Boot 3.x и Spring Security 6**. Spring Boot 3 основан на Spring Framework 6 и Jakarta EE: импорты спецификаций необходимо заменить с `javax.*` на `jakarta.*` (например, `javax.validation.*` → `jakarta.validation.*`, `javax.persistence.*` → `jakarta.persistence.*`, `javax.servlet.*` → `jakarta.servlet.*`).
+
 ### Базовая настройка
 
 ```xml
@@ -1095,41 +1106,53 @@ Spring Boot автоматически поддерживает JSON (Jackson) �
 ```java
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-            .csrf().disable()
-            .authorizeRequests()
-                .antMatchers("/api/public/**").permitAll()
-                .antMatchers("/api/admin/**").hasRole("ADMIN")
-                .antMatchers("/api/**").authenticated()
-            .and()
-            .httpBasic()
-            .and()
-            .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-    }
-    
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-            .withUser("user")
-                .password(passwordEncoder().encode("password"))
-                .roles("USER")
-            .and()
-            .withUser("admin")
-                .password(passwordEncoder().encode("admin"))
-                .roles("USER", "ADMIN");
-    }
-    
+public class SecurityConfig {
+
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    @Order(2)
+    SecurityFilterChain applicationSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().denyAll()
+            )
+            .httpBasic(Customizer.withDefaults())
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            );
+
+        return http.build();
+    }
+
+    @Bean
+    UserDetailsService users(PasswordEncoder passwordEncoder) {
+        UserDetails user = User.withUsername("user")
+            .password(passwordEncoder.encode("password"))
+            .roles("USER")
+            .build();
+        UserDetails admin = User.withUsername("admin")
+            .password(passwordEncoder.encode("admin"))
+            .roles("USER", "ADMIN")
+            .build();
+
+        return new InMemoryUserDetailsManager(user, admin);
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }
 ```
+
+Здесь lambda DSL заменяет цепочки с `.and()`, а `authorizeHttpRequests` и `requestMatchers` пришли на смену удалённым из Spring Security 6 методам старого API. Если в приложении одновременно объявлена Actuator-цепочка из предыдущего раздела, порядок `@Order(1)`/`@Order(2)` не даёт общей цепочке перехватить management endpoints.
+
+### Legacy: Spring Boot 2 / Spring Security 5
+
+В проектах сопровождения на Spring Boot 2.x можно встретить наследование от `WebSecurityConfigurerAdapter`, `authorizeRequests` и `antMatchers`. Это **legacy API**: адаптер deprecated начиная со Spring Security 5.7, а в Spring Security 6 удалён. Не переносите такой код в новые приложения; при миграции замените наследование бинами `SecurityFilterChain` и `UserDetailsService`, затем перейдите на lambda DSL, `authorizeHttpRequests` и `requestMatchers`, как показано выше.
 
 ### JWT Authentication
 
@@ -1545,23 +1568,27 @@ public class ScheduledTasks {
    
    *Ответ:* Actuator — модуль для production-мониторинга и управления приложением. Предоставляет HTTP-эндпоинты для health checks (`/actuator/health`), метрик JVM/HTTP (`/actuator/metrics`), информации о бинах (`/actuator/beans`), управления логированием (`/actuator/loggers`), экспорта в Prometheus. Критичные эндпоинты должны быть защищены через Spring Security.
 
-8. **Как Spring Boot создаёт executable JAR?**
+8. **Как настроить авторизацию в Spring Security 6 без наследования от адаптера?**
+
+   *Ответ:* Объявить `@Bean SecurityFilterChain`, настроить `HttpSecurity` через lambda DSL и вызвать `http.build()`. Правила задаются через `authorizeHttpRequests`, а пути — через `requestMatchers`. Для нескольких цепочек используют `securityMatcher` и `@Order`; например, Actuator можно выделить через `EndpointRequest.toAnyEndpoint()`.
+
+9. **Как Spring Boot создаёт executable JAR?**
    
    *Ответ:* Spring Boot Maven/Gradle Plugin упаковывает приложение, все зависимости и встроенный сервер в один "fat JAR". Используется кастомный ClassLoader (`LaunchedURLClassLoader`) для загрузки классов из вложенных JAR. Точка входа — `JarLauncher` или `WarLauncher`, который затем запускает пользовательский `main` метод. С версии 2.3 поддерживаются layered JARs для оптимизации Docker-образов.
 
-9. **В чём разница между @SpringBootApplication и комбинацией @Configuration + @EnableAutoConfiguration + @ComponentScan?**
+10. **В чём разница между @SpringBootApplication и комбинацией @Configuration + @EnableAutoConfiguration + @ComponentScan?**
    
    *Ответ:* `@SpringBootApplication` — мета-аннотация, объединяющая три аннотации: `@Configuration` (класс является источником бинов), `@EnableAutoConfiguration` (включает автоконфигурацию), `@ComponentScan` (сканирует текущий пакет и вложенные). Функционально эквивалентны, `@SpringBootApplication` просто сокращает код.
 
-10. **Как переопределить автоконфигурацию Spring Boot?**
+11. **Как переопределить автоконфигурацию Spring Boot?**
     
     *Ответ:* Несколько способов: 1) Создать собственный бин с тем же именем/типом (автоконфигурация использует `@ConditionalOnMissingBean`), 2) Изменить properties (`spring.datasource.*`, `server.port`), 3) Исключить автоконфигурацию через `@SpringBootApplication(exclude=...)` или `spring.autoconfigure.exclude`, 4) Создать `@Configuration` класс с более высоким приоритетом.
 
-11. **Что такое @ConfigurationProperties и когда его использовать?**
+12. **Что такое @ConfigurationProperties и когда его использовать?**
     
     *Ответ:* `@ConfigurationProperties` связывает группу properties с Java-объектом (POJO), обеспечивая type-safety, валидацию через JSR-303, вложенные структуры, IDE auto-completion. Используется для группировки связанных настроек (например, все настройки БД в `DatabaseProperties`). Предпочтительнее `@Value` для сложных конфигураций.
 
-12. **Как реализовать graceful shutdown в Spring Boot?**
+13. **Как реализовать graceful shutdown в Spring Boot?**
     
     *Ответ:* С Spring Boot 2.3+:
     ```yaml
@@ -1573,19 +1600,19 @@ public class ScheduledTasks {
     ```
     При получении SIGTERM сервер перестаёт принимать новые запросы, завершает обработку текущих в течение заданного таймаута, затем останавливается. Для старых версий нужно вручную реализовывать через `ApplicationListener<ContextClosedEvent>`.
 
-13. **Как работает @Transactional в Spring Boot?**
+14. **Как работает @Transactional в Spring Boot?**
     
     *Ответ:* `@Transactional` использует AOP для создания прокси, который начинает транзакцию перед вызовом метода и коммитит/откатывает после. Spring Boot автоматически конфигурирует `PlatformTransactionManager` (обычно `JpaTransactionManager` при наличии JPA). Аннотация может применяться к методам и классам. Параметры: `propagation` (поведение вложенных транзакций), `isolation` (уровень изоляции), `readOnly`, `timeout`, `rollbackFor`.
 
-14. **Как протестировать Spring Boot приложение?**
+15. **Как протестировать Spring Boot приложение?**
     
     *Ответ:* Spring Boot предоставляет аннотации для различных типов тестов: `@SpringBootTest` (полный контекст), `@WebMvcTest` (только веб-слой), `@DataJpaTest` (только JPA), `@MockBean` (мокирование в контексте). Для интеграционных тестов с реальной БД используется Testcontainers. Для unit-тестов — обычный JUnit + Mockito без Spring.
 
-15. **Что такое CommandLineRunner и ApplicationRunner?**
+16. **Что такое CommandLineRunner и ApplicationRunner?**
     
     *Ответ:* Интерфейсы для выполнения кода после старта приложения. `CommandLineRunner.run(String... args)` принимает аргументы как String массив, `ApplicationRunner.run(ApplicationArguments args)` — как типизированный объект с доступом к опциям. Используются для инициализации данных, выполнения миграций, warming up кеша. Можно управлять порядком выполнения через `@Order`.
 
-16. **Как Spring Boot интегрируется с внешними системами конфигурации (Spring Cloud Config)?**
+17. **Как Spring Boot интегрируется с внешними системами конфигурации (Spring Cloud Config)?**
     
     *Ответ:* Spring Boot может загружать конфигурацию из внешнего Config Server при старте через `bootstrap.properties`:
     ```properties
@@ -1594,7 +1621,7 @@ public class ScheduledTasks {
     ```
     Config Server хранит конфигурацию в Git, приложения получают профиль-специфичные properties при старте. Поддерживается обновление конфигурации без рестарта через `/actuator/refresh` или Spring Cloud Bus.
 
-17. **Как реализовать health check для зависимых сервисов?**
+18. **Как реализовать health check для зависимых сервисов?**
     
     *Ответ:* Создать кастомный `HealthIndicator`:
     ```java
@@ -1619,15 +1646,15 @@ public class ScheduledTasks {
     }
     ```
 
-18. **Какие лучшие практики развертывания Spring Boot приложений?**
+19. **Какие лучшие практики развертывания Spring Boot приложений?**
     
     *Ответ:* 1) Использовать executable JAR с встроенным сервером, 2) Применять layered JARs для Docker, 3) Не хранить secrets в application.properties (использовать environment variables или Vault), 4) Настроить graceful shutdown, 5) Включить Actuator с ограниченным доступом, 6) Использовать внешнюю конфигурацию (Config Server), 7) Логировать в JSON для централизованной агрегации, 8) Настроить health checks для оркестраторов (Kubernetes), 9) Ограничить ресурсы JVM (`-Xmx`, `-XX:MaxMetaspaceSize`).
 
-19. **Как оптимизировать время старта Spring Boot приложения?**
+20. **Как оптимизировать время старта Spring Boot приложения?**
     
     *Ответ:* 1) Использовать ленивую инициализацию (`spring.main.lazy-initialization=true`), 2) Исключить ненужные автоконфигурации, 3) Уменьшить количество сканируемых пакетов через `@ComponentScan(basePackages)`, 4) Использовать Spring Native / GraalVM для AOT-компиляции, 5) Отключить неиспользуемые стартеры, 6) Настроить индексирование компонентов через `spring-context-indexer`, 7) Профилировать через Spring Boot Actuator `/actuator/startup`.
 
-20. **В чём разница между spring-boot-starter-parent и dependency management через BOM?**
+21. **В чём разница между spring-boot-starter-parent и dependency management через BOM?**
     
     *Ответ:* `spring-boot-starter-parent` — родительский POM, который предоставляет dependency management, плагины, настройки компилятора, encoding. Наследование через `<parent>`. BOM (Bill of Materials) — альтернативный способ через `<dependencyManagement>` + `<scope>import</scope>`, позволяет использовать свой собственный parent POM. Функционально похожи, но BOM более гибкий при наличии корпоративного parent POM.
 
