@@ -1,5 +1,12 @@
 # Оптимизация запросов и планы выполнения в PostgreSQL
 
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** PostgreSQL 16–18
+- **Статус примеров:** `current`
+- **Первичные источники:** [PostgreSQL Documentation](https://www.postgresql.org/docs/); [PostgreSQL Release Notes](https://www.postgresql.org/docs/release/)
+
 ## Содержание
 
 1. [Когда нужна оптимизация](#1-когда-нужна-оптимизация)
