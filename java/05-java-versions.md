@@ -10,13 +10,22 @@
 6. [Частые проблемы при апгрейде и как их решать](#частые-проблемы-при-апгрейде-и-как-их-решать)
 7. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 8. [Актуальность материала](#актуальность-материала)
+9. [Источники хронологии](#источники-хронологии)
 
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
+- **Целевая версия или диапазон:** Java SE 17–26; preview-возможности рассматриваются только там, где явно помечены
 - **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Первичные источники:** [OpenJDK JEP Index](https://openjdk.org/jeps/0), release notes JDK 24–26 и [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Фокус ревизии:** для JEP из JDK 24–26 явно указан статус возможности в соответствующем релизе.
+
+### Что проверять при каждом обновлении
+
+- новые LTS/feature-релизы Java;
+- изменения в GC/диагностике/JFR/виртуальных потоках;
+- рекомендации по migration path;
+- совместимость Spring/Hibernate с новыми JDK.
 
 ## Зачем знать историю версий Java
 
@@ -61,9 +70,21 @@
 | **Java 21 (LTS)** | 2023 | **Virtual Threads (final)**, **Pattern Matching for switch (final)**, **Record Patterns (final)**, Sequenced Collections, String Templates (preview), Generational ZGC. |
 | **Java 22** | 2024 | Foreign Function & Memory API (final), Structured Concurrency (preview), Scoped Values (2nd preview), unnamed variables/patterns. |
 | **Java 23** | 2024 | Эволюция preview/incubator-фич: class-file API (preview), Markdown в Javadoc, импорты модулей (preview), продолжение Project Loom/Panama. |
-| **Java 24** | 2025 | Продолжение стабилизации новых языковых и runtime-возможностей, улучшения производительности JVM и GC. |
-| **Java 25 (LTS)** | 2025 | Новая LTS-база для production: накопленные улучшения языка/рантайма, стабильный целевой апгрейд с 17/21. |
-| **Java 26** | 2026 | Удаление Applet API, HTTP/3 для HTTP Client API, новые preview/инкубационные улучшения (включая Structured Concurrency, Vector API и pattern matching-эволюцию). |
+| **Java 24** | 2025 | JEP 484 Class-File API (**final**), JEP 485 Stream Gatherers (**final**), JEP 491 синхронизация виртуальных потоков без pinning (**final**), JEP 493 runtime image без JMOD (**final**); JEP 487 Scoped Values, JEP 492 Flexible Constructor Bodies, JEP 494 Module Import Declarations и JEP 499 Structured Concurrency (**preview**); JEP 489 Vector API (**incubator**); JEP 486 Security Manager окончательно отключён и JEP 490 non-generational ZGC удалён (**removed**). |
+| **Java 25 (LTS)** | 2025 | JEP 506 Scoped Values, JEP 511 Module Import Declarations, JEP 512 Compact Source Files and Instance Main Methods, JEP 513 Flexible Constructor Bodies и JEP 519 Compact Object Headers (**final**); JEP 502 Stable Values, JEP 505 Structured Concurrency и JEP 507 Primitive Types in Patterns (**preview**); JEP 508 Vector API (**incubator**); JEP 503 32-bit x86 port удалён (**removed**). |
+| **Java 26** | 2026 | JEP 516 AOT Object Caching with Any GC, JEP 517 HTTP/3 for HTTP Client, JEP 522 уменьшение синхронизации G1 и JEP 524 PEM Encodings (**final**); JEP 525 Structured Concurrency, JEP 526 Lazy Constants и JEP 527 Primitive Types in Patterns (**preview**); JEP 529 Vector API (**incubator**); JEP 504 Applet API удалён (**removed**). |
+
+> Здесь **final** означает стандартную, не preview/incubator-возможность данного JDK, а **removed** — фактическое удаление или окончательное отключение компонента. Это не статус документа JEP в трекере (`Closed/Delivered`). Полный набор менее заметных изменений следует проверять в release notes.
+
+### Возможности, менявшие статус или отозванные
+
+| Возможность | Хронология статуса | Практический вывод |
+|---|---|---|
+| Structured Concurrency | JDK 19–20: **incubator**; JDK 21–24: последовательные **preview**; JDK 25: пятый **preview** с переработанным API; JDK 26: шестой **preview** | Обобщение «Java 21+» неверно: API всё ещё не **final**, а исходный код для JDK 24 и JDK 25 несовместим без адаптации. |
+| Scoped Values | JDK 20: **incubator**; JDK 21–24: **preview**; JDK 25: **final** | Для production без preview-флагов ориентируйтесь на JDK 25 или новее. |
+| Vector API | Последовательные **incubator**-итерации; JDK 24 — девятая, JDK 25 — десятая, JDK 26 — одиннадцатая | Incubator-модуль не является стабильным Java SE API; требуются `--add-modules jdk.incubator.vector` и повторная проверка при обновлении JDK. |
+| String Templates | JDK 21 (JEP 430) и JDK 22 (JEP 459): **preview**; затем предложение **withdrawn**, в JDK 23+ возможности нет | Нельзя считать String Templates частью современной Java или рассчитывать на совместимость старых preview-примеров; используйте обычную конкатенацию, форматирование либо шаблонизатор. |
+| Non-generational ZGC | В JDK 24 удалён (**removed**, JEP 490); generational mode остался | Перед обновлением удалите устаревшие ZGC-флаги и сравните GC-профиль приложения. |
 
 ## Ключевые изменения по эпохам
 
@@ -87,7 +108,7 @@
 ## Практические рекомендации по выбору версии
 
 1. Для новых production-проектов ориентируйтесь на **LTS** (обычно 21 или 25, в зависимости от экосистемы и ограничений компании).
-2. Если вы на Java 17, переход на Java 21/25 обычно даёт лучший throughput, удобнее конкурентное программирование и более современный язык.
+2. Если вы на Java 17, Java 21/25 дают более современный язык и новые модели конкурентности. Не обещайте рост throughput заранее: проведите нагрузочное тестирование и отдельное GC-сравнение **конкретного приложения** на одинаковых ресурсах, данных, SLA и профиле запросов.
 3. Не-LTS релизы полезны для ранней проверки новых возможностей, но в корпоративной среде чаще используются как промежуточный этап.
 4. Перед апгрейдом проверяйте:
    - совместимость фреймворков (Spring, Hibernate, Gradle/Maven plugins),
@@ -117,3 +138,9 @@
 3. В чём практическая ценность virtual threads (Java 21) для backend-сервисов?
 4. Почему компаниям часто проще переходить между LTS-версиями, чем обновляться на каждый feature-release?
 5. Какие проверки нужно сделать перед миграцией с Java 17 на Java 25?
+
+## Источники хронологии
+
+- [OpenJDK JEP Index](https://openjdk.org/jeps/0) — номера, целевые версии и история статусов JEP.
+- [OpenJDK JDK 24](https://openjdk.org/projects/jdk/24/), [JDK 25](https://openjdk.org/projects/jdk/25/) и [JDK 26](https://openjdk.org/projects/jdk/26/) — списки JEP каждого feature-release.
+- [JDK 24 release notes](https://jdk.java.net/24/release-notes), [JDK 25 release notes](https://jdk.java.net/25/release-notes) и [JDK 26 release notes](https://jdk.java.net/26/release-notes) — изменения API, совместимости и удалённые возможности, не всегда оформленные отдельным JEP.
