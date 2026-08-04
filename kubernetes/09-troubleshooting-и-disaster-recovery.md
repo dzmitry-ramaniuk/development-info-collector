@@ -1,23 +1,24 @@
 # Troubleshooting и disaster recovery Kubernetes
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Безопасный порядок диагностики](#безопасный-порядок-диагностики)
+3. [Runbook: Pending Pods](#runbook-pending-pods)
+4. [Runbook: CrashLoopBackOff](#runbook-crashloopbackoff)
+5. [Runbook: OOMKilled](#runbook-oomkilled)
+6. [Runbook: DNS и сеть](#runbook-dns-и-сеть)
+7. [Runbook: storage incidents](#runbook-storage-incidents)
+8. [Runbook: control-plane degradation](#runbook-control-plane-degradation)
+9. [Disaster recovery](#disaster-recovery)
+10. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
 - **Целевая версия или диапазон:** Kubernetes 1.34 (baseline раздела); команды требуют `kubectl` в поддерживаемом version-skew диапазоне
 - **Статус манифестов:** встроенные API/команды — `current`; provider-specific backup, CNI, CSI и managed control-plane процедуры — `template`, сверяются с поставщиком
 - **Первичные источники:** [Troubleshooting](https://v1-34.docs.kubernetes.io/docs/tasks/debug/); [Operating etcd](https://v1-34.docs.kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/); [Cluster Administration](https://v1-34.docs.kubernetes.io/docs/concepts/cluster-administration/); [Disruptions](https://v1-34.docs.kubernetes.io/docs/concepts/workloads/pods/disruptions/)
-
-## Содержание
-
-1. [Безопасный порядок диагностики](#безопасный-порядок-диагностики)
-2. [Runbook: Pending Pods](#runbook-pending-pods)
-3. [Runbook: CrashLoopBackOff](#runbook-crashloopbackoff)
-4. [Runbook: OOMKilled](#runbook-oomkilled)
-5. [Runbook: DNS и сеть](#runbook-dns-и-сеть)
-6. [Runbook: storage incidents](#runbook-storage-incidents)
-7. [Runbook: control-plane degradation](#runbook-control-plane-degradation)
-8. [Disaster recovery](#disaster-recovery)
-9. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Безопасный порядок диагностики
 

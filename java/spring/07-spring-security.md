@@ -1,5 +1,35 @@
 # Spring Security
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Модель безопасности Spring Security](#модель-безопасности-spring-security)
+   - [SecurityFilterChain и цепочка фильтров](#securityfilterchain-и-цепочка-фильтров)
+   - [Authentication и SecurityContext](#authentication-и-securitycontext)
+3. [Аутентификация и хранение паролей](#аутентификация-и-хранение-паролей)
+   - [Session-based authentication](#session-based-authentication)
+   - [Token-based authentication](#token-based-authentication)
+   - [Безопасное хранение паролей](#безопасное-хранение-паролей)
+4. [Рабочая конфигурация Spring Boot](#рабочая-конфигурация-spring-boot)
+   - [Зависимости](#зависимости)
+   - [Session-based приложение](#session-based-приложение)
+   - [OAuth 2.0 Resource Server с JWT](#oauth-20-resource-server-с-jwt)
+5. [OAuth 2.0, OIDC и проверка JWT](#oauth-20-oidc-и-проверка-jwt)
+   - [Разделение ролей протоколов](#разделение-ролей-протоколов)
+   - [Правила валидации JWT](#правила-валидации-jwt)
+   - [Refresh-токены и ротация ключей](#refresh-токены-и-ротация-ключей)
+6. [Авторизация: RBAC и method security](#авторизация-rbac-и-method-security)
+7. [Защита HTTP-границы](#защита-http-границы)
+   - [CSRF](#csrf)
+   - [CORS](#cors)
+   - [Secure headers](#secure-headers)
+   - [HTTP 401 и 403](#http-401-и-403)
+8. [Logout, отзыв и завершение сессий](#logout-отзыв-и-завершение-сессий)
+9. [Тестирование с spring-security-test](#тестирование-с-spring-security-test)
+10. [Типичные ошибки и практический чек-лист](#типичные-ошибки-и-практический-чек-лист)
+11. [Практическое упражнение](#практическое-упражнение)
+12. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
@@ -8,35 +38,6 @@
 - **Первичные источники:** [Spring Security Reference](https://docs.spring.io/spring-security/reference/6.5/); [Spring Boot Reference](https://docs.spring.io/spring-boot/3.5/reference/); [OAuth 2.0 Security Best Current Practice (RFC 9700)](https://www.rfc-editor.org/rfc/rfc9700); [JSON Web Token Best Current Practices (RFC 8725)](https://www.rfc-editor.org/rfc/rfc8725)
 
 > Материал описывает servlet-приложения. Для WebFlux используются `SecurityWebFilterChain` и реактивный `SecurityContext`; смешивать servlet- и reactive API нельзя.
-
-## Содержание
-
-1. [Модель безопасности Spring Security](#модель-безопасности-spring-security)
-   - [SecurityFilterChain и цепочка фильтров](#securityfilterchain-и-цепочка-фильтров)
-   - [Authentication и SecurityContext](#authentication-и-securitycontext)
-2. [Аутентификация и хранение паролей](#аутентификация-и-хранение-паролей)
-   - [Session-based authentication](#session-based-authentication)
-   - [Token-based authentication](#token-based-authentication)
-   - [Безопасное хранение паролей](#безопасное-хранение-паролей)
-3. [Рабочая конфигурация Spring Boot](#рабочая-конфигурация-spring-boot)
-   - [Зависимости](#зависимости)
-   - [Session-based приложение](#session-based-приложение)
-   - [OAuth 2.0 Resource Server с JWT](#oauth-20-resource-server-с-jwt)
-4. [OAuth 2.0, OIDC и проверка JWT](#oauth-20-oidc-и-проверка-jwt)
-   - [Разделение ролей протоколов](#разделение-ролей-протоколов)
-   - [Правила валидации JWT](#правила-валидации-jwt)
-   - [Refresh-токены и ротация ключей](#refresh-токены-и-ротация-ключей)
-5. [Авторизация: RBAC и method security](#авторизация-rbac-и-method-security)
-6. [Защита HTTP-границы](#защита-http-границы)
-   - [CSRF](#csrf)
-   - [CORS](#cors)
-   - [Secure headers](#secure-headers)
-   - [HTTP 401 и 403](#http-401-и-403)
-7. [Logout, отзыв и завершение сессий](#logout-отзыв-и-завершение-сессий)
-8. [Тестирование с spring-security-test](#тестирование-с-spring-security-test)
-9. [Типичные ошибки и практический чек-лист](#типичные-ошибки-и-практический-чек-лист)
-10. [Практическое упражнение](#практическое-упражнение)
-11. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Модель безопасности Spring Security
 

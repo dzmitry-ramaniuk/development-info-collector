@@ -1,4 +1,17 @@
 # Multi-region и geo-distributed системы
+
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Когда multi-region действительно нужен](#когда-multi-region-действительно-нужен)
+3. [Active-passive vs active-active](#active-passive-vs-active-active)
+4. [Routing, data locality и user experience](#routing-data-locality-и-user-experience)
+5. [Консистентность и репликация между регионами](#консистентность-и-репликация-между-регионами)
+6. [Failover, disaster recovery и операционная готовность](#failover-disaster-recovery-и-операционная-готовность)
+7. [Типичные ошибки multi-region дизайна](#типичные-ошибки-multi-region-дизайна)
+8. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+9. [Связанные темы](#связанные-темы)
+
 <script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Актуальность материала
@@ -7,17 +20,6 @@
 - **Целевая версия или диапазон:** концепции версионно-независимы; технические примеры и API проверены по состоянию на 2026-08-04
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Architecture Center](https://aws.amazon.com/architecture/); [Google SRE Books](https://sre.google/books/)
-
-## Содержание
-
-1. [Когда multi-region действительно нужен](#когда-multi-region-действительно-нужен)
-2. [Active-passive vs active-active](#active-passive-vs-active-active)
-3. [Routing, data locality и user experience](#routing-data-locality-и-user-experience)
-4. [Консистентность и репликация между регионами](#консистентность-и-репликация-между-регионами)
-5. [Failover, disaster recovery и операционная готовность](#failover-disaster-recovery-и-операционная-готовность)
-6. [Типичные ошибки multi-region дизайна](#типичные-ошибки-multi-region-дизайна)
-7. [Вопросы для самопроверки](#вопросы-для-самопроверки)
-8. [Связанные темы](#связанные-темы)
 
 ## Когда multi-region действительно нужен
 

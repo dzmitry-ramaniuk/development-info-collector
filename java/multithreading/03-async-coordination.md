@@ -1,4 +1,13 @@
 # Асинхронные вычисления и координация
+
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [CompletableFuture: асинхронные конвейеры](#completablefuture-асинхронные-конвейеры)
+3. [Structured Concurrency: матрица JDK](#structured-concurrency-матрица-jdk)
+4. [Future и его ограничения](#future-и-его-ограничения)
+5. [Как выбирать подход](#как-выбирать-подход)
+
 <script type="module" src="../../assets/mermaid-init.js"></script>
 
 ## Актуальность материала
@@ -7,13 +16,6 @@
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
 - **Статус примеров:** `current`
 - **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
-
-## Содержание
-
-1. [CompletableFuture: асинхронные конвейеры](#completablefuture-асинхронные-конвейеры)
-2. [Structured Concurrency: матрица JDK](#structured-concurrency-матрица-jdk)
-3. [Future и его ограничения](#future-и-его-ограничения)
-4. [Как выбирать подход](#как-выбирать-подход)
 
 ## CompletableFuture: асинхронные конвейеры
 

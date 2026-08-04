@@ -1,4 +1,19 @@
 # Сетевое взаимодействие и API
+
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Как выбирать способ взаимодействия](#как-выбирать-способ-взаимодействия)
+3. [HTTP, gRPC, WebSocket и async messaging](#http-grpc-websocket-и-async-messaging)
+4. [Проектирование API-контрактов](#проектирование-api-контрактов)
+5. [Polling, webhooks и push-модели](#polling-webhooks-и-push-модели)
+6. [Таймауты, ретраи и идемпотентность](#таймауты-ретраи-и-идемпотентность)
+7. [Load balancer, reverse proxy и API gateway](#load-balancer-reverse-proxy-и-api-gateway)
+8. [Rate limiting и versioning](#rate-limiting-и-versioning)
+9. [Паттерны устойчивого взаимодействия](#паттерны-устойчивого-взаимодействия)
+10. [Типичные ошибки](#типичные-ошибки)
+11. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 <script type="module" src="../assets/mermaid-init.js"></script>
 
 ## Актуальность материала
@@ -7,19 +22,6 @@
 - **Целевая версия или диапазон:** концепции версионно-независимы; технические примеры и API проверены по состоянию на 2026-08-04
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Architecture Center](https://aws.amazon.com/architecture/); [Google SRE Books](https://sre.google/books/)
-
-## Содержание
-
-1. [Как выбирать способ взаимодействия](#как-выбирать-способ-взаимодействия)
-2. [HTTP, gRPC, WebSocket и async messaging](#http-grpc-websocket-и-async-messaging)
-3. [Проектирование API-контрактов](#проектирование-api-контрактов)
-4. [Polling, webhooks и push-модели](#polling-webhooks-и-push-модели)
-5. [Таймауты, ретраи и идемпотентность](#таймауты-ретраи-и-идемпотентность)
-6. [Load balancer, reverse proxy и API gateway](#load-balancer-reverse-proxy-и-api-gateway)
-7. [Rate limiting и versioning](#rate-limiting-и-versioning)
-8. [Паттерны устойчивого взаимодействия](#паттерны-устойчивого-взаимодействия)
-9. [Типичные ошибки](#типичные-ошибки)
-10. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Как выбирать способ взаимодействия
 

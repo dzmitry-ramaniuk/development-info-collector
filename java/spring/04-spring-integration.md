@@ -1,21 +1,14 @@
 # Spring Integration
 
-
-## Актуальность материала
-
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
-- **Статус примеров:** `current`
-- **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
-
 ## Содержание
 
-1. [Введение](#введение)
-2. [Основные концепции](#основные-концепции)
+1. [Актуальность материала](#актуальность-материала)
+2. [Введение](#введение)
+3. [Основные концепции](#основные-концепции)
    - [Message (Сообщение)](#message-сообщение)
    - [Message Channel (Канал сообщений)](#message-channel-канал-сообщений)
    - [Message Endpoint (Конечная точка)](#message-endpoint-конечная-точка)
-3. [Message Endpoints](#message-endpoints)
+4. [Message Endpoints](#message-endpoints)
    - [Service Activator](#service-activator)
    - [Transformer](#transformer)
    - [Filter](#filter)
@@ -24,10 +17,10 @@
    - [Aggregator](#aggregator)
    - [Enricher](#enricher)
    - [Bridge](#bridge)
-4. [Gateway и MessagingTemplate](#gateway-и-messagingtemplate)
+5. [Gateway и MessagingTemplate](#gateway-и-messagingtemplate)
    - [Gateway](#gateway)
    - [MessagingTemplate](#messagingtemplate)
-5. [Адаптеры для внешних систем](#адаптеры-для-внешних-систем)
+6. [Адаптеры для внешних систем](#адаптеры-для-внешних-систем)
    - [File Adapter](#file-adapter)
    - [HTTP Adapter](#http-adapter)
    - [JMS Adapter](#jms-adapter)
@@ -35,45 +28,52 @@
    - [Mail Adapter](#mail-adapter)
    - [FTP/SFTP Adapter](#ftpsftp-adapter)
    - [WebSocket Adapter](#websocket-adapter)
-6. [Конфигурация интеграционных потоков](#конфигурация-интеграционных-потоков)
+7. [Конфигурация интеграционных потоков](#конфигурация-интеграционных-потоков)
    - [Java DSL (рекомендуется)](#java-dsl-рекомендуется)
    - [Аннотации](#аннотации)
    - [XML-конфигурация (legacy)](#xml-конфигурация-legacy)
-7. [Poller и планирование](#poller-и-планирование)
-8. [Обработка ошибок](#обработка-ошибок)
+8. [Poller и планирование](#poller-и-планирование)
+9. [Обработка ошибок](#обработка-ошибок)
    - [Error Channel](#error-channel)
    - [Retry и Recovery](#retry-и-recovery)
    - [Circuit Breaker](#circuit-breaker)
-9. [Транзакции](#транзакции)
-10. [Мониторинг и метрики](#мониторинг-и-метрики)
+10. [Транзакции](#транзакции)
+11. [Мониторинг и метрики](#мониторинг-и-метрики)
    - [Micrometer Integration](#micrometer-integration)
    - [JMX Export](#jmx-export)
    - [Message History](#message-history)
    - [Wire Tap](#wire-tap)
-11. [Тестирование](#тестирование)
+12. [Тестирование](#тестирование)
    - [MockIntegration](#mockintegration)
    - [Тестирование с Gateway:](#тестирование-с-gateway)
    - [Тестирование адаптеров:](#тестирование-адаптеров)
    - [Embedded Test Endpoints:](#embedded-test-endpoints)
-12. [Реактивная поддержка](#реактивная-поддержка)
-13. [Продвинутые паттерны](#продвинутые-паттерны)
+13. [Реактивная поддержка](#реактивная-поддержка)
+14. [Продвинутые паттерны](#продвинутые-паттерны)
    - [Content-Based Router с условиями](#content-based-router-с-условиями)
    - [Claim Check Pattern](#claim-check-pattern)
    - [Idempotent Receiver](#idempotent-receiver)
    - [Message Expiration](#message-expiration)
-14. [Практические советы](#практические-советы)
+15. [Практические советы](#практические-советы)
    - [Производительность](#производительность)
    - [Отладка](#отладка)
    - [Безопасность](#безопасность)
    - [Масштабирование](#масштабирование)
-15. [Типичные сценарии использования](#типичные-сценарии-использования)
+16. [Типичные сценарии использования](#типичные-сценарии-использования)
    - [Интеграция с микросервисами](#интеграция-с-микросервисами)
    - [ETL процесс](#etl-процесс)
    - [Event-driven архитектура](#event-driven-архитектура)
    - [Файловая обработка с архивированием](#файловая-обработка-с-архивированием)
-16. [Практические упражнения](#практические-упражнения)
-17. [Вопросы на собеседовании](#вопросы-на-собеседовании)
-18. [Дополнительные материалы](#дополнительные-материалы)
+17. [Практические упражнения](#практические-упражнения)
+18. [Вопросы на собеседовании](#вопросы-на-собеседовании)
+19. [Дополнительные материалы](#дополнительные-материалы)
+
+## Актуальность материала
+
+- **Дата проверки:** 2026-08-04
+- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current`
+- **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
 
 ## Введение
 

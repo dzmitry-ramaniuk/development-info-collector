@@ -1,5 +1,38 @@
 # Singleton (Одиночка)
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Назначение и применение](#назначение-и-применение)
+3. [Структура паттерна](#структура-паттерна)
+4. [Способы реализации](#способы-реализации)
+   - [Eager Initialization](#eager-initialization)
+   - [Lazy Initialization](#lazy-initialization)
+   - [Thread-Safe Singleton](#thread-safe-singleton)
+   - [Double-Checked Locking](#double-checked-locking)
+   - [Bill Pugh Singleton](#bill-pugh-singleton)
+   - [Enum Singleton](#enum-singleton)
+5. [Проблемы и решения](#проблемы-и-решения)
+   - [Проблема 1: Нарушение через Reflection](#проблема-1-нарушение-через-reflection)
+   - [Проблема 2: Нарушение при сериализации](#проблема-2-нарушение-при-сериализации)
+   - [Проблема 3: Проблемы с ClassLoader](#проблема-3-проблемы-с-classloader)
+   - [Проблема 4: Клонирование](#проблема-4-клонирование)
+6. [Примеры использования](#примеры-использования)
+   - [Пример 1: Configuration Manager](#пример-1-configuration-manager)
+   - [Пример 2: Database Connection Pool](#пример-2-database-connection-pool)
+   - [Пример 3: Logger](#пример-3-logger)
+   - [Примеры из JDK](#примеры-из-jdk)
+   - [Примеры из Spring Framework](#примеры-из-spring-framework)
+7. [Преимущества и недостатки](#преимущества-и-недостатки)
+   - [Преимущества](#преимущества)
+   - [Недостатки](#недостатки)
+8. [Современные альтернативы](#современные-альтернативы)
+   - [Dependency Injection](#dependency-injection)
+   - [Когда всё-таки использовать Singleton](#когда-всё-таки-использовать-singleton)
+9. [Вопросы на собеседовании](#вопросы-на-собеседовании)
+   - [Базовые вопросы](#базовые-вопросы)
+   - [Продвинутые вопросы](#продвинутые-вопросы)
+
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
@@ -8,22 +41,6 @@
 - **Первичные источники:** [Oracle Java Language Specification](https://docs.oracle.com/javase/specs/); [Oracle Java API](https://docs.oracle.com/en/java/javase/25/docs/api/)
 
 Singleton — порождающий паттерн проектирования, который гарантирует, что у класса есть только один экземпляр, и предоставляет глобальную точку доступа к этому экземпляру.
-
-## Содержание
-
-1. [Назначение и применение](#назначение-и-применение)
-2. [Структура паттерна](#структура-паттерна)
-3. [Способы реализации](#способы-реализации)
-   - [Eager Initialization](#eager-initialization)
-   - [Lazy Initialization](#lazy-initialization)
-   - [Thread-Safe Singleton](#thread-safe-singleton)
-   - [Double-Checked Locking](#double-checked-locking)
-   - [Bill Pugh Singleton](#bill-pugh-singleton)
-   - [Enum Singleton](#enum-singleton)
-4. [Проблемы и решения](#проблемы-и-решения)
-5. [Примеры использования](#примеры-использования)
-6. [Преимущества и недостатки](#преимущества-и-недостатки)
-7. [Вопросы на собеседовании](#вопросы-на-собеседовании)
 
 ## Назначение и применение
 

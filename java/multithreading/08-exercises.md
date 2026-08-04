@@ -1,20 +1,21 @@
 # Практические упражнения
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Упражнение 1: Producer-Consumer с Rate Limiting](#упражнение-1-producer-consumer-с-rate-limiting)
+3. [Упражнение 2: Асинхронные HTTP запросы с таймаутом](#упражнение-2-асинхронные-http-запросы-с-таймаутом)
+4. [Упражнение 3: Обнаружение и устранение Deadlock](#упражнение-3-обнаружение-и-устранение-deadlock)
+5. [Упражнение 4: Thread-safe LRU Cache](#упражнение-4-thread-safe-lru-cache)
+6. [Упражнение 5: Fork/Join для параллельной обработки файлов](#упражнение-5-forkjoin-для-параллельной-обработки-файлов)
+7. [Упражнение 6: Реализация ThreadPoolExecutor с метриками](#упражнение-6-реализация-threadpoolexecutor-с-метриками)
+
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
 - **Статус примеров:** `current`
 - **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
-
-## Содержание
-
-1. [Упражнение 1: Producer-Consumer с Rate Limiting](#упражнение-1-producer-consumer-с-rate-limiting)
-2. [Упражнение 2: Асинхронные HTTP запросы с таймаутом](#упражнение-2-асинхронные-http-запросы-с-таймаутом)
-3. [Упражнение 3: Обнаружение и устранение Deadlock](#упражнение-3-обнаружение-и-устранение-deadlock)
-4. [Упражнение 4: Thread-safe LRU Cache](#упражнение-4-thread-safe-lru-cache)
-5. [Упражнение 5: Fork/Join для параллельной обработки файлов](#упражнение-5-forkjoin-для-параллельной-обработки-файлов)
-6. [Упражнение 6: Реализация ThreadPoolExecutor с метриками](#упражнение-6-реализация-threadpoolexecutor-с-метриками)
 
 ## Упражнение 1: Producer-Consumer с Rate Limiting
 
@@ -251,4 +252,3 @@ public class MonitoredThreadPool extends ThreadPoolExecutor {
     }
 }
 ```
-

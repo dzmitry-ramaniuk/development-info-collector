@@ -1,22 +1,23 @@
 # Scheduling, ресурсы и autoscaling в Kubernetes
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Requests, limits и QoS](#requests-limits-и-qos)
+3. [Probes](#probes)
+4. [PodDisruptionBudget](#poddisruptionbudget)
+5. [Размещение Pods](#размещение-pods)
+6. [Taints и tolerations](#taints-и-tolerations)
+7. [HPA, VPA и Cluster Autoscaler](#hpa-vpa-и-cluster-autoscaler)
+8. [Практический пример](#практический-пример)
+9. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 ## Актуальность материала
 
 - **Дата проверки:** 2026-08-04
 - **Целевая версия или диапазон:** Kubernetes 1.34 (baseline раздела)
 - **Статус манифестов:** `current` для встроенных `v1`, `policy/v1` и `autoscaling/v2`; VPA и Cluster Autoscaler — `current`, но являются отдельно устанавливаемыми компонентами/CRD
 - **Первичные источники:** [Scheduling](https://v1-34.docs.kubernetes.io/docs/concepts/scheduling-eviction/); [Resource Management](https://v1-34.docs.kubernetes.io/docs/concepts/configuration/manage-resources-containers/); [HPA](https://v1-34.docs.kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/); [Node Autoscaling](https://v1-34.docs.kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/)
-
-## Содержание
-
-1. [Requests, limits и QoS](#requests-limits-и-qos)
-2. [Probes](#probes)
-3. [PodDisruptionBudget](#poddisruptionbudget)
-4. [Размещение Pods](#размещение-pods)
-5. [Taints и tolerations](#taints-и-tolerations)
-6. [HPA, VPA и Cluster Autoscaler](#hpa-vpa-и-cluster-autoscaler)
-7. [Практический пример](#практический-пример)
-8. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Requests, limits и QoS
 

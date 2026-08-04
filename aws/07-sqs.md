@@ -1,5 +1,14 @@
 # SQS: очереди, ретраи, DLQ и идемпотентность
 
+## Содержание
+
+1. [Актуальность материала](#актуальность-материала)
+2. [Standard и FIFO](#standard-и-fifo)
+3. [Сравнение доставки](#сравнение-доставки)
+4. [Ретраи и DLQ](#ретраи-и-dlq)
+5. [Практический baseline для production](#практический-baseline-для-production)
+6. [Вопросы для самопроверки](#вопросы-для-самопроверки)
+
 > **Дата ревизии:** 4 августа 2026 года. Числовые значения проверены на эту дату; доступность функций, цены и quotas зависят от региона, типа аккаунта и одобренных AWS повышений. Перед production-развёртыванием сверяйтесь с Service Quotas и AWS Console.
 
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html) · [quotas](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html) · [pricing](https://aws.amazon.com/sqs/pricing/)
@@ -9,14 +18,6 @@
 - **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
 - **Статус примеров:** `current`
 - **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
-
-## Содержание
-
-1. [Standard и FIFO](#standard-и-fifo)
-2. [Сравнение доставки](#сравнение-доставки)
-3. [Ретраи и DLQ](#ретраи-и-dlq)
-4. [Практический baseline для production](#практический-baseline-для-production)
-5. [Вопросы для самопроверки](#вопросы-для-самопроверки)
 
 ## Standard и FIFO
 
