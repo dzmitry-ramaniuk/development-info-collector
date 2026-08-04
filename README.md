@@ -4,7 +4,7 @@
 
 ## 📚 Содержание
 
-Материалы организованы в девять основных разделов:
+Материалы организованы в десять основных разделов:
 
 ### [Java](java/README.md) ☕
 
@@ -52,6 +52,16 @@
   - Best practices и подготовка к собеседованиям
 
 → [Перейти к материалам по тестированию](тестирование/README.md)
+
+### [Docker](docker/README.md) 🐳
+
+Контейнеризация приложений от базовых механизмов до безопасной эксплуатации:
+  - **[Основы контейнеров](docker/01-основы-контейнеров.md)** — image/container, namespaces, cgroups и OCI Registry
+  - **[Dockerfile и сборка](docker/02-dockerfile-и-сборка-образов.md)** — layers, cache, multi-stage и Spring Boot
+  - **[Compose, сети и хранилища](docker/03-compose-сети-и-хранилища.md)** — PostgreSQL, Redis, volumes и health checks
+  - **[Безопасность и production](docker/04-безопасность-и-production-practices.md)** — SBOM, scanning, secrets и resource limits
+
+→ [Перейти к материалам по Docker](docker/README.md)
 
 ### [Kubernetes](kubernetes/README.md) ☸️
 
@@ -116,6 +126,7 @@
 | [Java feature-релизы](java/05-java-versions.md) | Сопровождающий репозитория | Java 26 | 6 месяцев | 2026-04-27 | 2026-10-27 |
 | [Spring](java/spring/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [Kafka](очереди/кафка/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
+| [Docker](docker/README.md) | Сопровождающий репозитория | Docker Engine 28.x; Compose v2; OCI 1.1 | 6 месяцев | 2026-08-04 | 2027-02-04 |
 | [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
 | [PostgreSQL](базы%20данных/postgresql/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
 | [Redis](базы%20данных/redis/README.md) | Сопровождающий репозитория | Redis Open Source 8.2.x | 6 месяцев | 2026-08-04 | 2027-02-04 |
@@ -150,7 +161,8 @@
 3. [Базы данных](базы данных/README.md) — закрепить SQL, транзакции, индексы и производительность
 4. [Spring Framework](java/spring/README.md) и [Hibernate/JPA](java/04-hibernate.md) — перейти к прикладной backend-разработке
 5. [Тестирование](тестирование/README.md) — научиться проверять код и инфраструктурные сценарии
-6. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
+6. [Docker](docker/README.md) — упаковать Spring Boot, настроить зависимости и безопасный runtime
+7. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
 
 ### Если цель — подготовка к собеседованию
 - Начните с [Java Core](java/java-core/README.md) и [многопоточности](java/multithreading/README.md): это база для большинства технических интервью
@@ -160,6 +172,7 @@
 
 ### Если цель — расширить кругозор по архитектуре и эксплуатации
 - Изучите [очереди](очереди/README.md), чтобы понять event-driven подход и интеграцию сервисов
+- Начните с [Docker](docker/README.md), чтобы освоить сборку, сети, хранилища и ограничения контейнера
 - Перейдите к [Kubernetes](kubernetes/README.md), чтобы связать разработку с эксплуатацией и production-развёртыванием
 - Используйте [паттерны проектирования](паттерны проектирования/README.md) как мост между кодом, архитектурой и обсуждением решений на интервью
 - Добавьте [System Design](system design/README.md), чтобы перейти от отдельных инструментов к проектированию end-to-end систем
