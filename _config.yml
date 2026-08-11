@@ -1,0 +1,25 @@
+title: Development Info Collector
+lang: ru-RU
+encoding: UTF-8
+
+# GitHub Pages должен собирать Markdown-файлы, даже если в них нет YAML front matter.
+# Иначе ссылки на README.md и тематические страницы открывают исходный Markdown.
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-relative-links
+
+optional_front_matter:
+  remove_originals: true
+
+# README каждого раздела становится его index.html. Это распространяется в том
+# числе на PostgreSQL, Redis, System Design и все группы паттернов проектирования.
+readme_index:
+  enabled: true
+  remove_originals: true
+  with_frontmatter: false
+
+# Во время сборки заменяем относительные ссылки *.md на адреса HTML-страниц.
+relative_links:
+  enabled: true
+  collections: true
