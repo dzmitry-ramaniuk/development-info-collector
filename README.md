@@ -1,3 +1,6 @@
+---
+---
+
 # Development Info Collector
 
 Структурированная коллекция учебных материалов на русском языке по различным технологиям разработки. Это рабочая тетрадь для изучения Java, баз данных, систем очередей и тестирования, предназначенная для подготовки к техническим собеседованиям и систематизации знаний.
@@ -6,299 +9,299 @@
 
 Полный каталог учебных страниц сгруппирован по разделам. Обзорная страница каждого раздела указана в его заголовке.
 
-1. **[Java](java/README.md)**
-   - [Java Core: структура материала](java/01-java-core.md)
-   - [Multithreading: структура материала](java/02-multithreading.md)
-   - [Spring Platform Overview](java/03-spring.md)
-   - [Hibernate и JPA](java/04-hibernate.md)
-   - [Эволюция версий Java: что добавлялось в каждом релизе](java/05-java-versions.md)
-   - [Тюнинг и мониторинг JVM](java/06-jvm-tuning-monitoring.md)
-   - **[Java Core](java/java-core/README.md)**
-     - [Виртуальная машина и платформа Java](java/java-core/01-jvm-runtime.md)
-     - [Управление памятью и сборка мусора](java/java-core/02-memory-management.md)
-     - [Основы языка и синтаксис](java/java-core/03-language-basics.md)
-     - [Объектно-ориентированное программирование в Java](java/java-core/04-oop-design.md)
-     - [Коллекции](java/java-core/05-collections.md)
-     - [Работа с данными и ввод/вывод](java/java-core/06-data-io.md)
-     - [Функциональные возможности и современные фичи Java](java/java-core/07-functional-modern-java.md)
-     - [Алгоритмическая сложность и анализ производительности](java/java-core/08-algorithms-complexity.md)
-     - [Stream API](java/java-core/09-stream-api.md)
-     - [Типы ссылок в Java](java/java-core/10-reference-types.md)
-     - [Обобщения (Generics)](java/java-core/11-generics.md)
-   - **[Multithreading](java/multithreading/README.md)**
-     - [Java Memory Model и гарантии видимости](java/multithreading/01-jmm-visibility.md)
-     - [Управление потоками и пулами](java/multithreading/02-thread-pools.md)
-     - [Асинхронные вычисления и координация](java/multithreading/03-async-coordination.md)
-     - [Синхронизаторы и конкурентные структуры данных](java/multithreading/04-synchronizers.md)
-     - [Потоковое локальное состояние и неизменяемость](java/multithreading/05-threadlocal-immutability.md)
-     - [Диагностика и устранение проблем](java/multithreading/06-diagnostics-problems.md)
-     - [Шаблоны и практические приёмы](java/multithreading/07-patterns.md)
-     - [Практические упражнения](java/multithreading/08-exercises.md)
-     - [Вопросы на собеседовании](java/multithreading/09-interview-questions.md)
-     - [Synchronized в Java: теория и практика](java/multithreading/10-synchronized.md)
-   - **[Spring Framework](java/spring/README.md)**
-     - [Spring Core](java/spring/01-spring-core.md)
-     - [Spring Boot](java/spring/02-spring-boot.md)
-     - [Spring Data](java/spring/03-spring-data.md)
-     - [Spring Integration](java/spring/04-spring-integration.md)
-     - [Проксирование бинов в Spring](java/spring/05-spring-proxying.md)
-     - [Реактивное программирование в Java](java/spring/06-reactive-programming.md)
-     - [Spring Security](java/spring/07-spring-security.md)
+1. **[Java](java/README.html)**
+   - [Java Core: структура материала](java/01-java-core.html)
+   - [Multithreading: структура материала](java/02-multithreading.html)
+   - [Spring Platform Overview](java/03-spring.html)
+   - [Hibernate и JPA](java/04-hibernate.html)
+   - [Эволюция версий Java: что добавлялось в каждом релизе](java/05-java-versions.html)
+   - [Тюнинг и мониторинг JVM](java/06-jvm-tuning-monitoring.html)
+   - **[Java Core](java/java-core/README.html)**
+     - [Виртуальная машина и платформа Java](java/java-core/01-jvm-runtime.html)
+     - [Управление памятью и сборка мусора](java/java-core/02-memory-management.html)
+     - [Основы языка и синтаксис](java/java-core/03-language-basics.html)
+     - [Объектно-ориентированное программирование в Java](java/java-core/04-oop-design.html)
+     - [Коллекции](java/java-core/05-collections.html)
+     - [Работа с данными и ввод/вывод](java/java-core/06-data-io.html)
+     - [Функциональные возможности и современные фичи Java](java/java-core/07-functional-modern-java.html)
+     - [Алгоритмическая сложность и анализ производительности](java/java-core/08-algorithms-complexity.html)
+     - [Stream API](java/java-core/09-stream-api.html)
+     - [Типы ссылок в Java](java/java-core/10-reference-types.html)
+     - [Обобщения (Generics)](java/java-core/11-generics.html)
+   - **[Multithreading](java/multithreading/README.html)**
+     - [Java Memory Model и гарантии видимости](java/multithreading/01-jmm-visibility.html)
+     - [Управление потоками и пулами](java/multithreading/02-thread-pools.html)
+     - [Асинхронные вычисления и координация](java/multithreading/03-async-coordination.html)
+     - [Синхронизаторы и конкурентные структуры данных](java/multithreading/04-synchronizers.html)
+     - [Потоковое локальное состояние и неизменяемость](java/multithreading/05-threadlocal-immutability.html)
+     - [Диагностика и устранение проблем](java/multithreading/06-diagnostics-problems.html)
+     - [Шаблоны и практические приёмы](java/multithreading/07-patterns.html)
+     - [Практические упражнения](java/multithreading/08-exercises.html)
+     - [Вопросы на собеседовании](java/multithreading/09-interview-questions.html)
+     - [Synchronized в Java: теория и практика](java/multithreading/10-synchronized.html)
+   - **[Spring Framework](java/spring/README.html)**
+     - [Spring Core](java/spring/01-spring-core.html)
+     - [Spring Boot](java/spring/02-spring-boot.html)
+     - [Spring Data](java/spring/03-spring-data.html)
+     - [Spring Integration](java/spring/04-spring-integration.html)
+     - [Проксирование бинов в Spring](java/spring/05-spring-proxying.html)
+     - [Реактивное программирование в Java](java/spring/06-reactive-programming.html)
+     - [Spring Security](java/spring/07-spring-security.html)
 
-1. **[Базы данных](базы%20данных/README.md)**
-   - [Реляционная модель и нормализация](базы%20данных/01-реляционная-модель-и-нормализация.md)
-   - [Практический SQL](базы%20данных/02-практический-sql.md)
-   - [Миграции схемы без простоя](базы%20данных/03-миграции-схемы.md)
-   - **[PostgreSQL](базы%20данных/postgresql/README.md)**
-     - [Архитектура и внутреннее устройство PostgreSQL](базы%20данных/postgresql/01-architecture.md)
-     - [Типы данных и моделирование в PostgreSQL](базы%20данных/postgresql/02-data-types.md)
-     - [Индексация и доступ к данным в PostgreSQL](базы%20данных/postgresql/03-indexing.md)
-     - [Запросы, планы выполнения и статистика PostgreSQL](базы%20данных/postgresql/04-query-performance.md)
-     - [Транзакции и конкурентный доступ в PostgreSQL](базы%20данных/postgresql/05-transactions.md)
-     - [Эксплуатация, резервное копирование и масштабирование PostgreSQL](базы%20данных/postgresql/06-operations.md)
-     - [Вопросы и ответы для собеседований по PostgreSQL](базы%20данных/postgresql/07-interview.md)
-     - [Шпаргалка по `psql` и полезным командам PostgreSQL](базы%20данных/postgresql/08-psql-cheatsheet.md)
-     - [Партиционирование и шардинг в PostgreSQL](базы%20данных/postgresql/09-partitioning-sharding.md)
-     - [Оптимизация запросов и планы выполнения в PostgreSQL](базы%20данных/postgresql/10-query-optimization-execution-plans.md)
-   - **[Redis](базы%20данных/redis/README.md)**
-     - [Redis: основы и структуры данных](базы%20данных/redis/01-основы-и-структуры-данных.md)
-     - [Redis: кэширование](базы%20данных/redis/02-кэширование.md)
-     - [Redis: надёжность и эксплуатация](базы%20данных/redis/03-надежность-и-эксплуатация.md)
-     - [Redis: интеграция с Java и Spring](базы%20данных/redis/04-java-и-spring.md)
+1. **[Базы данных](базы%20данных/README.html)**
+   - [Реляционная модель и нормализация](базы%20данных/01-реляционная-модель-и-нормализация.html)
+   - [Практический SQL](базы%20данных/02-практический-sql.html)
+   - [Миграции схемы без простоя](базы%20данных/03-миграции-схемы.html)
+   - **[PostgreSQL](базы%20данных/postgresql/README.html)**
+     - [Архитектура и внутреннее устройство PostgreSQL](базы%20данных/postgresql/01-architecture.html)
+     - [Типы данных и моделирование в PostgreSQL](базы%20данных/postgresql/02-data-types.html)
+     - [Индексация и доступ к данным в PostgreSQL](базы%20данных/postgresql/03-indexing.html)
+     - [Запросы, планы выполнения и статистика PostgreSQL](базы%20данных/postgresql/04-query-performance.html)
+     - [Транзакции и конкурентный доступ в PostgreSQL](базы%20данных/postgresql/05-transactions.html)
+     - [Эксплуатация, резервное копирование и масштабирование PostgreSQL](базы%20данных/postgresql/06-operations.html)
+     - [Вопросы и ответы для собеседований по PostgreSQL](базы%20данных/postgresql/07-interview.html)
+     - [Шпаргалка по `psql` и полезным командам PostgreSQL](базы%20данных/postgresql/08-psql-cheatsheet.html)
+     - [Партиционирование и шардинг в PostgreSQL](базы%20данных/postgresql/09-partitioning-sharding.html)
+     - [Оптимизация запросов и планы выполнения в PostgreSQL](базы%20данных/postgresql/10-query-optimization-execution-plans.html)
+   - **[Redis](базы%20данных/redis/README.html)**
+     - [Redis: основы и структуры данных](базы%20данных/redis/01-основы-и-структуры-данных.html)
+     - [Redis: кэширование](базы%20данных/redis/02-кэширование.html)
+     - [Redis: надёжность и эксплуатация](базы%20данных/redis/03-надежность-и-эксплуатация.html)
+     - [Redis: интеграция с Java и Spring](базы%20данных/redis/04-java-и-spring.html)
 
-1. **[Очереди сообщений и потоковая обработка данных](очереди/README.md)**
-   - **[Apache ActiveMQ](очереди/activemq/README.md)**
-     - [Основы и архитектура Apache ActiveMQ](очереди/activemq/01-основы-и-архитектура.md)
-   - **[Apache Kafka](очереди/кафка/README.md)**
-     - [Принципы и архитектура Apache Kafka](очереди/кафка/01-принципы-и-архитектура.md)
-     - [Типовые проблемы и риски](очереди/кафка/02-проблемы-и-риски.md)
-     - [Ключевые механизмы Kafka](очереди/кафка/03-ключевые-механизмы.md)
-     - [Приёмы эффективной работы](очереди/кафка/04-приемы-работы.md)
-     - [Вопросы и ответы](очереди/кафка/05-вопросы-и-ответы.md)
-     - [Kafka Streams](очереди/кафка/06-kafka-streams.md)
-     - [Kafka Connect](очереди/кафка/07-kafka-connect.md)
-     - [Schema Registry и управление схемами](очереди/кафка/08-schema-registry.md)
-     - [Безопасность и мониторинг Kafka](очереди/кафка/09-безопасность-мониторинг.md)
-     - [Эксплуатация Apache Kafka 4.0.0 в production](очереди/кафка/10-эксплуатация-production.md)
+1. **[Очереди сообщений и потоковая обработка данных](очереди/README.html)**
+   - **[Apache ActiveMQ](очереди/activemq/README.html)**
+     - [Основы и архитектура Apache ActiveMQ](очереди/activemq/01-основы-и-архитектура.html)
+   - **[Apache Kafka](очереди/кафка/README.html)**
+     - [Принципы и архитектура Apache Kafka](очереди/кафка/01-принципы-и-архитектура.html)
+     - [Типовые проблемы и риски](очереди/кафка/02-проблемы-и-риски.html)
+     - [Ключевые механизмы Kafka](очереди/кафка/03-ключевые-механизмы.html)
+     - [Приёмы эффективной работы](очереди/кафка/04-приемы-работы.html)
+     - [Вопросы и ответы](очереди/кафка/05-вопросы-и-ответы.html)
+     - [Kafka Streams](очереди/кафка/06-kafka-streams.html)
+     - [Kafka Connect](очереди/кафка/07-kafka-connect.html)
+     - [Schema Registry и управление схемами](очереди/кафка/08-schema-registry.html)
+     - [Безопасность и мониторинг Kafka](очереди/кафка/09-безопасность-мониторинг.html)
+     - [Эксплуатация Apache Kafka 4.0.0 в production](очереди/кафка/10-эксплуатация-production.html)
 
-1. **[Тестирование](тестирование/README.md)**
-   - [JUnit — фреймворк модульного тестирования для Java](тестирование/01-junit.md)
-   - [Testcontainers — интеграционное тестирование с Docker-контейнерами](тестирование/02-testcontainers.md)
-   - [Mockito — фреймворк для создания тестовых двойников](тестирование/03-mockito.md)
-   - [Spring Boot Test — тестирование Spring-приложений](тестирование/04-spring-boot-test.md)
-   - [Лучшие практики и типичные ошибки в тестировании](тестирование/05-best-practices.md)
-   - [Интервью-гайд по тестированию — вопросы и ответы](тестирование/06-interview-guide.md)
-   - [Контрактное тестирование](тестирование/07-contract-testing.md)
-   - [API- и E2E-тестирование](тестирование/08-api-e2e-testing.md)
-   - [Нагрузочное и performance-тестирование](тестирование/09-performance-testing.md)
-   - [Security testing](тестирование/10-security-testing.md)
+1. **[Тестирование](тестирование/README.html)**
+   - [JUnit — фреймворк модульного тестирования для Java](тестирование/01-junit.html)
+   - [Testcontainers — интеграционное тестирование с Docker-контейнерами](тестирование/02-testcontainers.html)
+   - [Mockito — фреймворк для создания тестовых двойников](тестирование/03-mockito.html)
+   - [Spring Boot Test — тестирование Spring-приложений](тестирование/04-spring-boot-test.html)
+   - [Лучшие практики и типичные ошибки в тестировании](тестирование/05-best-practices.html)
+   - [Интервью-гайд по тестированию — вопросы и ответы](тестирование/06-interview-guide.html)
+   - [Контрактное тестирование](тестирование/07-contract-testing.html)
+   - [API- и E2E-тестирование](тестирование/08-api-e2e-testing.html)
+   - [Нагрузочное и performance-тестирование](тестирование/09-performance-testing.html)
+   - [Security testing](тестирование/10-security-testing.html)
 
-1. **[Docker](docker/README.md)**
-   - [Основы контейнеров](docker/01-основы-контейнеров.md)
-   - [Dockerfile и сборка образов](docker/02-dockerfile-и-сборка-образов.md)
-   - [Docker Compose: сети и хранилища](docker/03-compose-сети-и-хранилища.md)
-   - [Безопасность и production practices](docker/04-безопасность-и-production-practices.md)
+1. **[Docker](docker/README.html)**
+   - [Основы контейнеров](docker/01-основы-контейнеров.html)
+   - [Dockerfile и сборка образов](docker/02-dockerfile-и-сборка-образов.html)
+   - [Docker Compose: сети и хранилища](docker/03-compose-сети-и-хранилища.html)
+   - [Безопасность и production practices](docker/04-безопасность-и-production-practices.html)
 
-1. **[Kubernetes](kubernetes/README.md)**
-   - [Основы Kubernetes](kubernetes/01-основы-kubernetes.md)
-   - [Архитектура и компоненты Kubernetes](kubernetes/02-архитектура-компоненты.md)
-   - [Развёртывание и сервисы в Kubernetes](kubernetes/03-деплоймент-сервисы.md)
-   - [Конфигурация и секреты в Kubernetes](kubernetes/04-конфигурация-секреты.md)
-   - [Мониторинг и логирование в Kubernetes](kubernetes/05-мониторинг-логирование.md)
-   - [Безопасность и политики Kubernetes](kubernetes/06-безопасность-и-политики.md)
-   - [Scheduling, ресурсы и autoscaling в Kubernetes](kubernetes/07-scheduling-и-autoscaling.md)
-   - [Доставка приложений в Kubernetes](kubernetes/08-доставка-приложений.md)
-   - [Troubleshooting и disaster recovery Kubernetes](kubernetes/09-troubleshooting-и-disaster-recovery.md)
+1. **[Kubernetes](kubernetes/README.html)**
+   - [Основы Kubernetes](kubernetes/01-основы-kubernetes.html)
+   - [Архитектура и компоненты Kubernetes](kubernetes/02-архитектура-компоненты.html)
+   - [Развёртывание и сервисы в Kubernetes](kubernetes/03-деплоймент-сервисы.html)
+   - [Конфигурация и секреты в Kubernetes](kubernetes/04-конфигурация-секреты.html)
+   - [Мониторинг и логирование в Kubernetes](kubernetes/05-мониторинг-логирование.html)
+   - [Безопасность и политики Kubernetes](kubernetes/06-безопасность-и-политики.html)
+   - [Scheduling, ресурсы и autoscaling в Kubernetes](kubernetes/07-scheduling-и-autoscaling.html)
+   - [Доставка приложений в Kubernetes](kubernetes/08-доставка-приложений.html)
+   - [Troubleshooting и disaster recovery Kubernetes](kubernetes/09-troubleshooting-и-disaster-recovery.html)
 
-1. **[AWS](aws/README.md)**
-   - [Основы AWS для разработчика](aws/01-основы-aws.md)
-   - [EC2: виртуальные машины и эксплуатация](aws/02-ec2.md)
-   - [VPC: сеть, подсети, маршрутизация и безопасность](aws/03-vpc.md)
-   - [Lambda: serverless-функции и современные паттерны](aws/04-lambda.md)
-   - [S3: consistency, безопасность и жизненный цикл данных](aws/05-s3.md)
-   - [DynamoDB: моделирование данных и масштабирование](aws/06-dynamodb.md)
-   - [SQS: очереди, ретраи, DLQ и идемпотентность](aws/07-sqs.md)
-   - [SNS: pub/sub, fan-out и гарантии доставки](aws/08-sns.md)
-   - [EventBridge: маршрутизация событий, ретраи и DLQ](aws/09-eventbridge.md)
-   - [Cognito: аутентификация, user pools и federation](aws/10-cognito.md)
+1. **[AWS](aws/README.html)**
+   - [Основы AWS для разработчика](aws/01-основы-aws.html)
+   - [EC2: виртуальные машины и эксплуатация](aws/02-ec2.html)
+   - [VPC: сеть, подсети, маршрутизация и безопасность](aws/03-vpc.html)
+   - [Lambda: serverless-функции и современные паттерны](aws/04-lambda.html)
+   - [S3: consistency, безопасность и жизненный цикл данных](aws/05-s3.html)
+   - [DynamoDB: моделирование данных и масштабирование](aws/06-dynamodb.html)
+   - [SQS: очереди, ретраи, DLQ и идемпотентность](aws/07-sqs.html)
+   - [SNS: pub/sub, fan-out и гарантии доставки](aws/08-sns.html)
+   - [EventBridge: маршрутизация событий, ретраи и DLQ](aws/09-eventbridge.html)
+   - [Cognito: аутентификация, user pools и federation](aws/10-cognito.html)
 
-1. **[CI/CD](ci-cd/README.md)**
-   - [Git workflow и code review](ci-cd/01-git-и-code-review.md)
-   - [Построение CI pipeline](ci-cd/02-построение-ci-pipeline.md)
-   - [Артефакты и promotion между средами](ci-cd/03-артефакты-и-promotion.md)
-   - [Релизы и deployment strategies](ci-cd/04-релизы-и-deployment-strategies.md)
+1. **[CI/CD](ci-cd/README.html)**
+   - [Git workflow и code review](ci-cd/01-git-и-code-review.html)
+   - [Построение CI pipeline](ci-cd/02-построение-ci-pipeline.html)
+   - [Артефакты и promotion между средами](ci-cd/03-артефакты-и-promotion.html)
+   - [Релизы и deployment strategies](ci-cd/04-релизы-и-deployment-strategies.html)
 
-1. **[Паттерны проектирования](паттерны%20проектирования/README.md)**
-   - **[Поведенческие паттерны](паттерны%20проектирования/поведенческие/README.md)**
-     - [Chain of Responsibility (Цепочка обязанностей)](паттерны%20проектирования/поведенческие/01-chain-of-responsibility.md)
-     - [Command (Команда)](паттерны%20проектирования/поведенческие/02-command.md)
-     - [Iterator (Итератор)](паттерны%20проектирования/поведенческие/03-iterator.md)
-     - [Mediator (Посредник)](паттерны%20проектирования/поведенческие/04-mediator.md)
-     - [Memento (Хранитель)](паттерны%20проектирования/поведенческие/05-memento.md)
-     - [Observer (Наблюдатель)](паттерны%20проектирования/поведенческие/06-observer.md)
-     - [State (Состояние)](паттерны%20проектирования/поведенческие/07-state.md)
-     - [Strategy (Стратегия)](паттерны%20проектирования/поведенческие/08-strategy.md)
-     - [Template Method (Шаблонный метод)](паттерны%20проектирования/поведенческие/09-template-method.md)
-     - [Visitor (Посетитель)](паттерны%20проектирования/поведенческие/10-visitor.md)
-   - **[Порождающие паттерны](паттерны%20проектирования/порождающие/README.md)**
-     - [Singleton (Одиночка)](паттерны%20проектирования/порождающие/01-singleton.md)
-     - [Factory Method (Фабричный метод)](паттерны%20проектирования/порождающие/02-factory-method.md)
-     - [Abstract Factory (Абстрактная фабрика)](паттерны%20проектирования/порождающие/03-abstract-factory.md)
-     - [Builder (Строитель)](паттерны%20проектирования/порождающие/04-builder.md)
-     - [Prototype (Прототип)](паттерны%20проектирования/порождающие/05-prototype.md)
-   - **[Структурные паттерны](паттерны%20проектирования/структурные/README.md)**
-     - [Adapter (Адаптер)](паттерны%20проектирования/структурные/01-adapter.md)
-     - [Bridge (Мост)](паттерны%20проектирования/структурные/02-bridge.md)
-     - [Composite (Компоновщик)](паттерны%20проектирования/структурные/03-composite.md)
-     - [Decorator (Декоратор)](паттерны%20проектирования/структурные/04-decorator.md)
-     - [Facade (Фасад)](паттерны%20проектирования/структурные/05-facade.md)
-     - [Flyweight (Приспособленец, Легковес)](паттерны%20проектирования/структурные/06-flyweight.md)
-     - [Proxy (Заместитель)](паттерны%20проектирования/структурные/07-proxy.md)
+1. **[Паттерны проектирования](паттерны%20проектирования/README.html)**
+   - **[Поведенческие паттерны](паттерны%20проектирования/поведенческие/README.html)**
+     - [Chain of Responsibility (Цепочка обязанностей)](паттерны%20проектирования/поведенческие/01-chain-of-responsibility.html)
+     - [Command (Команда)](паттерны%20проектирования/поведенческие/02-command.html)
+     - [Iterator (Итератор)](паттерны%20проектирования/поведенческие/03-iterator.html)
+     - [Mediator (Посредник)](паттерны%20проектирования/поведенческие/04-mediator.html)
+     - [Memento (Хранитель)](паттерны%20проектирования/поведенческие/05-memento.html)
+     - [Observer (Наблюдатель)](паттерны%20проектирования/поведенческие/06-observer.html)
+     - [State (Состояние)](паттерны%20проектирования/поведенческие/07-state.html)
+     - [Strategy (Стратегия)](паттерны%20проектирования/поведенческие/08-strategy.html)
+     - [Template Method (Шаблонный метод)](паттерны%20проектирования/поведенческие/09-template-method.html)
+     - [Visitor (Посетитель)](паттерны%20проектирования/поведенческие/10-visitor.html)
+   - **[Порождающие паттерны](паттерны%20проектирования/порождающие/README.html)**
+     - [Singleton (Одиночка)](паттерны%20проектирования/порождающие/01-singleton.html)
+     - [Factory Method (Фабричный метод)](паттерны%20проектирования/порождающие/02-factory-method.html)
+     - [Abstract Factory (Абстрактная фабрика)](паттерны%20проектирования/порождающие/03-abstract-factory.html)
+     - [Builder (Строитель)](паттерны%20проектирования/порождающие/04-builder.html)
+     - [Prototype (Прототип)](паттерны%20проектирования/порождающие/05-prototype.html)
+   - **[Структурные паттерны](паттерны%20проектирования/структурные/README.html)**
+     - [Adapter (Адаптер)](паттерны%20проектирования/структурные/01-adapter.html)
+     - [Bridge (Мост)](паттерны%20проектирования/структурные/02-bridge.html)
+     - [Composite (Компоновщик)](паттерны%20проектирования/структурные/03-composite.html)
+     - [Decorator (Декоратор)](паттерны%20проектирования/структурные/04-decorator.html)
+     - [Facade (Фасад)](паттерны%20проектирования/структурные/05-facade.html)
+     - [Flyweight (Приспособленец, Легковес)](паттерны%20проектирования/структурные/06-flyweight.html)
+     - [Proxy (Заместитель)](паттерны%20проектирования/структурные/07-proxy.html)
 
-1. **[AI-агенты и инструменты разработчика](ai-агенты/README.md)**
-   - [Работа с агентами: скиллы, MCP, CLI и сравнение продуктов](ai-агенты/01-работа-с-агентами-скиллы-mcp-cli-и-сравнение.md)
+1. **[AI-агенты и инструменты разработчика](ai-агенты/README.html)**
+   - [Работа с агентами: скиллы, MCP, CLI и сравнение продуктов](ai-агенты/01-работа-с-агентами-скиллы-mcp-cli-и-сравнение.html)
 
-1. **[System Design](system%20design/README.md)**
-   - [Основы и архитектурные компромиссы](system%20design/01-основы-и-архитектурные-компромиссы.md)
-   - [Сетевое взаимодействие и API](system%20design/02-сетевое-взаимодействие-и-api.md)
-   - [Хранение данных и выбор базы](system%20design/03-хранение-данных-и-выбор-базы.md)
-   - [Кэширование](system%20design/04-кэширование.md)
-   - [Асинхронность и событийные системы](system%20design/05-асинхронность-и-событийные-системы.md)
-   - [Масштабирование, надёжность и отказоустойчивость](system%20design/06-масштабирование-надежность-и-отказоустойчивость.md)
-   - [Микросервисы, границы и декомпозиция](system%20design/07-микросервисы-границы-и-декомпозиция.md)
-   - [Наблюдаемость, безопасность и эксплуатация](system%20design/08-наблюдаемость-безопасность-и-эксплуатация.md)
-   - [Разбор популярных задач и подготовка к интервью](system%20design/09-разбор-популярных-задач-и-подготовка-к-интервью.md)
-   - [Multi-region и geo-distributed системы](system%20design/10-multi-region-и-geo-distributed-системы.md)
-   - [CDC, event sourcing и materialized views](system%20design/11-cdc-event-sourcing-и-materialized-views.md)
-   - [Эволюция системы и миграции без простоя](system%20design/12-эволюция-системы-и-миграции-без-простоя.md)
-   - [Consensus и распределённая координация](system%20design/13-consensus-и-распределенная-координация.md)
-   - [Метрики: подходы, инструменты и стек для Java](system%20design/14-метрики-стек-и-подходы.md)
+1. **[System Design](system%20design/README.html)**
+   - [Основы и архитектурные компромиссы](system%20design/01-основы-и-архитектурные-компромиссы.html)
+   - [Сетевое взаимодействие и API](system%20design/02-сетевое-взаимодействие-и-api.html)
+   - [Хранение данных и выбор базы](system%20design/03-хранение-данных-и-выбор-базы.html)
+   - [Кэширование](system%20design/04-кэширование.html)
+   - [Асинхронность и событийные системы](system%20design/05-асинхронность-и-событийные-системы.html)
+   - [Масштабирование, надёжность и отказоустойчивость](system%20design/06-масштабирование-надежность-и-отказоустойчивость.html)
+   - [Микросервисы, границы и декомпозиция](system%20design/07-микросервисы-границы-и-декомпозиция.html)
+   - [Наблюдаемость, безопасность и эксплуатация](system%20design/08-наблюдаемость-безопасность-и-эксплуатация.html)
+   - [Разбор популярных задач и подготовка к интервью](system%20design/09-разбор-популярных-задач-и-подготовка-к-интервью.html)
+   - [Multi-region и geo-distributed системы](system%20design/10-multi-region-и-geo-distributed-системы.html)
+   - [CDC, event sourcing и materialized views](system%20design/11-cdc-event-sourcing-и-materialized-views.html)
+   - [Эволюция системы и миграции без простоя](system%20design/12-эволюция-системы-и-миграции-без-простоя.html)
+   - [Consensus и распределённая координация](system%20design/13-consensus-и-распределенная-координация.html)
+   - [Метрики: подходы, инструменты и стек для Java](system%20design/14-метрики-стек-и-подходы.html)
 
-1. **[Практикумы по проектированию backend-систем](практикумы/README.md)**
-   - [Практикум: синхронный CRUD-сервис каталога](практикумы/01-синхронный-crud-сервис.md)
-   - [Практикум: event-driven обработка заказов](практикумы/02-event-driven-обработка-заказов.md)
-   - [Практикум: высоконагруженный сервис уведомлений](практикумы/03-высоконагруженный-сервис-уведомлений.md)
+1. **[Практикумы по проектированию backend-систем](практикумы/README.html)**
+   - [Практикум: синхронный CRUD-сервис каталога](практикумы/01-синхронный-crud-сервис.html)
+   - [Практикум: event-driven обработка заказов](практикумы/02-event-driven-обработка-заказов.html)
+   - [Практикум: высоконагруженный сервис уведомлений](практикумы/03-высоконагруженный-сервис-уведомлений.html)
 
 Материалы организованы в десять основных разделов:
 
 ## Обзор разделов
 
-### [Java](java/README.md) ☕
+### [Java](java/README.html) ☕
 
 Комплексные материалы по языку Java и экосистеме:
-  - **[Java Core](java/java-core/README.md)** — основы платформы, JVM, память, коллекции, Stream API
-  - **[Многопоточность](java/multithreading/README.md)** — Java Memory Model, пулы потоков, синхронизация, конкурентные структуры
-  - **[Spring Framework](java/spring/README.md)** — IoC/DI, Spring Boot, Spring Data, реактивное программирование
-  - **[Hibernate и JPA](java/04-hibernate.md)** — ORM, маппинг сущностей, кеширование, оптимизация
-  - **[Эволюция версий Java](java/05-java-versions.md)** — что добавлялось в релизах Java вплоть до JDK 25 (проверено 4 августа 2026 года), LTS и рекомендации по апгрейду
-  - **[Тюнинг и мониторинг JVM](java/06-jvm-tuning-monitoring.md)** — GC-метрики, настройка памяти, диагностика и эксплуатация JVM в production
+  - **[Java Core](java/java-core/README.html)** — основы платформы, JVM, память, коллекции, Stream API
+  - **[Многопоточность](java/multithreading/README.html)** — Java Memory Model, пулы потоков, синхронизация, конкурентные структуры
+  - **[Spring Framework](java/spring/README.html)** — IoC/DI, Spring Boot, Spring Data, реактивное программирование
+  - **[Hibernate и JPA](java/04-hibernate.html)** — ORM, маппинг сущностей, кеширование, оптимизация
+  - **[Эволюция версий Java](java/05-java-versions.html)** — что добавлялось в релизах Java вплоть до JDK 25 (проверено 4 августа 2026 года), LTS и рекомендации по апгрейду
+  - **[Тюнинг и мониторинг JVM](java/06-jvm-tuning-monitoring.html)** — GC-метрики, настройка памяти, диагностика и эксплуатация JVM в production
 
-→ [Перейти к материалам по Java](java/README.md)
+→ [Перейти к материалам по Java](java/README.html)
 
-### [Базы данных](базы данных/README.md) 🗄️
+### [Базы данных](базы%20данных/README.html) 🗄️
 
 Материалы по СУБД, проектированию и оптимизации:
-  - **[PostgreSQL](базы данных/postgresql/README.md)** — архитектура, индексы, транзакции, производительность, партиционирование
-  - **[Реляционная модель и нормализация](базы данных/01-реляционная-модель-и-нормализация.md)** — ключи, 1NF–BCNF и моделирование связей
-  - **[Практический SQL](базы данных/02-практический-sql.md)** — JOIN, CTE, окна, агрегаты и `NULL`
-  - **[Миграции схемы](базы данных/03-миграции-схемы.md)** — Flyway/Liquibase, expand/contract и backfill; продолжение в [zero-downtime эволюции](system%20design/12-эволюция-системы-и-миграции-без-простоя.md)
-  - Связь реляционной модели с **[Hibernate/JPA](java/04-hibernate.md)**
+  - **[PostgreSQL](базы%20данных/postgresql/README.html)** — архитектура, индексы, транзакции, производительность, партиционирование
+  - **[Реляционная модель и нормализация](базы%20данных/01-реляционная-модель-и-нормализация.html)** — ключи, 1NF–BCNF и моделирование связей
+  - **[Практический SQL](базы%20данных/02-практический-sql.html)** — JOIN, CTE, окна, агрегаты и `NULL`
+  - **[Миграции схемы](базы%20данных/03-миграции-схемы.html)** — Flyway/Liquibase, expand/contract и backfill; продолжение в [zero-downtime эволюции](system%20design/12-эволюция-системы-и-миграции-без-простоя.html)
+  - Связь реляционной модели с **[Hibernate/JPA](java/04-hibernate.html)**
 
-→ [Перейти к материалам по базам данных](базы данных/README.md)
+→ [Перейти к материалам по базам данных](базы%20данных/README.html)
 
-### [Очереди](очереди/README.md) 📨
+### [Очереди](очереди/README.html) 📨
 
 Системы обмена сообщениями и потоковая обработка данных:
-  - **[Apache Kafka](очереди/кафка/README.md)** — распределённая платформа потоковой обработки
+  - **[Apache Kafka](очереди/кафка/README.html)** — распределённая платформа потоковой обработки
     - Основы: архитектура, партиции, consumer groups
     - Kafka Streams — потоковая обработка данных
     - Kafka Connect — интеграция с внешними системами
     - Schema Registry — управление схемами
     - Безопасность, мониторинг и эксплуатация
-  - **[Apache ActiveMQ](очереди/activemq/README.md)** — брокер сообщений с поддержкой JMS
+  - **[Apache ActiveMQ](очереди/activemq/README.html)** — брокер сообщений с поддержкой JMS
 
-→ [Перейти к материалам по очередям](очереди/README.md)
+→ [Перейти к материалам по очередям](очереди/README.html)
 
-### [Тестирование](тестирование/README.md) 🧪
+### [Тестирование](тестирование/README.html) 🧪
 
 Практики обеспечения качества и инструменты тестирования:
   - **JUnit 5** — модульное тестирование
   - **Mockito** — создание тестовых двойников
   - **Testcontainers** — интеграционное тестирование с Docker
   - **Spring Boot Test** — тестирование Spring-приложений
-  - **[Контрактное тестирование](тестирование/07-contract-testing.md)** — CDC и совместимость схем
-  - **[API и E2E](тестирование/08-api-e2e-testing.md)** — HTTP-контракт, негативные сценарии и сквозные journeys
-  - **[Performance testing](тестирование/09-performance-testing.md)** — workload, latency, throughput и saturation
-  - **[Security testing](тестирование/10-security-testing.md)** — SCA, SAST/DAST, access control и OWASP API risks
+  - **[Контрактное тестирование](тестирование/07-contract-testing.html)** — CDC и совместимость схем
+  - **[API и E2E](тестирование/08-api-e2e-testing.html)** — HTTP-контракт, негативные сценарии и сквозные journeys
+  - **[Performance testing](тестирование/09-performance-testing.html)** — workload, latency, throughput и saturation
+  - **[Security testing](тестирование/10-security-testing.html)** — SCA, SAST/DAST, access control и OWASP API risks
   - Best practices и подготовка к собеседованиям
 
-→ [Перейти к материалам по тестированию](тестирование/README.md)
+→ [Перейти к материалам по тестированию](тестирование/README.html)
 
-### [Docker](docker/README.md) 🐳
+### [Docker](docker/README.html) 🐳
 
 Контейнеризация приложений от базовых механизмов до безопасной эксплуатации:
-  - **[Основы контейнеров](docker/01-основы-контейнеров.md)** — image/container, namespaces, cgroups и OCI Registry
-  - **[Dockerfile и сборка](docker/02-dockerfile-и-сборка-образов.md)** — layers, cache, multi-stage и Spring Boot
-  - **[Compose, сети и хранилища](docker/03-compose-сети-и-хранилища.md)** — PostgreSQL, Redis, volumes и health checks
-  - **[Безопасность и production](docker/04-безопасность-и-production-practices.md)** — SBOM, scanning, secrets и resource limits
+  - **[Основы контейнеров](docker/01-основы-контейнеров.html)** — image/container, namespaces, cgroups и OCI Registry
+  - **[Dockerfile и сборка](docker/02-dockerfile-и-сборка-образов.html)** — layers, cache, multi-stage и Spring Boot
+  - **[Compose, сети и хранилища](docker/03-compose-сети-и-хранилища.html)** — PostgreSQL, Redis, volumes и health checks
+  - **[Безопасность и production](docker/04-безопасность-и-production-practices.html)** — SBOM, scanning, secrets и resource limits
 
-→ [Перейти к материалам по Docker](docker/README.md)
+→ [Перейти к материалам по Docker](docker/README.html)
 
-### [Kubernetes](kubernetes/README.md) ☸️
+### [Kubernetes](kubernetes/README.html) ☸️
 
 Система оркестрации контейнеров для автоматизации развёртывания и управления приложениями:
-  - **[Основы Kubernetes](kubernetes/01-основы-kubernetes.md)** — концепции, архитектура, установка, первые шаги
-  - **[Архитектура и компоненты](kubernetes/02-архитектура-компоненты.md)** — Control Plane, Node компоненты, сетевая модель
-  - **[Развёртывание и сервисы](kubernetes/03-деплоймент-сервисы.md)** — Pods, Deployments, Services, Ingress, StatefulSets
-  - **[Конфигурация и секреты](kubernetes/04-конфигурация-секреты.md)** — ConfigMaps, Secrets, Volumes, Storage
-  - **[Мониторинг и логирование](kubernetes/05-мониторинг-логирование.md)** — Prometheus, Grafana, EFK/ELK, трассировка
-  - **[Безопасность и политики](kubernetes/06-безопасность-и-политики.md)** — RBAC, NetworkPolicy, PSS, encryption и admission policies
-  - **[Scheduling и autoscaling](kubernetes/07-scheduling-и-autoscaling.md)** — ресурсы, probes, размещение, PDB, HPA/VPA и node autoscaling
-  - **[Доставка приложений](kubernetes/08-доставка-приложений.md)** — Helm, Kustomize, GitOps, rollout и rollback
-  - **[Troubleshooting и disaster recovery](kubernetes/09-troubleshooting-и-disaster-recovery.md)** — production runbooks, backup и restore
+  - **[Основы Kubernetes](kubernetes/01-основы-kubernetes.html)** — концепции, архитектура, установка, первые шаги
+  - **[Архитектура и компоненты](kubernetes/02-архитектура-компоненты.html)** — Control Plane, Node компоненты, сетевая модель
+  - **[Развёртывание и сервисы](kubernetes/03-деплоймент-сервисы.html)** — Pods, Deployments, Services, Ingress, StatefulSets
+  - **[Конфигурация и секреты](kubernetes/04-конфигурация-секреты.html)** — ConfigMaps, Secrets, Volumes, Storage
+  - **[Мониторинг и логирование](kubernetes/05-мониторинг-логирование.html)** — Prometheus, Grafana, EFK/ELK, трассировка
+  - **[Безопасность и политики](kubernetes/06-безопасность-и-политики.html)** — RBAC, NetworkPolicy, PSS, encryption и admission policies
+  - **[Scheduling и autoscaling](kubernetes/07-scheduling-и-autoscaling.html)** — ресурсы, probes, размещение, PDB, HPA/VPA и node autoscaling
+  - **[Доставка приложений](kubernetes/08-доставка-приложений.html)** — Helm, Kustomize, GitOps, rollout и rollback
+  - **[Troubleshooting и disaster recovery](kubernetes/09-troubleshooting-и-disaster-recovery.html)** — production runbooks, backup и restore
 
-→ [Перейти к материалам по Kubernetes](kubernetes/README.md)
+→ [Перейти к материалам по Kubernetes](kubernetes/README.html)
 
-### [AWS](aws/README.md) ☁️
+### [AWS](aws/README.html) ☁️
 
 Материалы по Amazon Web Services для backend- и platform-разработки:
-  - **[Основы AWS для разработчика](aws/01-основы-aws.md)** — регионы и AZ, IAM, базовые сервисы, типовые архитектурные сценарии
+  - **[Основы AWS для разработчика](aws/01-основы-aws.html)** — регионы и AZ, IAM, базовые сервисы, типовые архитектурные сценарии
   - **IAM и безопасность** — роли, политики, least privilege и практики безопасного доступа
   - **Compute / Storage / Databases** — выбор между EC2, ECS/EKS, Lambda, S3, RDS и DynamoDB
 
-→ [Перейти к материалам по AWS](aws/README.md)
+→ [Перейти к материалам по AWS](aws/README.html)
 
-### [CI/CD](ci-cd/README.md) 🔄
+### [CI/CD](ci-cd/README.html) 🔄
 
 Практики безопасной доставки изменений от Git до production:
-  - **[Git workflow и code review](ci-cd/01-git-и-code-review.md)** — trunk-based development, GitFlow, небольшие PR, обязательные проверки, Conventional Commits и SemVer
-  - **[Построение CI pipeline](ci-cd/02-построение-ci-pipeline.md)** — compile, анализ, тесты, packaging, image build, security checks и publication
-  - **[Артефакты и promotion](ci-cd/03-артефакты-и-promotion.md)** — immutable artifacts, provenance, SBOM и audit trail
-  - **[Релизы и deployment strategies](ci-cd/04-релизы-и-deployment-strategies.md)** — миграции БД, flags, rolling, blue-green, canary и rollback
+  - **[Git workflow и code review](ci-cd/01-git-и-code-review.html)** — trunk-based development, GitFlow, небольшие PR, обязательные проверки, Conventional Commits и SemVer
+  - **[Построение CI pipeline](ci-cd/02-построение-ci-pipeline.html)** — compile, анализ, тесты, packaging, image build, security checks и publication
+  - **[Артефакты и promotion](ci-cd/03-артефакты-и-promotion.html)** — immutable artifacts, provenance, SBOM и audit trail
+  - **[Релизы и deployment strategies](ci-cd/04-релизы-и-deployment-strategies.html)** — миграции БД, flags, rolling, blue-green, canary и rollback
 
-→ [Перейти к материалам по CI/CD](ci-cd/README.md)
+→ [Перейти к материалам по CI/CD](ci-cd/README.html)
 
-### [Паттерны проектирования](паттерны проектирования/README.md) 🏗️
+### [Паттерны проектирования](паттерны%20проектирования/README.html) 🏗️
 
 Типовые решения часто встречающихся проблем при проектировании ПО:
-  - **[Порождающие паттерны](паттерны проектирования/порождающие/README.md)** — Singleton, Factory Method, Abstract Factory, Builder, Prototype
-  - **[Структурные паттерны](паттерны проектирования/структурные/README.md)** — Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy
-  - **[Поведенческие паттерны](паттерны проектирования/поведенческие/README.md)** — Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor
+  - **[Порождающие паттерны](паттерны%20проектирования/порождающие/README.html)** — Singleton, Factory Method, Abstract Factory, Builder, Prototype
+  - **[Структурные паттерны](паттерны%20проектирования/структурные/README.html)** — Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy
+  - **[Поведенческие паттерны](паттерны%20проектирования/поведенческие/README.html)** — Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor
 
-→ [Перейти к материалам по паттернам проектирования](паттерны проектирования/README.md)
+→ [Перейти к материалам по паттернам проектирования](паттерны%20проектирования/README.html)
 
 
-### [AI-агенты и инструменты](ai-агенты/README.md) 🤖
+### [AI-агенты и инструменты](ai-агенты/README.html) 🤖
 
 Практика использования AI-инструментов в ежедневной разработке:
-  - **[Работа с агентами](ai-агенты/01-работа-с-агентами-скиллы-mcp-cli-и-сравнение.md)** — постановка задач, критерии приёмки, безопасный workflow
+  - **[Работа с агентами](ai-агенты/01-работа-с-агентами-скиллы-mcp-cli-и-сравнение.html)** — постановка задач, критерии приёмки, безопасный workflow
   - Конфигурация и поддержка скиллов для повторяемых задач
   - MCP-интеграции и CLI-подход для воспроизводимых изменений
   - Сравнение **Copilot / Claude / Codex** под разные сценарии
 
-→ [Перейти к материалам по AI-агентам](ai-агенты/README.md)
+→ [Перейти к материалам по AI-агентам](ai-агенты/README.html)
 
-### [System Design](system design/README.md) 🏛️
+### [System Design](system%20design/README.html) 🏛️
 
 Принципы проектирования масштабируемых и надёжных распределённых систем:
   - Архитектурные компромиссы, CAP, SLA/SLO и оценка нагрузки
@@ -308,16 +311,16 @@
   - Отдельный практический материал по выбору стека метрик: Elastic Stack, open-source observability и Java-инструментирование
   - Разбор популярных задач и подготовка к system design interview
 
-→ [Перейти к материалам по System Design](system design/README.md)
+→ [Перейти к материалам по System Design](system%20design/README.html)
 
-### [Практикумы](практикумы/README.md) 🧩
+### [Практикумы](практикумы/README.html) 🧩
 
 Открытые архитектурные кейсы без единственного «правильного» ответа:
-  - **[Синхронный CRUD-сервис](практикумы/01-синхронный-crud-сервис.md)** — REST, PostgreSQL, миграции и масштабирование чтения
-  - **[Event-driven обработка заказов](практикумы/02-event-driven-обработка-заказов.md)** — Kafka, saga, outbox и end-to-end идемпотентность
-  - **[Высоконагруженные уведомления](практикумы/03-высоконагруженный-сервис-уведомлений.md)** — fan-out, backpressure, capacity planning и multi-region DR
+  - **[Синхронный CRUD-сервис](практикумы/01-синхронный-crud-сервис.html)** — REST, PostgreSQL, миграции и масштабирование чтения
+  - **[Event-driven обработка заказов](практикумы/02-event-driven-обработка-заказов.html)** — Kafka, saga, outbox и end-to-end идемпотентность
+  - **[Высоконагруженные уведомления](практикумы/03-высоконагруженный-сервис-уведомлений.html)** — fan-out, backpressure, capacity planning и multi-region DR
 
-→ [Перейти к практикумам](практикумы/README.md)
+→ [Перейти к практикумам](практикумы/README.html)
 
 ## 🗓️ Матрица актуальности разделов
 
@@ -325,28 +328,28 @@
 
 | Раздел | Владелец | Baseline-версия | Интервал | Последняя проверка | Следующая проверка |
 |---|---|---|---:|---|---|
-| [AI-агенты](ai-агенты/README.md) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
-| [AWS](aws/README.md) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
-| [CI/CD](ci-cd/README.md) | Сопровождающий репозитория | Java 21, Kubernetes 1.34, SemVer 2.0.0 | 6 месяцев | 2026-08-04 | 2027-02-04 |
-| [Java feature-релизы](java/05-java-versions.md) | Сопровождающий репозитория | Java 26 | 6 месяцев | 2026-04-27 | 2026-10-27 |
-| [Spring](java/spring/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
-| [Kafka](очереди/кафка/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
-| [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | 1.34 | 6 месяцев | — | 2026-08-31 |
-| [Docker](docker/README.md) | Сопровождающий репозитория | Docker Engine 28.x; Compose v2; OCI 1.1 | 6 месяцев | 2026-08-04 | 2027-02-04 |
-| [Kubernetes](kubernetes/README.md) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
-| [PostgreSQL](базы%20данных/postgresql/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
-| [Redis](базы%20данных/redis/README.md) | Сопровождающий репозитория | Redis Open Source 8.2.x | 6 месяцев | 2026-08-04 | 2027-02-04 |
-| [Тестовый стек](тестирование/README.md) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
-| [Java Core и multithreading](java/README.md) | Сопровождающий репозитория | Java 21+ | 18 месяцев | — | 2026-08-31 |
-| [Базы данных: общие концепции](базы%20данных/README.md) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
-| [Очереди: общие концепции](очереди/README.md) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
-| [Паттерны проектирования](паттерны%20проектирования/README.md) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
-| [System Design](system%20design/README.md) | Сопровождающий репозитория | Не применима | 18 месяцев | — | 2026-08-31 |
-| [Практикумы](практикумы/README.md) | Сопровождающий репозитория | Java 21+, PostgreSQL 16–18, Kafka 3.7–4.x, Kubernetes 1.30+ | 12 месяцев | 2026-08-04 | 2027-08-04 |
+| [AI-агенты](ai-агенты/README.html) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
+| [AWS](aws/README.html) | Сопровождающий репозитория | Не зафиксирована | 3 месяца | — | 2026-08-31 |
+| [CI/CD](ci-cd/README.html) | Сопровождающий репозитория | Java 21, Kubernetes 1.34, SemVer 2.0.0 | 6 месяцев | 2026-08-04 | 2027-02-04 |
+| [Java feature-релизы](java/05-java-versions.html) | Сопровождающий репозитория | Java 26 | 6 месяцев | 2026-04-27 | 2026-10-27 |
+| [Spring](java/spring/README.html) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
+| [Kafka](очереди/кафка/README.html) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
+| [Kubernetes](kubernetes/README.html) | Сопровождающий репозитория | 1.34 | 6 месяцев | — | 2026-08-31 |
+| [Docker](docker/README.html) | Сопровождающий репозитория | Docker Engine 28.x; Compose v2; OCI 1.1 | 6 месяцев | 2026-08-04 | 2027-02-04 |
+| [Kubernetes](kubernetes/README.html) | Сопровождающий репозитория | Не зафиксирована | 6 месяцев | — | 2026-08-31 |
+| [PostgreSQL](базы%20данных/postgresql/README.html) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
+| [Redis](базы%20данных/redis/README.html) | Сопровождающий репозитория | Redis Open Source 8.2.x | 6 месяцев | 2026-08-04 | 2027-02-04 |
+| [Тестовый стек](тестирование/README.html) | Сопровождающий репозитория | Не зафиксирована | 12 месяцев | — | 2026-08-31 |
+| [Java Core и multithreading](java/README.html) | Сопровождающий репозитория | Java 21+ | 18 месяцев | — | 2026-08-31 |
+| [Базы данных: общие концепции](базы%20данных/README.html) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
+| [Очереди: общие концепции](очереди/README.html) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
+| [Паттерны проектирования](паттерны%20проектирования/README.html) | Сопровождающий репозитория | Не применима | 24 месяца | — | 2026-08-31 |
+| [System Design](system%20design/README.html) | Сопровождающий репозитория | Не применима | 18 месяцев | — | 2026-08-31 |
+| [Практикумы](практикумы/README.html) | Сопровождающий репозитория | Java 21+, PostgreSQL 16–18, Kafka 3.7–4.x, Kubernetes 1.30+ | 12 месяцев | 2026-08-04 | 2027-08-04 |
 
 ### Порядок ревизии
 
-1. Откройте issue по [шаблону ревизии](.github/ISSUE_TEMPLATE/revision.md) и зафиксируйте охват всех тематических страниц, а не только `README.md`.
+1. Откройте issue по [шаблону ревизии](.github/ISSUE_TEMPLATE/revision.html) и зафиксируйте охват всех тематических страниц, а не только `README.md`.
 2. **Сначала** обновите baseline-версию и даты в этой матрице; если у раздела есть своя версионная матрица, обновите и её.
 3. **Затем** сверьте и исправьте утверждения, API, код и конфигурационные примеры во всех входящих в охват файлах.
 4. **После этого** обновите обзорные `README.md`, внутренние ссылки и вопросы для самопроверки.
@@ -364,38 +367,38 @@
 ## 🧭 Рекомендуемые траектории изучения
 
 ### Если цель — стать уверенным Java Backend разработчиком
-1. [Java Core](java/java-core/README.md) — понять устройство платформы, память, коллекции и современные возможности языка
-2. [Многопоточность](java/multithreading/README.md) — разобраться с JMM, синхронизацией и шаблонами конкурентного программирования
-3. [Базы данных](базы данных/README.md) — закрепить SQL, транзакции, индексы и производительность
-4. [Spring Framework](java/spring/README.md) и [Hibernate/JPA](java/04-hibernate.md) — перейти к прикладной backend-разработке
-5. [Тестирование](тестирование/README.md) — научиться проверять код и инфраструктурные сценарии
-6. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
-7. Закрепите путь в [практикумах](практикумы/README.md): CRUD → обработка заказов → высоконагруженные уведомления
-6. [CI/CD](ci-cd/README.md) — связать review, проверки, артефакты и безопасный релиз
-6. [Docker](docker/README.md) — упаковать Spring Boot, настроить зависимости и безопасный runtime
-7. [Очереди](очереди/README.md) и [Kubernetes](kubernetes/README.md) — расширить стек до интеграции и эксплуатации
+1. [Java Core](java/java-core/README.html) — понять устройство платформы, память, коллекции и современные возможности языка
+2. [Многопоточность](java/multithreading/README.html) — разобраться с JMM, синхронизацией и шаблонами конкурентного программирования
+3. [Базы данных](базы%20данных/README.html) — закрепить SQL, транзакции, индексы и производительность
+4. [Spring Framework](java/spring/README.html) и [Hibernate/JPA](java/04-hibernate.html) — перейти к прикладной backend-разработке
+5. [Тестирование](тестирование/README.html) — научиться проверять код и инфраструктурные сценарии
+6. [Очереди](очереди/README.html) и [Kubernetes](kubernetes/README.html) — расширить стек до интеграции и эксплуатации
+7. Закрепите путь в [практикумах](практикумы/README.html): CRUD → обработка заказов → высоконагруженные уведомления
+6. [CI/CD](ci-cd/README.html) — связать review, проверки, артефакты и безопасный релиз
+6. [Docker](docker/README.html) — упаковать Spring Boot, настроить зависимости и безопасный runtime
+7. [Очереди](очереди/README.html) и [Kubernetes](kubernetes/README.html) — расширить стек до интеграции и эксплуатации
 
 ### Если цель — подготовка к собеседованию
-- Начните с [Java Core](java/java-core/README.md) и [многопоточности](java/multithreading/README.md): это база для большинства технических интервью
-- Затем повторите [PostgreSQL](базы данных/postgresql/README.md), [Spring](java/spring/README.md) и [тестирование](тестирование/README.md)
-- В конце используйте [паттерны проектирования](паттерны проектирования/README.md) для систематизации архитектурного мышления и терминологии
-- Затем перейдите к [System Design](system design/README.md), чтобы собрать отдельные технологии в целостные архитектурные решения
-- Проведите mock-review решений из [практикумов](практикумы/README.md), защищая assumptions и альтернативные trade-offs
+- Начните с [Java Core](java/java-core/README.html) и [многопоточности](java/multithreading/README.html): это база для большинства технических интервью
+- Затем повторите [PostgreSQL](базы%20данных/postgresql/README.html), [Spring](java/spring/README.html) и [тестирование](тестирование/README.html)
+- В конце используйте [паттерны проектирования](паттерны%20проектирования/README.html) для систематизации архитектурного мышления и терминологии
+- Затем перейдите к [System Design](system%20design/README.html), чтобы собрать отдельные технологии в целостные архитектурные решения
+- Проведите mock-review решений из [практикумов](практикумы/README.html), защищая assumptions и альтернативные trade-offs
 
 ### Если цель — расширить кругозор по архитектуре и эксплуатации
-- Изучите [очереди](очереди/README.md), чтобы понять event-driven подход и интеграцию сервисов
-- Пройдите [CI/CD](ci-cd/README.md), чтобы связать изменение кода с проверяемым артефактом, rollout и rollback
-- Начните с [Docker](docker/README.md), чтобы освоить сборку, сети, хранилища и ограничения контейнера
-- Перейдите к [Kubernetes](kubernetes/README.md), чтобы связать разработку с эксплуатацией и production-развёртыванием
-- Используйте [паттерны проектирования](паттерны проектирования/README.md) как мост между кодом, архитектурой и обсуждением решений на интервью
-- Добавьте [System Design](system design/README.md), чтобы перейти от отдельных инструментов к проектированию end-to-end систем
-- Примените материал последовательно в [CRUD, event-driven и high-load практикумах](практикумы/README.md)
+- Изучите [очереди](очереди/README.html), чтобы понять event-driven подход и интеграцию сервисов
+- Пройдите [CI/CD](ci-cd/README.html), чтобы связать изменение кода с проверяемым артефактом, rollout и rollback
+- Начните с [Docker](docker/README.html), чтобы освоить сборку, сети, хранилища и ограничения контейнера
+- Перейдите к [Kubernetes](kubernetes/README.html), чтобы связать разработку с эксплуатацией и production-развёртыванием
+- Используйте [паттерны проектирования](паттерны%20проектирования/README.html) как мост между кодом, архитектурой и обсуждением решений на интервью
+- Добавьте [System Design](system%20design/README.html), чтобы перейти от отдельных инструментов к проектированию end-to-end систем
+- Примените материал последовательно в [CRUD, event-driven и high-load практикумах](практикумы/README.html)
 
 ### Если цель — перейти от теории к архитектурной практике
 
-- Начните с [CRUD-сервиса](практикумы/01-синхронный-crud-сервис.md), связывая Java, Spring и PostgreSQL
-- Затем выполните [обработку заказов](практикумы/02-event-driven-обработка-заказов.md), добавив Kafka и eventual consistency
-- Завершите [сервисом уведомлений](практикумы/03-высоконагруженный-сервис-уведомлений.md), проверив capacity planning, эксплуатацию и DR
+- Начните с [CRUD-сервиса](практикумы/01-синхронный-crud-сервис.html), связывая Java, Spring и PostgreSQL
+- Затем выполните [обработку заказов](практикумы/02-event-driven-обработка-заказов.html), добавив Kafka и eventual consistency
+- Завершите [сервисом уведомлений](практикумы/03-высоконагруженный-сервис-уведомлений.html), проверив capacity planning, эксплуатацию и DR
 - На каждом этапе сравнивайте минимум два варианта и фиксируйте ADR, SLO, тесты и условия пересмотра решения
 
 ## 🎯 Как использовать

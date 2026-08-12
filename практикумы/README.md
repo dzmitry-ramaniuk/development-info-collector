@@ -1,3 +1,6 @@
+---
+---
+
 # Практикумы по проектированию backend-систем
 
 ## Содержание
@@ -11,13 +14,13 @@
 
 Практикумы — это открытые архитектурные задачи: исходные числа являются гипотезами, а не скрытым ответом. На каждом этапе зафиксируйте assumptions, ADR, измеримые SLO, бюджет ошибок и причины выбора. Затем проведите архитектурное ревью, сравнив минимум два варианта.
 
-Перед стартом полезно повторить [Java](../java/README.md), [PostgreSQL](../базы%20данных/postgresql/README.md), [Kafka](../очереди/кафка/README.md), [тестирование](../тестирование/README.md), [Kubernetes](../kubernetes/README.md), [AWS](../aws/README.md) и [System Design](../system%20design/README.md).
+Перед стартом полезно повторить [Java](../java/README.html), [PostgreSQL](../базы%20данных/postgresql/README.html), [Kafka](../очереди/кафка/README.html), [тестирование](../тестирование/README.html), [Kubernetes](../kubernetes/README.html), [AWS](../aws/README.html) и [System Design](../system%20design/README.html).
 
 ## Кейсы
 
-1. [Синхронный CRUD-сервис каталога](01-синхронный-crud-сервис.md) — консистентность, REST API, PostgreSQL и безопасная эволюция монолита.
-2. [Event-driven обработка заказов](02-event-driven-обработка-заказов.md) — события, saga, outbox, идемпотентность и eventual consistency.
-3. [Высоконагруженный сервис уведомлений](03-высоконагруженный-сервис-уведомлений.md) — fan-out, квоты, приоритизация, backpressure и multi-region DR.
+1. [Синхронный CRUD-сервис каталога](01-синхронный-crud-сервис.html) — консистентность, REST API, PostgreSQL и безопасная эволюция монолита.
+2. [Event-driven обработка заказов](02-event-driven-обработка-заказов.html) — события, saga, outbox, идемпотентность и eventual consistency.
+3. [Высоконагруженный сервис уведомлений](03-высоконагруженный-сервис-уведомлений.html) — fan-out, квоты, приоритизация, backpressure и multi-region DR.
 
 ## Рекомендуемые траектории
 

@@ -1,3 +1,6 @@
+---
+---
+
 # Безопасность и production practices
 
 ## Содержание
@@ -95,7 +98,7 @@ services:
 container memory > heap + metaspace + code cache + direct buffers + thread stacks + native overhead
 ```
 
-Начальная доля `-XX:MaxRAMPercentage=75.0` — не универсальная истина: измерьте RSS, `jcmd VM.native_memory`, число потоков, direct memory и поведение GC под реальным limit. Настройте health/readiness, graceful SIGTERM, timeouts, метрики throttling/OOM/restarts. Подробности — [тюнинг JVM](../java/06-jvm-tuning-monitoring.md); следующий уровень размещения и probes — [Kubernetes](../kubernetes/README.md).
+Начальная доля `-XX:MaxRAMPercentage=75.0` — не универсальная истина: измерьте RSS, `jcmd VM.native_memory`, число потоков, direct memory и поведение GC под реальным limit. Настройте health/readiness, graceful SIGTERM, timeouts, метрики throttling/OOM/restarts. Подробности — [тюнинг JVM](../java/06-jvm-tuning-monitoring.html); следующий уровень размещения и probes — [Kubernetes](../kubernetes/README.html).
 
 ## Production checklist
 

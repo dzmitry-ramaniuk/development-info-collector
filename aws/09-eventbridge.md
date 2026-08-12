@@ -1,3 +1,6 @@
+---
+---
+
 # EventBridge: маршрутизация событий, ретраи и DLQ
 
 ## Содержание
@@ -64,4 +67,4 @@ DLQ rule target должна быть Standard SQS queue; дайте EventBridge
 
 ---
 
-[← К разделу AWS](README.md)
+[← К разделу AWS](README.html)

@@ -1,3 +1,6 @@
+---
+---
+
 # CI/CD
 
 ## Содержание
@@ -19,10 +22,10 @@ CI отвечает на вопрос «можно ли доверять это�
 
 ## Рекомендуемый маршрут
 
-1. [Git и Code Review](01-git-и-code-review.md) — workflow, качество изменений и правила ревью.
-2. [Построение CI pipeline](02-построение-ci-pipeline.md) — стадии проверок и воспроизводимая сборка.
-3. [Артефакты и promotion](03-артефакты-и-promotion.md) — immutable artifacts, provenance и продвижение между средами.
-4. [Релизы и deployment strategies](04-релизы-и-deployment-strategies.md) — rollout, rollback и контроль риска.
+1. [Git и Code Review](01-git-и-code-review.html) — workflow, качество изменений и правила ревью.
+2. [Построение CI pipeline](02-построение-ci-pipeline.html) — стадии проверок и воспроизводимая сборка.
+3. [Артефакты и promotion](03-артефакты-и-promotion.html) — immutable artifacts, provenance и продвижение между средами.
+4. [Релизы и deployment strategies](04-релизы-и-deployment-strategies.html) — rollout, rollback и контроль риска.
 
 - **Разработчику:** страницы 01 → 02, затем чек-листы из 04.
 - **Platform/DevOps-инженеру:** страницы 02 → 03 → 04.
@@ -30,12 +33,12 @@ CI отвечает на вопрос «можно ли доверять это�
 
 ## Связанные разделы
 
-- [Тестирование](../тестирование/README.md) — test pyramid, JUnit, Testcontainers и критерии качества.
-- [Kubernetes](../kubernetes/README.md) — декларативный rollout и эксплуатация workloads.
-- [AWS](../aws/README.md) — облачные IAM, registry, compute и deployment-сервисы.
-- [System Design](../system%20design/README.md) — надёжность, наблюдаемость и архитектурные компромиссы.
-- [Эволюция системы и миграции без простоя](../system%20design/12-эволюция-системы-и-миграции-без-простоя.md) — expand/contract, canary и изменение данных без downtime.
+- [Тестирование](../тестирование/README.html) — test pyramid, JUnit, Testcontainers и критерии качества.
+- [Kubernetes](../kubernetes/README.html) — декларативный rollout и эксплуатация workloads.
+- [AWS](../aws/README.html) — облачные IAM, registry, compute и deployment-сервисы.
+- [System Design](../system%20design/README.html) — надёжность, наблюдаемость и архитектурные компромиссы.
+- [Эволюция системы и миграции без простоя](../system%20design/12-эволюция-системы-и-миграции-без-простоя.html) — expand/contract, canary и изменение данных без downtime.
 
 ---
 
-[← На главную](../README.md)
+[← На главную](../README.html)

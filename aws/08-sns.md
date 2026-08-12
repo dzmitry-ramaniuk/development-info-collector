@@ -1,3 +1,6 @@
+---
+---
+
 # SNS: pub/sub, fan-out и гарантии доставки
 
 ## Содержание
@@ -59,4 +62,4 @@ SNS применяет endpoint-specific delivery policy. Для managed endpoin
 
 ---
 
-[← К разделу AWS](README.md)
+[← К разделу AWS](README.html)

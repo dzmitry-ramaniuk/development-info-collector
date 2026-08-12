@@ -1,3 +1,6 @@
+---
+---
+
 # Multithreading: структура материала
 
 ## Содержание
@@ -32,16 +35,16 @@ Java изначально проектировалась как язык с вс
 
 ## Дорожная карта глав
 
-1. [Java Memory Model и гарантии видимости](multithreading/01-jmm-visibility.md) — модель памяти JVM, happens-before, volatile и проблемы синхронизации.
-2. [Управление потоками и пулами](multithreading/02-thread-pools.md) — ExecutorService, ForkJoinPool, виртуальные потоки, управление жизненным циклом.
-3. [Асинхронные вычисления и координация](multithreading/03-async-coordination.md) — CompletableFuture, Structured Concurrency, построение асинхронных конвейеров.
-4. [Синхронизаторы и конкурентные структуры данных](multithreading/04-synchronizers.md) — Lock, ReadWriteLock, StampedLock, CountDownLatch, CyclicBarrier, Semaphore, Phaser, атомарные типы, ConcurrentHashMap, BlockingQueue.
-5. [Потоковое локальное состояние и неизменяемость](multithreading/05-threadlocal-immutability.md) — ThreadLocal, InheritableThreadLocal, неизменяемые объекты, Records.
-6. [Диагностика и устранение проблем](multithreading/06-diagnostics-problems.md) — deadlock, livelock, starvation, race conditions, инструменты диагностики (jstack, jcmd, JFR), тестирование конкурентного кода.
-7. [Шаблоны и практические приёмы](multithreading/07-patterns.md) — Producer-Consumer, Worker Pool, Fork/Join, Reactive Streams, Double-Checked Locking, Thread-Per-Message, параллельные коллекции.
-8. [Практические упражнения](multithreading/08-exercises.md) — задачи для закрепления материала с подсказками по реализации.
-9. [Вопросы на собеседовании](multithreading/09-interview-questions.md) — типичные вопросы с детальными ответами и примерами кода.
-10. [Synchronized: теория и практика](multithreading/10-synchronized.md) — углублённый разбор мониторов, happens-before, `wait`/`notify`, устройства и производительности `synchronized`.
+1. [Java Memory Model и гарантии видимости](multithreading/01-jmm-visibility.html) — модель памяти JVM, happens-before, volatile и проблемы синхронизации.
+2. [Управление потоками и пулами](multithreading/02-thread-pools.html) — ExecutorService, ForkJoinPool, виртуальные потоки, управление жизненным циклом.
+3. [Асинхронные вычисления и координация](multithreading/03-async-coordination.html) — CompletableFuture, Structured Concurrency, построение асинхронных конвейеров.
+4. [Синхронизаторы и конкурентные структуры данных](multithreading/04-synchronizers.html) — Lock, ReadWriteLock, StampedLock, CountDownLatch, CyclicBarrier, Semaphore, Phaser, атомарные типы, ConcurrentHashMap, BlockingQueue.
+5. [Потоковое локальное состояние и неизменяемость](multithreading/05-threadlocal-immutability.html) — ThreadLocal, InheritableThreadLocal, неизменяемые объекты, Records.
+6. [Диагностика и устранение проблем](multithreading/06-diagnostics-problems.html) — deadlock, livelock, starvation, race conditions, инструменты диагностики (jstack, jcmd, JFR), тестирование конкурентного кода.
+7. [Шаблоны и практические приёмы](multithreading/07-patterns.html) — Producer-Consumer, Worker Pool, Fork/Join, Reactive Streams, Double-Checked Locking, Thread-Per-Message, параллельные коллекции.
+8. [Практические упражнения](multithreading/08-exercises.html) — задачи для закрепления материала с подсказками по реализации.
+9. [Вопросы на собеседовании](multithreading/09-interview-questions.html) — типичные вопросы с детальными ответами и примерами кода.
+10. [Synchronized: теория и практика](multithreading/10-synchronized.html) — углублённый разбор мониторов, happens-before, `wait`/`notify`, устройства и производительности `synchronized`.
 
 ## Как главы связаны между собой
 

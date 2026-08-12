@@ -1,3 +1,6 @@
+---
+---
+
 # Troubleshooting и disaster recovery Kubernetes
 
 ## Содержание
@@ -120,4 +123,4 @@ Events имеют ограниченное хранение, а `--previous` д�
 3. **Почему snapshot volume может быть недостаточен?** Он может не обеспечивать application consistency между файлами/томами.
 4. **Что важнее наличия backup?** Регулярно доказанный restore в заданные RTO/RPO.
 
-[← К разделу Kubernetes](README.md)
+[← К разделу Kubernetes](README.html)

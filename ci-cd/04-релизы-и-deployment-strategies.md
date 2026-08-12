@@ -1,3 +1,6 @@
+---
+---
+
 # Релизы и deployment strategies
 
 ## Содержание
@@ -57,7 +60,7 @@ ALTER TABLE customer ADD COLUMN normalized_email varchar(320);
 
 Migration tool должен вести schema history и получать lock, но он не делает SQL автоматически безопасным. Проверяйте длительность locks, размер transaction log, replication lag, disk headroom и возможность прервать/backfill продолжить. Не запускайте destructive migration одновременно с приложением, которое ещё использует удаляемое поле.
 
-Rollback бинарника не откатывает данные. Down migration часто разрушительна; безопаснее roll-forward и совместимая схема. Подробнее — [эволюция системы и миграции без простоя](../system%20design/12-эволюция-системы-и-миграции-без-простоя.md).
+Rollback бинарника не откатывает данные. Down migration часто разрушительна; безопаснее roll-forward и совместимая схема. Подробнее — [эволюция системы и миграции без простоя](../system%20design/12-эволюция-системы-и-миграции-без-простоя.html).
 
 ## Feature flags
 
@@ -180,7 +183,7 @@ kubectl --context prod -n orders rollout undo deployment/orders --to-revision=17
 
 ## Связанные темы
 
-- [Артефакты и promotion](03-артефакты-и-promotion.md)
-- [Kubernetes](../kubernetes/README.md)
-- [AWS](../aws/README.md)
-- [Эволюция системы и миграции без простоя](../system%20design/12-эволюция-системы-и-миграции-без-простоя.md)
+- [Артефакты и promotion](03-артефакты-и-promotion.html)
+- [Kubernetes](../kubernetes/README.html)
+- [AWS](../aws/README.html)
+- [Эволюция системы и миграции без простоя](../system%20design/12-эволюция-системы-и-миграции-без-простоя.html)

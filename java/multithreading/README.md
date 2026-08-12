@@ -1,3 +1,6 @@
+---
+---
+
 # Multithreading
 
 ## Содержание
@@ -13,70 +16,70 @@
 
 <script type="module" src="../../assets/mermaid-init.js"></script>
 
-[Краткая навигация раздела](../02-multithreading.md)
+[Краткая навигация раздела](../02-multithreading.html)
 
 Многопоточность в Java: модель памяти, синхронизация, конкурентные библиотеки, паттерны и практические приёмы.
 
 > Эта страница — подробное оглавление раздела, обзор которого находится в
-> [`02-multithreading.md`](../02-multithreading.md). Ссылки ниже ведут на отдельные
+> [`02-multithreading.md`](../02-multithreading.html). Ссылки ниже ведут на отдельные
 > главы единого учебного маршрута.
 
 ## 📚 Содержание
 
-1. [Java Memory Model и гарантии видимости](01-jmm-visibility.md)
+1. [Java Memory Model и гарантии видимости](01-jmm-visibility.html)
    - Модель памяти Java
    - Happens-before
    - Volatile и synchronized
    - Проблемы видимости
 
-2. [Управление потоками и пулами](02-thread-pools.md)
+2. [Управление потоками и пулами](02-thread-pools.html)
    - Thread и Runnable
    - ExecutorService
    - ThreadPoolExecutor
    - ForkJoinPool
 
-3. [Асинхронные вычисления и координация](03-async-coordination.md)
+3. [Асинхронные вычисления и координация](03-async-coordination.html)
    - CompletableFuture
    - Future и Callable
    - Асинхронные паттерны
    - Обработка ошибок
 
-4. [Синхронизаторы и конкурентные структуры данных](04-synchronizers.md)
+4. [Синхронизаторы и конкурентные структуры данных](04-synchronizers.html)
    - CountDownLatch, CyclicBarrier
    - Semaphore, Phaser
    - ConcurrentHashMap
    - Другие конкурентные коллекции
 
-5. [Потоковое локальное состояние и неизменяемость](05-threadlocal-immutability.md)
+5. [Потоковое локальное состояние и неизменяемость](05-threadlocal-immutability.html)
    - ThreadLocal
    - Неизменяемые объекты
    - Безопасная публикация
    - Final поля
 
-6. [Диагностика и устранение проблем](06-diagnostics-problems.md)
+6. [Диагностика и устранение проблем](06-diagnostics-problems.html)
    - Deadlock
    - Race conditions
    - Starvation и livelock
    - Инструменты диагностики
 
-7. [Шаблоны и практические приёмы](07-patterns.md)
+7. [Шаблоны и практические приёмы](07-patterns.html)
    - Producer-Consumer
    - Read-Write Lock
    - Double-checked locking
    - Другие паттерны
 
-8. [Практические упражнения](08-exercises.md)
+8. [Практические упражнения](08-exercises.html)
    - Задачи на многопоточность
    - Разбор решений
    - Типичные ошибки
 
-9. [Вопросы на собеседовании](09-interview-questions.md)
+9. [Вопросы на собеседовании](09-interview-questions.html)
    - Теоретические вопросы
    - Практические задачи
    - Анализ кода
    - Советы по подготовке
 
-10. [Synchronized: теория и практика](10-synchronized.md)
+10. [Synchronized: теория и практика](10-synchronized.html)
    - Основные концепции (мониторы, взаимное исключение, видимость)
    - Синтаксис и формы использования
    - Семантика happens-before
@@ -133,4 +136,4 @@ flowchart TD
 
 ---
 
-[← Назад к разделу Java](../README.md)
+[← Назад к разделу Java](../README.html)

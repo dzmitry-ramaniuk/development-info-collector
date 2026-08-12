@@ -1,3 +1,6 @@
+---
+---
+
 # Cognito: аутентификация, user pools и federation
 
 ## Содержание
@@ -57,4 +60,4 @@
 
 ---
 
-[← К разделу AWS](README.md)
+[← К разделу AWS](README.html)

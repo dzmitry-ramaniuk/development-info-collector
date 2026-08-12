@@ -1,3 +1,6 @@
+---
+---
+
 # Apache Kafka
 
 ## Содержание
@@ -27,30 +30,30 @@
 
 Фундаментальные концепции и архитектура Apache Kafka:
 
-1. [Принципы и архитектура](01-принципы-и-архитектура.md)
-2. [Типовые проблемы и риски](02-проблемы-и-риски.md)
-3. [Ключевые механизмы Kafka](03-ключевые-механизмы.md)
-4. [Приёмы эффективной работы](04-приемы-работы.md)
-5. [Вопросы и ответы](05-вопросы-и-ответы.md)
+1. [Принципы и архитектура](01-принципы-и-архитектура.html)
+2. [Типовые проблемы и риски](02-проблемы-и-риски.html)
+3. [Ключевые механизмы Kafka](03-ключевые-механизмы.html)
+4. [Приёмы эффективной работы](04-приемы-работы.html)
+5. [Вопросы и ответы](05-вопросы-и-ответы.html)
 
 ### Продвинутые темы
 
 Глубокое погружение в экосистему Kafka:
 
-6. [Kafka Streams](06-kafka-streams.md) — потоковая обработка данных
+6. [Kafka Streams](06-kafka-streams.html) — потоковая обработка данных
    - KStream и KTable
    - Stateless и stateful операции
    - Windowing и joins
    - State stores и interactive queries
    - Тестирование и мониторинг
 
-7. [Kafka Connect](07-kafka-connect.md) — интеграция с внешними системами
+7. [Kafka Connect](07-kafka-connect.html) — интеграция с внешними системами
    - Source и Sink коннекторы
    - JDBC, Debezium CDC, Elasticsearch, S3
    - Single Message Transforms (SMT)
    - Distributed mode и REST API
 
-8. [Schema Registry](08-schema-registry.md) — управление схемами данных
+8. [Schema Registry](08-schema-registry.html) — управление схемами данных
    - Avro, Protobuf, JSON Schema
    - Режимы совместимости
    - Эволюция схем
@@ -60,7 +63,7 @@
 
 Защита данных и наблюдаемость системы:
 
-9. [Безопасность и мониторинг](09-безопасность-мониторинг.md)
+9. [Безопасность и мониторинг](09-безопасность-мониторинг.html)
    - Authentication: SSL/TLS, SASL (PLAIN, SCRAM, Kerberos, OAuth)
    - Authorization: ACL, роли и разрешения
    - Encryption: in-transit и at-rest
@@ -71,7 +74,7 @@
 
 Production deployment и операционные практики:
 
-10. [Эксплуатация и Production Best Practices](10-эксплуатация-production.md)
+10. [Эксплуатация и Production Best Practices](10-эксплуатация-production.html)
     - Sizing и capacity planning
     - KRaft-конфигурация Kafka 4.0.0: broker, controller и metadata quorum
     - Форматирование storage и восстановление
@@ -104,9 +107,9 @@ Production deployment и операционные практики:
 
 ## 🔗 Связанные темы
 
-- [System Design](../../system design/README.md) — общий архитектурный контекст для event-driven систем
-- [Асинхронность и событийные системы](../../system design/05-асинхронность-и-событийные-системы.md) — когда и почему broker лучше прямого sync-взаимодействия
-- [Масштабирование, надёжность и отказоустойчивость](../../system design/06-масштабирование-надежность-и-отказоустойчивость.md) — как учитывать Kafka в общей fault-tolerant архитектуре
+- [System Design](../../system%20design/README.html) — общий архитектурный контекст для event-driven систем
+- [Асинхронность и событийные системы](../../system%20design/05-асинхронность-и-событийные-системы.html) — когда и почему broker лучше прямого sync-взаимодействия
+- [Масштабирование, надёжность и отказоустойчивость](../../system%20design/06-масштабирование-надежность-и-отказоустойчивость.html) — как учитывать Kafka в общей fault-tolerant архитектуре
 
 ## 📖 Дополнительные ресурсы
 
@@ -117,7 +120,7 @@ Production deployment и операционные практики:
 
 ---
 
-[← Назад к разделу Очереди](../README.md)
+[← Назад к разделу Очереди](../README.html)
 
 
 > Production-материал зафиксирован на **Kafka 4.0.0**; перед переходом на другой patch/minor-релиз сверяйте release и upgrade notes.

@@ -1,3 +1,6 @@
+---
+---
+
 # Docker Compose: сети и хранилища
 
 ## Содержание
@@ -48,7 +51,7 @@ Running не означает ready. `healthcheck` запускает probe вн
 
 ## Spring Boot, PostgreSQL и Redis
 
-Пример использует образ из [предыдущей главы](02-dockerfile-и-сборка-образов.md), непривилегированный UID, cgroup limits и graceful stop. Пароли ниже предназначены **только для локальной разработки**.
+Пример использует образ из [предыдущей главы](02-dockerfile-и-сборка-образов.html), непривилегированный UID, cgroup limits и graceful stop. Пароли ниже предназначены **только для локальной разработки**.
 
 ```yaml
 # compose.yaml
@@ -124,7 +127,7 @@ docker compose stop app
 docker compose down
 ```
 
-Для integration tests тот же класс зависимостей удобнее поднимать программно через [Testcontainers](../тестирование/02-testcontainers.md), а не делить один Compose-стек между тестами.
+Для integration tests тот же класс зависимостей удобнее поднимать программно через [Testcontainers](../тестирование/02-testcontainers.html), а не делить один Compose-стек между тестами.
 
 ## Проблемы и советы
 

@@ -1,3 +1,6 @@
+---
+---
+
 # Spring Framework
 
 ## Содержание
@@ -13,14 +16,14 @@
 6. [🔜 Планируется добавить](#-планируется-добавить)
 
 
-[Краткая навигация раздела](../03-spring.md)
+[Краткая навигация раздела](../03-spring.html)
 
 
 Руководство по экосистеме Spring Framework и ключевым проектам: от основ DI/IoC до интеграции с внешними системами.
 
 ## 📚 Содержание
 
-1. [Spring Core](01-spring-core.md)
+1. [Spring Core](01-spring-core.html)
    - Inversion of Control (IoC)
    - Dependency Injection (DI)
    - ApplicationContext
@@ -28,7 +31,7 @@
    - Конфигурация (Java, XML, аннотации)
    - AOP (Aspect-Oriented Programming)
 
-2. [Spring Boot](02-spring-boot.md)
+2. [Spring Boot](02-spring-boot.html)
    - Auto-configuration
    - Starters
    - Embedded servers
@@ -36,7 +39,7 @@
    - Actuator
    - Spring Boot DevTools
 
-3. [Spring Data](03-spring-data.md)
+3. [Spring Data](03-spring-data.html)
    - Spring Data JPA
    - Repositories
    - Query methods
@@ -44,21 +47,21 @@
    - Transactions
    - Auditing
 
-4. [Spring Integration](04-spring-integration.md)
+4. [Spring Integration](04-spring-integration.html)
    - Enterprise Integration Patterns
    - Channels и Messages
    - Endpoints
    - Adapters
    - Интеграция с внешними системами
 
-5. [Spring Proxying и AOP](05-spring-proxying.md)
+5. [Spring Proxying и AOP](05-spring-proxying.html)
    - Механизмы проксирования
    - JDK Dynamic Proxy vs CGLIB
    - @Transactional и проксирование
    - Aspectj
    - Типичные проблемы с прокси
 
-6. [Реактивное программирование](06-reactive-programming.md)
+6. [Реактивное программирование](06-reactive-programming.html)
    - Reactive Streams и спецификация
    - Project Reactor (Mono и Flux)
    - RxJava
@@ -66,7 +69,7 @@
    - WebClient
    - Backpressure и тестирование
 
-7. [Spring Security](07-spring-security.md)
+7. [Spring Security](07-spring-security.html)
    - SecurityFilterChain, Authentication и SecurityContext
    - Session-based и token-based authentication
    - OAuth 2.0 Resource Server, OIDC и JWT validation
@@ -108,7 +111,7 @@
 
 - **Java Core**: Рефлексия, аннотации, прокси
 - **Базы данных**: JDBC, JPA, транзакции
-- **Redis**: [Spring Cache, RedisTemplate, Lettuce и сериализация](../../базы%20данных/redis/04-java-и-spring.md)
+- **Redis**: [Spring Cache, RedisTemplate, Lettuce и сериализация](../../базы%20данных/redis/04-java-и-spring.html)
 - **Тестирование**: Spring Test, MockMvc, Testcontainers
 - **Многопоточность**: Асинхронность в Spring (@Async, @Scheduled)
 
@@ -119,4 +122,4 @@
 
 ---
 
-[← Назад к разделу Java](../README.md)
+[← Назад к разделу Java](../README.html)

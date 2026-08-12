@@ -1,3 +1,6 @@
+---
+---
+
 # Поведенческие паттерны
 
 ## Содержание
@@ -16,52 +19,52 @@
 
 ## 📚 Содержание
 
-1. [Chain of Responsibility (Цепочка обязанностей)](01-chain-of-responsibility.md)
+1. [Chain of Responsibility (Цепочка обязанностей)](01-chain-of-responsibility.html)
    - Передача запроса по цепочке обработчиков
    - Слабая связанность отправителя и получателя
    - Применение в servlet filters и middleware
 
-2. [Command (Команда)](02-command.md)
+2. [Command (Команда)](02-command.html)
    - Инкапсуляция запроса как объекта
    - Параметризация клиентов операциями
    - Отмена и повтор операций
 
-3. [Iterator (Итератор)](03-iterator.md)
+3. [Iterator (Итератор)](03-iterator.html)
    - Последовательный доступ к элементам коллекции
    - Скрытие внутреннего представления
    - Java Collections Framework
 
-4. [Mediator (Посредник)](04-mediator.md)
+4. [Mediator (Посредник)](04-mediator.html)
    - Централизация сложных коммуникаций
    - Снижение связанности между компонентами
    - Применение в GUI и event-driven архитектуре
 
-5. [Memento (Хранитель)](05-memento.md)
+5. [Memento (Хранитель)](05-memento.html)
    - Сохранение и восстановление состояния объекта
    - Инкапсуляция деталей состояния
    - Реализация undo/redo функциональности
 
-6. [Observer (Наблюдатель)](06-observer.md)
+6. [Observer (Наблюдатель)](06-observer.html)
    - Механизм подписки на события
    - Уведомление зависимых объектов об изменениях
    - Event listeners в Java и reactive programming
 
-7. [State (Состояние)](07-state.md)
+7. [State (Состояние)](07-state.html)
    - Изменение поведения объекта при изменении состояния
    - Конечные автоматы
    - Применение в бизнес-процессах
 
-8. [Strategy (Стратегия)](08-strategy.md)
+8. [Strategy (Стратегия)](08-strategy.html)
    - Семейство взаимозаменяемых алгоритмов
    - Выбор алгоритма во время выполнения
    - Comparator в Java Collections
 
-9. [Template Method (Шаблонный метод)](09-template-method.md)
+9. [Template Method (Шаблонный метод)](09-template-method.html)
    - Определение скелета алгоритма
    - Делегирование шагов подклассам
    - Abstract classes в Spring и других фреймворках
 
-10. [Visitor (Посетитель)](10-visitor.md)
+10. [Visitor (Посетитель)](10-visitor.html)
     - Добавление операций к структуре объектов
     - Разделение алгоритма и структуры данных
     - Применение в обработке AST
@@ -108,12 +111,12 @@
 
 ## 🔗 Связанные темы
 
-- [Порождающие паттерны](../порождающие/README.md) — создание объектов для поведенческих паттернов
-- [Структурные паттерны](../структурные/README.md) — организация структуры для поведения
-- [Spring Framework](../../java/spring/README.md) — Template Method и Observer в Spring
-- [Multithreading](../../java/multithreading/README.md) — многопоточные аспекты Observer и других паттернов
-- [Реактивное программирование](../../java/spring/06-reactive-programming.md) — современная реализация Observer
+- [Порождающие паттерны](../порождающие/README.html) — создание объектов для поведенческих паттернов
+- [Структурные паттерны](../структурные/README.html) — организация структуры для поведения
+- [Spring Framework](../../java/spring/README.html) — Template Method и Observer в Spring
+- [Multithreading](../../java/multithreading/README.html) — многопоточные аспекты Observer и других паттернов
+- [Реактивное программирование](../../java/spring/06-reactive-programming.html) — современная реализация Observer
 
 ---
 
-[← Назад к разделу Паттерны проектирования](../README.md)
+[← Назад к разделу Паттерны проектирования](../README.html)

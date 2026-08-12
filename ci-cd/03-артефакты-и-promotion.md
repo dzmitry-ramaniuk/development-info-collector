@@ -1,3 +1,6 @@
+---
+---
+
 # Артефакты и promotion между средами
 
 ## Содержание
@@ -139,8 +142,8 @@ configurationRevision: 41de90a
 
 ## Связанные темы
 
-- [Построение CI pipeline](02-построение-ci-pipeline.md)
-- [Релизы и deployment strategies](04-релизы-и-deployment-strategies.md)
-- [AWS](../aws/README.md)
+- [Построение CI pipeline](02-построение-ci-pipeline.html)
+- [Релизы и deployment strategies](04-релизы-и-deployment-strategies.html)
+- [AWS](../aws/README.html)
 
 <script type="module" src="../assets/mermaid-init.js"></script>

@@ -1,3 +1,6 @@
+---
+---
+
 # Builder (Строитель)
 
 ## Содержание
@@ -894,4 +897,4 @@ public class UserBuilder extends Builder<User> {
 
 ---
 
-[← Назад к разделу Порождающие паттерны](README.md)
+[← Назад к разделу Порождающие паттерны](README.html)
