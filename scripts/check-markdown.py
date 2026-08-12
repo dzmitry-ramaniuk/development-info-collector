@@ -46,6 +46,32 @@ def source_for_link(path):
     return path.with_suffix(".md") if path.suffix.lower() == ".html" else path
 
 
+def front_matter(path):
+    """Читает простые скалярные параметры YAML front matter без внешних зависимостей."""
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return None
+    block = text.split("---\n", 2)[1]
+    result = {}
+    for line in block.splitlines():
+        if ":" in line and not line.startswith((" ", "\t")):
+            key, value = line.split(":", 1)
+            result[key.strip()] = value.strip().strip('"\'')
+    return result
+
+
+def published_path(path):
+    """Возвращает относительный файл, который Jekyll создаст для Markdown-страницы."""
+    metadata = front_matter(path) or {}
+    permalink = metadata.get("permalink")
+    if permalink:
+        permalink = unquote(permalink).lstrip("/")
+        if not permalink or permalink.endswith("/"):
+            return Path(permalink) / "index.html"
+        return Path(permalink)
+    return path.relative_to(ROOT).with_suffix(".html")
+
+
 errors = []
 anchors = {path.resolve(): {item[3] for item in headings(path)} for path in FILES}
 for path in FILES:
@@ -71,7 +97,7 @@ for path in FILES:
 
 # Оглавление должно идти сразу после H1 и повторять порядок H2/H3.
 for path in FILES:
-    if not path.read_text(encoding="utf-8").startswith("---\n"):
+    if front_matter(path) is None:
         errors.append(f"{path.relative_to(ROOT)}: отсутствует YAML front matter для сборки Jekyll")
     if path.name == "README.md":
         continue
@@ -121,8 +147,49 @@ for path in FILES:
     if relative != "README.md" and relative not in root_targets:
         errors.append(f"README.md: в полном каталоге отсутствует {relative}")
 
+# Все Markdown-страницы должны иметь уникальный HTML-адрес, а ссылки — вести на
+# реально создаваемые Jekyll файлы. Это отдельно защищает корневой index.html и
+# остальные страницы от 404 после публикации.
+published = {}
+for path in FILES:
+    output = published_path(path)
+    if output in published:
+        errors.append(
+            f"{path.relative_to(ROOT)}: опубликованный путь {output} уже занят "
+            f"страницей {published[output].relative_to(ROOT)}"
+        )
+    published[output] = path
+
+if published_path(ROOT / "README.md") != Path("index.html"):
+    errors.append("README.md: корневая страница должна публиковаться как index.html")
+
+for path in FILES:
+    source_output = published_path(path)
+    for number, line in source_lines(path):
+        for match in LINK_RE.finditer(line):
+            destination = match.group(1).strip().strip("<>")
+            if re.match(r"^(?:https?:|mailto:|tel:|#)", destination):
+                continue
+            raw_path = unquote(destination.partition("#")[0])
+            is_directory_url = raw_path.endswith("/") or raw_path in (".", "..")
+            if not raw_path.lower().endswith(".html") and not is_directory_url:
+                continue
+            output = (source_output.parent / raw_path).resolve()
+            if is_directory_url:
+                output /= "index.html"
+            try:
+                output = output.relative_to(ROOT.resolve())
+            except ValueError:
+                errors.append(f"{path.relative_to(ROOT)}:{number}: HTML-ссылка выходит за корень сайта: {destination}")
+                continue
+            if output not in published:
+                errors.append(f"{path.relative_to(ROOT)}:{number}: Jekyll не создаёт файл {destination}")
+
 if errors:
     print("Ошибки Markdown-навигации:")
     print("\n".join(f"- {error}" for error in errors))
     sys.exit(1)
-print(f"Проверено Markdown-файлов: {len(FILES)}; битых ссылок и ошибок оглавлений нет.")
+print(
+    f"Проверено Markdown-файлов: {len(FILES)}; "
+    f"HTML-страниц: {len(published)}; битых ссылок, конфликтов URL и ошибок оглавлений нет."
+)
