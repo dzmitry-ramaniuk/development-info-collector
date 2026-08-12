@@ -152,7 +152,7 @@
 
 ### Что изучать после этого раздела
 - Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.md)
-- Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы данных/postgresql/README.md)
+- Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы%20данных/postgresql/README.md)
 - Для развёртывания в production: [доставка приложений в Kubernetes](../kubernetes/08-доставка-приложений.md); для операционной устойчивости: [troubleshooting и disaster recovery](../kubernetes/09-troubleshooting-и-disaster-recovery.md)
 - Для глубокого внедрения observability и метрик: [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.md)
 
@@ -175,12 +175,12 @@
 
 ## 🔗 Связанные темы
 
-- [Базы данных](../базы данных/README.md)
+- [Базы данных](../базы%20данных/README.md)
 - [Очереди](../очереди/README.md)
 - [Kubernetes](../kubernetes/README.md)
-- [Паттерны проектирования](../паттерны проектирования/README.md)
+- [Паттерны проектирования](../паттерны%20проектирования/README.md)
 - [Apache Kafka](../очереди/кафка/README.md) — практический мост к event-driven архитектуре
-- [PostgreSQL](../базы данных/postgresql/README.md) — практический мост к хранению данных, индексам и транзакциям
+- [PostgreSQL](../базы%20данных/postgresql/README.md) — практический мост к хранению данных, индексам и транзакциям
 - [Kubernetes](../kubernetes/README.md) — практический мост к эксплуатации, масштабированию и observability
 - [Scheduling и autoscaling Kubernetes](../kubernetes/07-scheduling-и-autoscaling.md) — практическая реализация capacity, placement и disruption budgets
 - [Безопасность и политики Kubernetes](../kubernetes/06-безопасность-и-политики.md) — применение least privilege, сетевой изоляции и admission controls

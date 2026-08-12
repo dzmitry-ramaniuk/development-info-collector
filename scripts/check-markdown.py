@@ -46,10 +46,17 @@ anchors = {path.resolve(): {item[3] for item in headings(path)} for path in FILE
 for path in FILES:
     for number, line in source_lines(path):
         for match in LINK_RE.finditer(line):
-            destination = match.group(1).strip().strip("<>")
+            raw_destination = match.group(1).strip()
+            destination = raw_destination.strip("<>")
             if re.match(r"^(?:https?:|mailto:|tel:)", destination):
                 continue
             raw_path, _, fragment = destination.partition("#")
+            if raw_path and re.search(r"\s", raw_path) and not (
+                raw_destination.startswith("<") and raw_destination.endswith(">")
+            ):
+                errors.append(
+                    f"{path.relative_to(ROOT)}:{number}: пробел в пути должен быть закодирован как %20: {destination}"
+                )
             target = (path.parent / unquote(raw_path)).resolve() if raw_path else path.resolve()
             if raw_path and not target.exists():
                 errors.append(f"{path.relative_to(ROOT)}:{number}: нет файла {destination}")

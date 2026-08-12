@@ -121,7 +121,7 @@ java/
 ```markdown
 - [Java Core](01-java-core.md)
 - [Виртуальная машина](java-core/01-jvm-runtime.md)
-- [PostgreSQL](../базы данных/postgresql/README.md)
+- [PostgreSQL](../базы%20данных/postgresql/README.md)
 ```
 
 #### Перекрёстные ссылки:
