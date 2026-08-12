@@ -1,3 +1,6 @@
+---
+---
+
 # Redis: интеграция с Java и Spring
 
 ## Содержание
@@ -137,7 +140,7 @@ try (RedisClient client = RedisClient.create(uri);
 
 ## Testcontainers
 
-Интеграционный тест обязан закреплять образ Redis той же major/minor линии, что production, и не подменять важную семантику mock-объектом. Подробнее — в разделе [Testcontainers](../../тестирование/02-testcontainers.md).
+Интеграционный тест обязан закреплять образ Redis той же major/minor линии, что production, и не подменять важную семантику mock-объектом. Подробнее — в разделе [Testcontainers](../../тестирование/02-testcontainers.html).
 
 ```java
 @Testcontainers
@@ -174,7 +177,7 @@ class RedisCacheTest {
 - Экспортируйте client latency, timeout/reconnect, pool wait, command errors и cache hit/miss с low-cardinality labels.
 - Не записывайте key/value и credentials в exception logs/traces.
 - Согласуйте SSL, ACL user с минимальными command/key permissions и ротацию credentials.
-- Свяжите выбор паттерна с [материалом по кэшированию](../../system%20design/04-кэширование.md) и proxy-ограничения — с [Spring](../../java/spring/README.md).
+- Свяжите выбор паттерна с [материалом по кэшированию](../../system%20design/04-кэширование.html) и proxy-ограничения — с [Spring](../../java/spring/README.html).
 
 ## Вопросы для самопроверки
 

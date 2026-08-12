@@ -1,3 +1,6 @@
+---
+---
+
 # Consensus и распределённая координация
 
 ## Содержание
@@ -150,7 +153,7 @@ flowchart TD
 
 ## Связанные материалы
 
-- [Multi-region и geo-distributed системы](10-multi-region-и-geo-distributed-системы.md)
-- [Асинхронность и событийные системы](05-асинхронность-и-событийные-системы.md)
-- [CDC, event sourcing и materialized views](11-cdc-event-sourcing-и-materialized-views.md)
-- [Масштабирование, надёжность и отказоустойчивость](06-масштабирование-надежность-и-отказоустойчивость.md)
+- [Multi-region и geo-distributed системы](10-multi-region-и-geo-distributed-системы.html)
+- [Асинхронность и событийные системы](05-асинхронность-и-событийные-системы.html)
+- [CDC, event sourcing и materialized views](11-cdc-event-sourcing-и-materialized-views.html)
+- [Масштабирование, надёжность и отказоустойчивость](06-масштабирование-надежность-и-отказоустойчивость.html)

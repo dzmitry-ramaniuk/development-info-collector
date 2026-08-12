@@ -1,3 +1,6 @@
+---
+---
+
 # Synchronized в Java: теория и практика
 
 ## Содержание
@@ -1653,4 +1656,4 @@ public enum EnumSingleton {
 
 ---
 
-[← Назад к разделу Multithreading](README.md)
+[← Назад к разделу Multithreading](README.html)

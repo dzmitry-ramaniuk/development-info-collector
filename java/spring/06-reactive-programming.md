@@ -1,3 +1,6 @@
+---
+---
+
 # Реактивное программирование в Java
 
 ## Содержание
@@ -1395,4 +1398,4 @@ Flux<Flux<Event>> windows = eventFlux
 
 ---
 
-[← Назад к разделу Spring](README.md)
+[← Назад к разделу Spring](README.html)

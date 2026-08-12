@@ -1,3 +1,6 @@
+---
+---
+
 # Docker
 
 ## Содержание
@@ -10,10 +13,10 @@ Docker упаковывает приложение и его пользоват�
 
 ## Материалы
 
-1. [Основы контейнеров](01-основы-контейнеров.md) — image и container, namespaces, cgroups и OCI Registry.
-2. [Dockerfile и сборка образов](02-dockerfile-и-сборка-образов.md) — слои, cache, multi-stage build, `.dockerignore` и Spring Boot.
-3. [Compose, сети и хранилища](03-compose-сети-и-хранилища.md) — DNS, порты, volumes, bind mounts, health checks и стек с PostgreSQL/Redis.
-4. [Безопасность и production practices](04-безопасность-и-production-practices.md) — supply chain, SBOM, scanning, secrets и runtime-hardening.
+1. [Основы контейнеров](01-основы-контейнеров.html) — image и container, namespaces, cgroups и OCI Registry.
+2. [Dockerfile и сборка образов](02-dockerfile-и-сборка-образов.html) — слои, cache, multi-stage build, `.dockerignore` и Spring Boot.
+3. [Compose, сети и хранилища](03-compose-сети-и-хранилища.html) — DNS, порты, volumes, bind mounts, health checks и стек с PostgreSQL/Redis.
+4. [Безопасность и production practices](04-безопасность-и-production-practices.html) — supply chain, SBOM, scanning, secrets и runtime-hardening.
 
 ## Маршрут изучения
 
@@ -24,6 +27,6 @@ Docker упаковывает приложение и его пользоват�
 
 ## Связанные разделы
 
-- [Kubernetes](../kubernetes/README.md) — оркестрация и probes после освоения контейнеров.
-- [Testcontainers](../тестирование/02-testcontainers.md) — контейнеры как disposable test dependencies.
-- [Тюнинг и мониторинг JVM](../java/06-jvm-tuning-monitoring.md) — heap, GC и диагностика под лимитами cgroups.
+- [Kubernetes](../kubernetes/README.html) — оркестрация и probes после освоения контейнеров.
+- [Testcontainers](../тестирование/02-testcontainers.html) — контейнеры как disposable test dependencies.
+- [Тюнинг и мониторинг JVM](../java/06-jvm-tuning-monitoring.html) — heap, GC и диагностика под лимитами cgroups.

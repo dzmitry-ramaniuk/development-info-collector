@@ -1,3 +1,6 @@
+---
+---
+
 # Dockerfile и сборка образов
 
 ## Содержание
@@ -59,7 +62,7 @@ EXPOSE 8080
 ENTRYPOINT ["java","-XX:MaxRAMPercentage=75.0","-XX:InitialRAMPercentage=25.0","-jar","/app/app.jar"]
 ```
 
-Современная Java учитывает cgroup CPU/memory при ergonomic-настройках (`UseContainerSupport` включён по умолчанию). Явный `MaxRAMPercentage` задаёт бюджет heap внутри container limit, но оставляет запас для metaspace, code cache, thread stacks, direct buffers и native libraries. Не передавайте `-Xmx`, вычисленный из RAM host, и не отключайте container support. Проверяйте решение через `java -XshowSettings:system -version` и Native Memory Tracking; подробнее — [JVM tuning](../java/06-jvm-tuning-monitoring.md).
+Современная Java учитывает cgroup CPU/memory при ergonomic-настройках (`UseContainerSupport` включён по умолчанию). Явный `MaxRAMPercentage` задаёт бюджет heap внутри container limit, но оставляет запас для metaspace, code cache, thread stacks, direct buffers и native libraries. Не передавайте `-Xmx`, вычисленный из RAM host, и не отключайте container support. Проверяйте решение через `java -XshowSettings:system -version` и Native Memory Tracking; подробнее — [JVM tuning](../java/06-jvm-tuning-monitoring.html).
 
 ## Dockerignore
 

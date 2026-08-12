@@ -41,6 +41,11 @@ def headings(path):
     return result
 
 
+def source_for_link(path):
+    """Сопоставляет опубликованный Jekyll URL *.html с исходным файлом *.md."""
+    return path.with_suffix(".md") if path.suffix.lower() == ".html" else path
+
+
 errors = []
 anchors = {path.resolve(): {item[3] for item in headings(path)} for path in FILES}
 for path in FILES:
@@ -58,6 +63,7 @@ for path in FILES:
                     f"{path.relative_to(ROOT)}:{number}: пробел в пути должен быть закодирован как %20: {destination}"
                 )
             target = (path.parent / unquote(raw_path)).resolve() if raw_path else path.resolve()
+            target = source_for_link(target)
             if raw_path and not target.exists():
                 errors.append(f"{path.relative_to(ROOT)}:{number}: нет файла {destination}")
             elif fragment and target.suffix.lower() == ".md" and unquote(fragment) not in anchors.get(target, set()):
@@ -65,6 +71,8 @@ for path in FILES:
 
 # Оглавление должно идти сразу после H1 и повторять порядок H2/H3.
 for path in FILES:
+    if not path.read_text(encoding="utf-8").startswith("---\n"):
+        errors.append(f"{path.relative_to(ROOT)}: отсутствует YAML front matter для сборки Jekyll")
     if path.name == "README.md":
         continue
     items = headings(path)
@@ -97,12 +105,17 @@ for path in FILES:
     local_readme = path.parent / "README.md"
     if not local_readme.exists():
         errors.append(f"{path.relative_to(ROOT)}: в каталоге нет README.md")
-    elif path.name not in local_readme.read_text(encoding="utf-8"):
+    elif path.with_suffix(".html").name not in local_readme.read_text(encoding="utf-8"):
         errors.append(f"{local_readme.relative_to(ROOT)}: отсутствует ссылка на {path.name}")
 
 # Главный каталог обязан содержать каждую учебную и обзорную страницу.
 root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
-root_targets = {unquote(link.partition("#")[0]) for link in LINK_RE.findall(root_readme)}
+root_targets = {
+    str(Path(unquote(link.partition("#")[0])).with_suffix(".md"))
+    if link.partition("#")[0].lower().endswith(".html")
+    else unquote(link.partition("#")[0])
+    for link in LINK_RE.findall(root_readme)
+}
 for path in FILES:
     relative = path.relative_to(ROOT).as_posix()
     if relative != "README.md" and relative not in root_targets:

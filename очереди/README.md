@@ -1,10 +1,13 @@
+---
+---
+
 # Очереди сообщений и потоковая обработка данных
 
 ## Содержание
 
 1. [📚 Содержание](#-содержание)
-   - [[Apache ActiveMQ](activemq/README.md)](#apache-activemqactivemqreadmemd)
-   - [[Apache Kafka](кафка/README.md)](#apache-kafkaкафкаreadmemd)
+   - [[Apache ActiveMQ](activemq/README.html)](#apache-activemqactivemqreadmemd)
+   - [[Apache Kafka](кафка/README.html)](#apache-kafkaкафкаreadmemd)
 2. [🧭 Рекомендуемые маршруты по разделу](#-рекомендуемые-маршруты-по-разделу)
 3. [⚖️ Быстрый выбор: Kafka или ActiveMQ](#-быстрый-выбор-kafka-или-activemq)
 4. [🎯 Для кого эти материалы](#-для-кого-эти-материалы)
@@ -21,7 +24,7 @@
 
 ## 📚 Содержание
 
-### [Apache ActiveMQ](activemq/README.md)
+### [Apache ActiveMQ](activemq/README.html)
 
 Учебные материалы по Apache ActiveMQ — надёжному брокеру сообщений с поддержкой JMS:
 
@@ -30,9 +33,9 @@
 - **Персистентность**: KahaDB, JDBC, транзакции, режимы доставки
 - **Практика**: Примеры кода, интеграция со Spring, best practices
 
-→ [Перейти к материалам по ActiveMQ](activemq/README.md)
+→ [Перейти к материалам по ActiveMQ](activemq/README.html)
 
-### [Apache Kafka](кафка/README.md)
+### [Apache Kafka](кафка/README.html)
 
 Комплексный учебник по Apache Kafka — распределённой платформе потоковой обработки данных:
 
@@ -41,12 +44,12 @@
 - **Безопасность и мониторинг**: Аутентификация, авторизация, метрики, логирование
 - **Эксплуатация**: Production deployment, high availability, disaster recovery, troubleshooting
 
-→ [Перейти к материалам по Kafka](кафка/README.md)
+→ [Перейти к материалам по Kafka](кафка/README.html)
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
 - **Если впервые изучаете очереди сообщений**: начните с Kafka как с самой востребованной платформы, а затем сравните её с ActiveMQ и классическим JMS-подходом
-- **Если работаете с интеграцией enterprise-систем**: изучите [ActiveMQ](activemq/README.md), после чего переходите к Kafka для понимания различий между broker-based messaging и event streaming
+- **Если работаете с интеграцией enterprise-систем**: изучите [ActiveMQ](activemq/README.html), после чего переходите к Kafka для понимания различий между broker-based messaging и event streaming
 - **Если интересует production-эксплуатация**: в Kafka уделите особое внимание безопасности, мониторингу, high availability и disaster recovery
 
 ## ⚖️ Быстрый выбор: Kafka или ActiveMQ

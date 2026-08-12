@@ -1,3 +1,6 @@
+---
+---
+
 # Практический SQL
 
 ## Содержание
@@ -19,7 +22,7 @@
 - **Статус примеров:** `current`.
 - **Первичные источники:** [PostgreSQL 18: Queries](https://www.postgresql.org/docs/18/queries.html), [Window Functions](https://www.postgresql.org/docs/18/tutorial-window.html), [Aggregate Functions](https://www.postgresql.org/docs/18/functions-aggregate.html), [ISO/IEC 9075-2:2023](https://www.iso.org/standard/76584.html).
 
-Примеры продолжают [схему сервиса бронирования](01-реляционная-модель-и-нормализация.md).
+Примеры продолжают [схему сервиса бронирования](01-реляционная-модель-и-нормализация.html).
 
 ## Логическая обработка и JOIN
 
@@ -136,7 +139,7 @@ WHERE x.place <= 3
 ORDER BY x.day, x.place, r.name;
 ```
 
-Проверяйте план через `EXPLAIN (ANALYZE, BUFFERS)` на тестовых данных: `ANALYZE` выполняет запрос. Индексы разобраны в [PostgreSQL](postgresql/README.md), влияние ORM — в [Hibernate/JPA](../java/04-hibernate.md).
+Проверяйте план через `EXPLAIN (ANALYZE, BUFFERS)` на тестовых данных: `ANALYZE` выполняет запрос. Индексы разобраны в [PostgreSQL](postgresql/README.html), влияние ORM — в [Hibernate/JPA](../java/04-hibernate.html).
 
 ## Типичные ошибки
 

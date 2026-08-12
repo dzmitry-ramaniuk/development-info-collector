@@ -1,3 +1,6 @@
+---
+---
+
 # Redis
 
 ## Содержание
@@ -11,10 +14,10 @@
 
 ## Маршрут изучения
 
-1. [Основы и структуры данных](01-основы-и-структуры-данных.md) — Strings, Hashes, Sets, Sorted Sets, Streams, Pub/Sub, транзакции и Lua.
-2. [Кэширование](02-кэширование.md) — TTL, eviction, cache-aside, защита от penetration/stampede и инвалидация.
-3. [Надёжность и эксплуатация](03-надежность-и-эксплуатация.md) — RDB/AOF, replication, Sentinel, Cluster, диагностика и аварийные процедуры.
-4. [Интеграция с Java и Spring](04-java-и-spring.md) — Spring Cache, `RedisTemplate`, Lettuce, сериализация, таймауты и Testcontainers.
+1. [Основы и структуры данных](01-основы-и-структуры-данных.html) — Strings, Hashes, Sets, Sorted Sets, Streams, Pub/Sub, транзакции и Lua.
+2. [Кэширование](02-кэширование.html) — TTL, eviction, cache-aside, защита от penetration/stampede и инвалидация.
+3. [Надёжность и эксплуатация](03-надежность-и-эксплуатация.html) — RDB/AOF, replication, Sentinel, Cluster, диагностика и аварийные процедуры.
+4. [Интеграция с Java и Spring](04-java-и-spring.html) — Spring Cache, `RedisTemplate`, Lettuce, сериализация, таймауты и Testcontainers.
 
 ## Границы применения
 
@@ -24,9 +27,9 @@ Redis особенно полезен как быстрый кэш, ephemeral st
 
 ## Связанные материалы
 
-- [Кэширование в System Design](../../system%20design/04-кэширование.md) — архитектурные паттерны и расчёт эффективности кэша.
-- [Spring Framework](../../java/spring/README.md) — контейнер, конфигурация и абстракции Spring.
-- [Testcontainers](../../тестирование/02-testcontainers.md) — воспроизводимые интеграционные тесты с настоящим Redis.
+- [Кэширование в System Design](../../system%20design/04-кэширование.html) — архитектурные паттерны и расчёт эффективности кэша.
+- [Spring Framework](../../java/spring/README.html) — контейнер, конфигурация и абстракции Spring.
+- [Testcontainers](../../тестирование/02-testcontainers.html) — воспроизводимые интеграционные тесты с настоящим Redis.
 
 ## Практический маршрут
 

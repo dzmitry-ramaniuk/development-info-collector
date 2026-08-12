@@ -1,3 +1,6 @@
+---
+---
+
 # Практикум: event-driven обработка заказов
 
 ## Содержание
@@ -58,7 +61,7 @@ Idempotency-Key: 01J...
 }
 ```
 
-Зафиксируйте partition key=`orderId`, schema compatibility, semantic versioning, owner и retention. Событие — неизменяемый факт; команды именуйте отдельно. Не обещайте глобальный порядок. Изучите [Kafka Schema Registry](../очереди/кафка/08-schema-registry.md) и [асинхронные системы](../system%20design/05-асинхронность-и-событийные-системы.md).
+Зафиксируйте partition key=`orderId`, schema compatibility, semantic versioning, owner и retention. Событие — неизменяемый факт; команды именуйте отдельно. Не обещайте глобальный порядок. Изучите [Kafka Schema Registry](../очереди/кафка/08-schema-registry.html) и [асинхронные системы](../system%20design/05-асинхронность-и-событийные-системы.html).
 
 ## Модель данных и компоненты
 
@@ -93,7 +96,7 @@ flowchart LR
 
 **Архитектурное ревью:** что означает at-least-once на каждой границе? Каков idempotency key платежа? Сохраняется ли порядок при retry? Можно ли безопасно replay после исправления бага?
 
-**Ожидаемые trade-offs:** dedup хранит состояние и требует retention; DLQ изолирует poison events, но может скрыть business backlog; строгий порядок ограничивает parallelism; транзакции Kafka не покрывают произвольный внешний API. См. [механизмы Kafka](../очереди/кафка/03-ключевые-механизмы.md).
+**Ожидаемые trade-offs:** dedup хранит состояние и требует retention; DLQ изолирует poison events, но может скрыть business backlog; строгий порядок ограничивает parallelism; транзакции Kafka не покрывают произвольный внешний API. См. [механизмы Kafka](../очереди/кафка/03-ключевые-механизмы.html).
 
 ## Этап 3 — saga и масштабирование
 
@@ -107,7 +110,7 @@ flowchart LR
 
 Определите SLI: accept latency/error rate, consumer lag в секундах, oldest-message age, terminal-time, duplicate/compensation/DLQ rate. Протяните correlation/trace context без высокой cardinality. Примените mTLS/ACL, отдельные service accounts, encryption, schema authorization и secret rotation. Проведите backward-compatible миграцию через dual-read/dual-write или upcaster и canary consumers.
 
-Для DR задокументируйте восстановление DB, topic/config/schema registry, offsets либо полный replay, failover DNS и reconciliation платежей. Репетируйте broker loss, AZ loss, corrupted deployment и region loss; сравните backup/restore, warm standby и active-active. Используйте [Kafka production](../очереди/кафка/10-эксплуатация-production.md), [observability](../system%20design/08-наблюдаемость-безопасность-и-эксплуатация.md), [Kubernetes](../kubernetes/README.md) и [AWS](../aws/README.md).
+Для DR задокументируйте восстановление DB, topic/config/schema registry, offsets либо полный replay, failover DNS и reconciliation платежей. Репетируйте broker loss, AZ loss, corrupted deployment и region loss; сравните backup/restore, warm standby и active-active. Используйте [Kafka production](../очереди/кафка/10-эксплуатация-production.html), [observability](../system%20design/08-наблюдаемость-безопасность-и-эксплуатация.html), [Kubernetes](../kubernetes/README.html) и [AWS](../aws/README.html).
 
 **Архитектурное ревью:** какие метрики являются пользовательскими? Совместимы ли rolling versions? Как проверить RPO/RTO? Как исключается повторный charge после failover?
 

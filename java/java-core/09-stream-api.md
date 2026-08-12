@@ -1,3 +1,6 @@
+---
+---
+
 # Stream API
 
 ## Содержание
@@ -1404,4 +1407,4 @@ public String generateReport(List<Transaction> transactions) {
 
 ---
 
-[← Назад к разделу Java Core](README.md)
+[← Назад к разделу Java Core](README.html)

@@ -1,3 +1,6 @@
+---
+---
+
 # Scheduling, ресурсы и autoscaling в Kubernetes
 
 ## Содержание
@@ -150,4 +153,4 @@ spec:
 4. **Почему toleration недостаточно для dedicated nodes?** Она разрешает размещение, но не требует его; добавьте affinity.
 5. **Как связаны HPA и CA?** HPA увеличивает Pods, CA добавляет nodes, когда новые Pods некуда разместить.
 
-[← К разделу Kubernetes](README.md)
+[← К разделу Kubernetes](README.html)

@@ -1,3 +1,6 @@
+---
+---
+
 # Обобщения (Generics)
 
 ## Содержание
@@ -499,7 +502,7 @@ public class Cache<K, V> {
 ## Best practices
 - Выбирайте интерфейсы в сигнатурах (`List` вместо `ArrayList`).
 - Используйте `Collections.unmodifiableList` или неизменяемые коллекции для защиты API.
-- Всегда переопределяйте `equals()` и `hashCode()` в паре для ключей `Map` и элементов `Set` (см. раздел [Контракты equals и hashCode](05-collections.md#контракты-equals-и-hashcode)).
+- Всегда переопределяйте `equals()` и `hashCode()` в паре для ключей `Map` и элементов `Set` (см. раздел [Контракты equals и hashCode](05-collections.html#контракты-equals-и-hashcode)).
 - Для крупных коллекций контролируйте initial capacity (`new HashMap<>(capacity, loadFactor)`).
 
 ## Практические упражнения

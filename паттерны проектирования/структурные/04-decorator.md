@@ -1,3 +1,6 @@
+---
+---
+
 # Decorator (Декоратор)
 
 ## Содержание
@@ -807,4 +810,4 @@ class ConcreteDecorator extends BaseDecorator {
 
 ---
 
-[← Назад к разделу Структурные паттерны](README.md)
+[← Назад к разделу Структурные паттерны](README.html)

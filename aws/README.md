@@ -1,3 +1,6 @@
+---
+---
+
 # AWS
 
 ## Содержание
@@ -16,45 +19,45 @@
 
 ## 📚 Содержание
 
-1. [Основы AWS для разработчика](01-основы-aws.md)
+1. [Основы AWS для разработчика](01-основы-aws.html)
    - Глобальная инфраструктура: регионы и зоны доступности
    - Модель ответственности Shared Responsibility Model
    - IAM: пользователи, роли, политики и best practices
    - Обзор AWS-сервисов и архитектурных сценариев
    - Практические сценарии для backend-приложений
 
-2. [EC2: виртуальные машины и эксплуатация](02-ec2.md)
-3. [VPC: сеть, подсети, маршрутизация и безопасность](03-vpc.md)
-4. [Lambda: serverless-функции и паттерны использования](04-lambda.md)
-5. [S3: объектное хранилище, безопасность и оптимизация стоимости](05-s3.md)
-6. [DynamoDB: моделирование данных и масштабирование](06-dynamodb.md)
-7. [SQS: очереди, ретраи, DLQ и идемпотентность](07-sqs.md)
-8. [SNS: pub/sub, fan-out и уведомления](08-sns.md)
-9. [EventBridge: event bus, правила и интеграции](09-eventbridge.md)
-10. [Cognito: аутентификация, user pools и federation](10-cognito.md)
+2. [EC2: виртуальные машины и эксплуатация](02-ec2.html)
+3. [VPC: сеть, подсети, маршрутизация и безопасность](03-vpc.html)
+4. [Lambda: serverless-функции и паттерны использования](04-lambda.html)
+5. [S3: объектное хранилище, безопасность и оптимизация стоимости](05-s3.html)
+6. [DynamoDB: моделирование данных и масштабирование](06-dynamodb.html)
+7. [SQS: очереди, ретраи, DLQ и идемпотентность](07-sqs.html)
+8. [SNS: pub/sub, fan-out и уведомления](08-sns.html)
+9. [EventBridge: event bus, правила и интеграции](09-eventbridge.html)
+10. [Cognito: аутентификация, user pools и federation](10-cognito.html)
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
 | Роль / цель | Начать с | Затем изучить | Основной акцент |
 |---|---|---|---|
-| Начинающий AWS-разработчик | [Основы AWS](01-основы-aws.md), [VPC](03-vpc.md) | [EC2](02-ec2.md), [S3](05-s3.md) | Shared Responsibility, IAM, регионы/AZ и стоимость |
-| Backend-разработчик | [Lambda](04-lambda.md), [S3](05-s3.md) | [DynamoDB](06-dynamodb.md), [SQS](07-sqs.md), [SNS](08-sns.md) | Идемпотентность, retries, concurrency и data modeling |
-| Platform / DevOps / SRE | [Основы AWS](01-основы-aws.md), [VPC](03-vpc.md), [EC2](02-ec2.md) | [Lambda](04-lambda.md), [EventBridge](09-eventbridge.md) | Least privilege, quotas, observability, HA и runbooks |
-| Архитектор event-driven систем | [SQS](07-sqs.md), [SNS](08-sns.md), [EventBridge](09-eventbridge.md) | [Lambda](04-lambda.md), [DynamoDB](06-dynamodb.md) | Delivery semantics, ordering, DLQ, schema evolution |
-| Разработчик identity / B2C | [Основы AWS](01-основы-aws.md), [Cognito](10-cognito.md) | [Lambda](04-lambda.md), [S3](05-s3.md) | Federation, токены, MFA и разграничение доступа |
-| Подготовка к интервью | [Основы AWS](01-основы-aws.md) | Все страницы по порядку 2–10 | Компромиссы IaaS/serverless и разбор failure modes |
+| Начинающий AWS-разработчик | [Основы AWS](01-основы-aws.html), [VPC](03-vpc.html) | [EC2](02-ec2.html), [S3](05-s3.html) | Shared Responsibility, IAM, регионы/AZ и стоимость |
+| Backend-разработчик | [Lambda](04-lambda.html), [S3](05-s3.html) | [DynamoDB](06-dynamodb.html), [SQS](07-sqs.html), [SNS](08-sns.html) | Идемпотентность, retries, concurrency и data modeling |
+| Platform / DevOps / SRE | [Основы AWS](01-основы-aws.html), [VPC](03-vpc.html), [EC2](02-ec2.html) | [Lambda](04-lambda.html), [EventBridge](09-eventbridge.html) | Least privilege, quotas, observability, HA и runbooks |
+| Архитектор event-driven систем | [SQS](07-sqs.html), [SNS](08-sns.html), [EventBridge](09-eventbridge.html) | [Lambda](04-lambda.html), [DynamoDB](06-dynamodb.html) | Delivery semantics, ordering, DLQ, schema evolution |
+| Разработчик identity / B2C | [Основы AWS](01-основы-aws.html), [Cognito](10-cognito.html) | [Lambda](04-lambda.html), [S3](05-s3.html) | Federation, токены, MFA и разграничение доступа |
+| Подготовка к интервью | [Основы AWS](01-основы-aws.html) | Все страницы по порядку 2–10 | Компромиссы IaaS/serverless и разбор failure modes |
 
 ## 🔗 Связанные темы
 
-- [Kubernetes](../kubernetes/README.md) — запуск контейнерных приложений и orchestration-паттерны
-- [Scheduling и autoscaling Kubernetes](../kubernetes/07-scheduling-и-autoscaling.md) — связь requests, HPA и node autoscaling с облачной capacity
-- [Безопасность и политики Kubernetes](../kubernetes/06-безопасность-и-политики.md) — сопоставление ServiceAccount/RBAC, сетевой изоляции и KMS с облачными controls
-- [Доставка приложений в Kubernetes](../kubernetes/08-доставка-приложений.md) — CI/CD, GitOps и progressive delivery поверх облачной инфраструктуры
-- [System Design](../system%20design/README.md) — архитектурные компромиссы, масштабирование и отказоустойчивость
-- [Базы данных](../базы%20данных/README.md) — выбор и эксплуатация хранилищ данных
-- [Очереди](../очереди/README.md) — асинхронные интеграции и event-driven взаимодействие
-- [CI/CD](../ci-cd/README.md) — promotion immutable artifacts и безопасные deployment strategies в облаке
+- [Kubernetes](../kubernetes/README.html) — запуск контейнерных приложений и orchestration-паттерны
+- [Scheduling и autoscaling Kubernetes](../kubernetes/07-scheduling-и-autoscaling.html) — связь requests, HPA и node autoscaling с облачной capacity
+- [Безопасность и политики Kubernetes](../kubernetes/06-безопасность-и-политики.html) — сопоставление ServiceAccount/RBAC, сетевой изоляции и KMS с облачными controls
+- [Доставка приложений в Kubernetes](../kubernetes/08-доставка-приложений.html) — CI/CD, GitOps и progressive delivery поверх облачной инфраструктуры
+- [System Design](../system%20design/README.html) — архитектурные компромиссы, масштабирование и отказоустойчивость
+- [Базы данных](../базы%20данных/README.html) — выбор и эксплуатация хранилищ данных
+- [Очереди](../очереди/README.html) — асинхронные интеграции и event-driven взаимодействие
+- [CI/CD](../ci-cd/README.html) — promotion immutable artifacts и безопасные deployment strategies в облаке
 
 ---
 
-[← Назад к главной странице](../README.md)
+[← Назад к главной странице](../README.html)

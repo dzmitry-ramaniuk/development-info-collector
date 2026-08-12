@@ -1,3 +1,6 @@
+---
+---
+
 # System Design
 
 ## Содержание
@@ -21,13 +24,13 @@
 
 ## 📚 Содержание
 
-1. [Основы и архитектурные компромиссы](01-основы-и-архитектурные-компромиссы.md)
+1. [Основы и архитектурные компромиссы](01-основы-и-архитектурные-компромиссы.html)
    - latency, throughput, availability, consistency
    - CAP, PACELC и цена компромиссов
    - SLA, SLO, error budget
    - нефункциональные требования и оценка нагрузки
 
-2. [Сетевое взаимодействие и API](02-сетевое-взаимодействие-и-api.md)
+2. [Сетевое взаимодействие и API](02-сетевое-взаимодействие-и-api.html)
    - HTTP, gRPC, WebSocket и очереди
    - идемпотентность, ретраи, таймауты
    - polling, webhooks и push-модели
@@ -35,7 +38,7 @@
    - rate limiting, versioning и контракт API
    - внешний и внутренний контракт сервиса
 
-3. [Хранение данных и выбор базы](03-хранение-данных-и-выбор-базы.md)
+3. [Хранение данных и выбор базы](03-хранение-данных-и-выбор-базы.html)
    - SQL vs NoSQL
    - репликация, шардирование, индексы
    - consistent hashing и object storage
@@ -43,67 +46,67 @@
    - CQRS, read/write patterns
    - транзакции и согласованность данных
 
-4. [Кэширование](04-кэширование.md)
+4. [Кэширование](04-кэширование.html)
    - cache-aside, write-through, write-behind
    - local cache и distributed cache
    - TTL, eviction, invalidation
    - защита от cache stampede
 
-5. [Асинхронность и событийные системы](05-асинхронность-и-событийные-системы.md)
+5. [Асинхронность и событийные системы](05-асинхронность-и-событийные-системы.html)
    - broker, queue, topic, stream
    - at-most-once, at-least-once, exactly-once
    - outbox, saga, DLQ, retry topics
    - event-driven integration
 
-6. [Масштабирование, надёжность и отказоустойчивость](06-масштабирование-надежность-и-отказоустойчивость.md)
+6. [Масштабирование, надёжность и отказоустойчивость](06-масштабирование-надежность-и-отказоустойчивость.html)
    - load balancing и горизонтальное масштабирование
    - health checks, failover, circuit breaker
    - multi-AZ, disaster recovery, graceful degradation
    - bottleneck analysis и capacity planning
 
-7. [Микросервисы, границы и декомпозиция](07-микросервисы-границы-и-декомпозиция.md)
+7. [Микросервисы, границы и декомпозиция](07-микросервисы-границы-и-декомпозиция.html)
    - bounded context и service boundaries
    - synchronous vs asynchronous collaboration
    - shared nothing и anti-pattern distributed monolith
    - evolutionary architecture
 
-8. [Наблюдаемость, безопасность и эксплуатация](08-наблюдаемость-безопасность-и-эксплуатация.md)
+8. [Наблюдаемость, безопасность и эксплуатация](08-наблюдаемость-безопасность-и-эксплуатация.html)
    - logs, metrics, traces
    - authentication, authorization, secrets
    - SLI/SLO, alerting, runbooks
    - production readiness checklist
 
-9. [Разбор популярных задач и подготовка к интервью](09-разбор-популярных-задач-и-подготовка-к-интервью.md)
+9. [Разбор популярных задач и подготовка к интервью](09-разбор-популярных-задач-и-подготовка-к-интервью.html)
    - как проходить system design interview
    - шаблон разбора задачи
    - кейсы: URL shortener, chat, news feed, rate limiter
    - список типовых вопросов и ответов
 
-10. [Multi-region и geo-distributed системы](10-multi-region-и-geo-distributed-системы.md)
+10. [Multi-region и geo-distributed системы](10-multi-region-и-geo-distributed-системы.html)
    - active-passive и active-active
    - routing, data locality, failover
    - RTO, RPO и межрегиональная репликация
    - когда multi-region действительно оправдан
 
-11. [CDC, event sourcing и materialized views](11-cdc-event-sourcing-и-materialized-views.md)
+11. [CDC, event sourcing и materialized views](11-cdc-event-sourcing-и-materialized-views.html)
    - change data capture и data propagation
    - event sourcing и replay
    - projection/read models
    - trade-offs между простотой и эволюцией данных
 
-12. [Эволюция системы и миграции без простоя](12-эволюция-системы-и-миграции-без-простоя.md)
+12. [Эволюция системы и миграции без простоя](12-эволюция-системы-и-миграции-без-простоя.html)
    - strangler fig и incremental migration
    - online schema change, backfill, dual-read/dual-write
    - feature flags и безопасный rollout
    - как менять архитектуру без остановки бизнеса
 
-13. [Consensus и распределённая координация](13-consensus-и-распределенная-координация.md)
+13. [Consensus и распределённая координация](13-consensus-и-распределенная-координация.html)
    - quorum, leader election, split-brain и fencing
    - linearizability, safety/liveness и Raft-практики
    - exactly-once границы, idempotency и deduplication
    - operational runbooks для control-plane
 
-14. [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.md)
+14. [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.html)
    - SLI/SLO и практики метрик для backend-сервисов
    - Elastic Stack и open-source observability stack
    - Micrometer, OpenTelemetry, Actuator и Java-инструментирование
@@ -148,13 +151,13 @@
 - Освойте migration patterns: strangler fig, online schema changes, dual write avoidance, backfill.
 - Добавьте практику observability-инжиниринга: как выбирать стек метрик, контролировать кардинальность и строить SLO-алерты.
 - Тренируйтесь обсуждать не только «как построить», но и **как эволюционировать** систему без остановки бизнеса.
-- Для закрепления переходите к страницам [10](10-multi-region-и-geo-distributed-системы.md), [11](11-cdc-event-sourcing-и-materialized-views.md), [12](12-эволюция-системы-и-миграции-без-простоя.md), [13](13-consensus-и-распределенная-координация.md) и [14](14-метрики-стек-и-подходы.md).
+- Для закрепления переходите к страницам [10](10-multi-region-и-geo-distributed-системы.html), [11](11-cdc-event-sourcing-и-materialized-views.html), [12](12-эволюция-системы-и-миграции-без-простоя.html), [13](13-consensus-и-распределенная-координация.html) и [14](14-метрики-стек-и-подходы.html).
 
 ### Что изучать после этого раздела
-- Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.md)
-- Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы%20данных/postgresql/README.md)
-- Для развёртывания в production: [доставка приложений в Kubernetes](../kubernetes/08-доставка-приложений.md); для операционной устойчивости: [troubleshooting и disaster recovery](../kubernetes/09-troubleshooting-и-disaster-recovery.md)
-- Для глубокого внедрения observability и метрик: [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.md)
+- Для событийной интеграции и streaming: [Apache Kafka](../очереди/кафка/README.html)
+- Для транзакций, репликации, индексов и партиционирования: [PostgreSQL](../базы%20данных/postgresql/README.html)
+- Для развёртывания в production: [доставка приложений в Kubernetes](../kubernetes/08-доставка-приложений.html); для операционной устойчивости: [troubleshooting и disaster recovery](../kubernetes/09-troubleshooting-и-disaster-recovery.html)
+- Для глубокого внедрения observability и метрик: [Метрики: подходы, инструменты и стек для Java](14-метрики-стек-и-подходы.html)
 
 ## 💡 Рекомендации
 
@@ -175,16 +178,16 @@
 
 ## 🔗 Связанные темы
 
-- [Базы данных](../базы%20данных/README.md)
-- [Очереди](../очереди/README.md)
-- [Kubernetes](../kubernetes/README.md)
-- [Паттерны проектирования](../паттерны%20проектирования/README.md)
-- [Apache Kafka](../очереди/кафка/README.md) — практический мост к event-driven архитектуре
-- [PostgreSQL](../базы%20данных/postgresql/README.md) — практический мост к хранению данных, индексам и транзакциям
-- [Kubernetes](../kubernetes/README.md) — практический мост к эксплуатации, масштабированию и observability
-- [Scheduling и autoscaling Kubernetes](../kubernetes/07-scheduling-и-autoscaling.md) — практическая реализация capacity, placement и disruption budgets
-- [Безопасность и политики Kubernetes](../kubernetes/06-безопасность-и-политики.md) — применение least privilege, сетевой изоляции и admission controls
+- [Базы данных](../базы%20данных/README.html)
+- [Очереди](../очереди/README.html)
+- [Kubernetes](../kubernetes/README.html)
+- [Паттерны проектирования](../паттерны%20проектирования/README.html)
+- [Apache Kafka](../очереди/кафка/README.html) — практический мост к event-driven архитектуре
+- [PostgreSQL](../базы%20данных/postgresql/README.html) — практический мост к хранению данных, индексам и транзакциям
+- [Kubernetes](../kubernetes/README.html) — практический мост к эксплуатации, масштабированию и observability
+- [Scheduling и autoscaling Kubernetes](../kubernetes/07-scheduling-и-autoscaling.html) — практическая реализация capacity, placement и disruption budgets
+- [Безопасность и политики Kubernetes](../kubernetes/06-безопасность-и-политики.html) — применение least privilege, сетевой изоляции и admission controls
 
 ---
 
-[← Назад к главной странице](../README.md)
+[← Назад к главной странице](../README.html)

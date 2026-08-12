@@ -1,3 +1,6 @@
+---
+---
+
 # Hibernate и JPA
 
 ## Содержание
@@ -1485,4 +1488,4 @@ spring.flyway.enabled=true
 
 ---
 
-[← Назад к Java](README.md)
+[← Назад к Java](README.html)

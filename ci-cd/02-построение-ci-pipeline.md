@@ -1,3 +1,6 @@
+---
+---
+
 # Построение CI pipeline
 
 ## Содержание
@@ -144,7 +147,7 @@ jobs:
 
 Пример сначала делает build/load и scan локального image, а push — только после gate. Для больших образов альтернативой служит публикация в quarantine repository с последующим promotion digest. Если scanner скачивает уже опубликованный образ, publication ещё не означает допуск к deployment.
 
-Команды Maven следует настроить так, чтобы unit tests исполнял Surefire, integration tests — Failsafe (`integration-test`/`verify`), а package не пропускал тесты. Для интеграций используйте изолированные services или [Testcontainers](../тестирование/02-testcontainers.md).
+Команды Maven следует настроить так, чтобы unit tests исполнял Surefire, integration tests — Failsafe (`integration-test`/`verify`), а package не пропускал тесты. Для интеграций используйте изолированные services или [Testcontainers](../тестирование/02-testcontainers.html).
 
 ## Производительность и безопасность
 
@@ -179,8 +182,8 @@ jobs:
 
 ## Связанные темы
 
-- [Git workflow и code review](01-git-и-code-review.md)
-- [Артефакты и promotion](03-артефакты-и-promotion.md)
-- [Тестирование](../тестирование/README.md)
+- [Git workflow и code review](01-git-и-code-review.html)
+- [Артефакты и promotion](03-артефакты-и-promotion.html)
+- [Тестирование](../тестирование/README.html)
 
 <script type="module" src="../assets/mermaid-init.js"></script>

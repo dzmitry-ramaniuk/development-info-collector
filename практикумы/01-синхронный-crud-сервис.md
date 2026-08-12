@@ -1,3 +1,6 @@
+---
+---
+
 # Практикум: синхронный CRUD-сервис каталога
 
 ## Содержание
@@ -64,7 +67,7 @@ CREATE TABLE product (
 );
 ```
 
-Добавьте `price_history`, `idempotency_request(key, request_hash, response, expires_at)` и `audit_log`; определите FK, retention, индексы и границы транзакций. Сопоставьте решения с [Spring Data](../java/spring/03-spring-data.md), [транзакциями PostgreSQL](../базы%20данных/postgresql/05-transactions.md) и [оптимизацией запросов](../базы%20данных/postgresql/10-query-optimization-execution-plans.md).
+Добавьте `price_history`, `idempotency_request(key, request_hash, response, expires_at)` и `audit_log`; определите FK, retention, индексы и границы транзакций. Сопоставьте решения с [Spring Data](../java/spring/03-spring-data.html), [транзакциями PostgreSQL](../базы%20данных/postgresql/05-transactions.html) и [оптимизацией запросов](../базы%20данных/postgresql/10-query-optimization-execution-plans.html).
 
 ## Схема компонентов
 
@@ -82,7 +85,7 @@ flowchart LR
 
 ## Этап 1 — корректный монолит
 
-Реализуйте один Spring Boot deployable и PostgreSQL: валидацию, транзакции, optimistic locking, единый error mapping, request timeout и graceful shutdown. Напишите unit, repository-интеграционные тесты через Testcontainers, API contract и concurrency test двух обновлений. См. [Spring Boot](../java/spring/02-spring-boot.md) и [стратегию тестирования](../тестирование/05-best-practices.md).
+Реализуйте один Spring Boot deployable и PostgreSQL: валидацию, транзакции, optimistic locking, единый error mapping, request timeout и graceful shutdown. Напишите unit, repository-интеграционные тесты через Testcontainers, API contract и concurrency test двух обновлений. См. [Spring Boot](../java/spring/02-spring-boot.html) и [стратегию тестирования](../тестирование/05-best-practices.html).
 
 **Архитектурное ревью:** где проходит транзакция? Что произойдёт при неизвестном результате после timeout? Почему `POST` retry безопасен или опасен? Какие invariants защищает БД?
 
@@ -98,7 +101,7 @@ flowchart LR
 
 ## Этап 3 — чтение под нагрузкой
 
-Снимите query plans, добавьте только доказанные индексы; сравните вертикальное масштабирование, read replica, cache-aside и отдельный search index. Определите cache key/TTL/invalidation, защиту от stampede и поведение read-after-write. Рассчитайте CPU, connections, IOPS, storage, bandwidth и 30% headroom; задайте autoscaling по saturation, а не только CPU. См. [кэширование](../system%20design/04-кэширование.md) и [Kubernetes autoscaling](../kubernetes/03-деплоймент-сервисы.md).
+Снимите query plans, добавьте только доказанные индексы; сравните вертикальное масштабирование, read replica, cache-aside и отдельный search index. Определите cache key/TTL/invalidation, защиту от stampede и поведение read-after-write. Рассчитайте CPU, connections, IOPS, storage, bandwidth и 30% headroom; задайте autoscaling по saturation, а не только CPU. См. [кэширование](../system%20design/04-кэширование.html) и [Kubernetes autoscaling](../kubernetes/03-деплоймент-сервисы.html).
 
 **Архитектурное ревью:** какая метрика подтверждает bottleneck? Допустим ли replica lag? Что происходит при cache outage? Когда поиск окупает второй источник данных?
 
@@ -106,7 +109,7 @@ flowchart LR
 
 ## Этап 4 — эволюция без простоя
 
-Проведите expand/migrate/contract: nullable-колонка → dual-compatible код → backfill малыми батчами → constraint validation → удаление старого поля. Опишите rollback и совместимость двух версий приложения. Разверните canary, PodDisruptionBudget и probes. Спроектируйте DR: restore в изолированную среду, переключение DNS/traffic, reconciliation и возврат; сравните single-region multi-AZ с warm standby другого региона. См. [миграции](../system%20design/12-эволюция-системы-и-миграции-без-простоя.md), [Kubernetes](../kubernetes/README.md) и [AWS](../aws/README.md).
+Проведите expand/migrate/contract: nullable-колонка → dual-compatible код → backfill малыми батчами → constraint validation → удаление старого поля. Опишите rollback и совместимость двух версий приложения. Разверните canary, PodDisruptionBudget и probes. Спроектируйте DR: restore в изолированную среду, переключение DNS/traffic, reconciliation и возврат; сравните single-region multi-AZ с warm standby другого региона. См. [миграции](../system%20design/12-эволюция-системы-и-миграции-без-простоя.html), [Kubernetes](../kubernetes/README.html) и [AWS](../aws/README.html).
 
 **Архитектурное ревью:** переживёт ли old binary новую schema? Как throttling backfill защищает primary? Кто объявляет disaster? Какие данные могут потеряться в пределах RPO?
 

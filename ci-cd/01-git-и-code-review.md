@@ -1,3 +1,6 @@
+---
+---
+
 # Git workflow и code review
 
 ## Содержание
@@ -143,6 +146,6 @@ git push -u origin feat/order-timeout
 
 ## Связанные темы
 
-- [Построение CI pipeline](02-построение-ci-pipeline.md)
-- [Артефакты и promotion](03-артефакты-и-promotion.md)
-- [Тестирование](../тестирование/README.md)
+- [Построение CI pipeline](02-построение-ci-pipeline.html)
+- [Артефакты и promotion](03-артефакты-и-promotion.html)
+- [Тестирование](../тестирование/README.html)

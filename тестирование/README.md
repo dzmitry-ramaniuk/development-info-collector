@@ -1,3 +1,6 @@
+---
+---
+
 # Тестирование
 
 ## Содержание
@@ -19,7 +22,7 @@
 
 ## 📚 Содержание
 
-1. [JUnit — фреймворк модульного тестирования для Java](01-junit.md)
+1. [JUnit — фреймворк модульного тестирования для Java](01-junit.html)
    - Основы JUnit 5
    - Сравнение JUnit 4 и JUnit 5
    - Аннотации и жизненный цикл
@@ -27,14 +30,14 @@
    - Расширения (Extensions)
    - Интеграция с инструментами сборки
 
-2. [Testcontainers — интеграционное тестирование с Docker-контейнерами](02-testcontainers.md)
+2. [Testcontainers — интеграционное тестирование с Docker-контейнерами](02-testcontainers.html)
    - Основы Testcontainers
    - Специализированные модули (PostgreSQL, MySQL, Kafka, Redis)
    - Интеграция с JUnit 5
    - Продвинутые возможности
    - Лучшие практики и оптимизация
 
-3. [Mockito — фреймворк для создания тестовых двойников](03-mockito.md)
+3. [Mockito — фреймворк для создания тестовых двойников](03-mockito.html)
    - Концепция тестовых двойников
    - Основные аннотации и API
    - Стаббинг и верификация
@@ -42,21 +45,21 @@
    - Spy и частичные моки
    - Best practices
 
-4. [Spring Boot Test — тестирование Spring-приложений](04-spring-boot-test.md)
+4. [Spring Boot Test — тестирование Spring-приложений](04-spring-boot-test.html)
    - Основные типы тестов
    - @SpringBootTest, @WebMvcTest, @DataJpaTest
    - Тестирование REST API
    - Интеграция с Testcontainers
    - Практические советы
 
-5. [Лучшие практики и типичные ошибки](05-best-practices.md)
+5. [Лучшие практики и типичные ошибки](05-best-practices.html)
    - Общие принципы тестирования
    - Типичные ошибки и антипаттерны
    - Best practices
    - Организация тестового кода
    - Производительность тестов
 
-6. [Интервью-гайд — подготовка к собеседованиям](06-interview-guide.md)
+6. [Интервью-гайд — подготовка к собеседованиям](06-interview-guide.html)
    - Вопросы по JUnit 5
    - Вопросы по Mockito
    - Вопросы по Spring Boot Test
@@ -64,58 +67,58 @@
    - Практические задачи
    - Короткие формулировки для собеседования
 
-7. [Контрактное тестирование](07-contract-testing.md)
+7. [Контрактное тестирование](07-contract-testing.html)
    - Consumer-driven contracts и provider verification
    - Schema compatibility и expand/contract
    - Граница с integration/E2E и пирамида/«соты»
 
-8. [API- и E2E-тестирование](08-api-e2e-testing.md)
+8. [API- и E2E-тестирование](08-api-e2e-testing.html)
    - HTTP-контракт и негативные сценарии
    - Идемпотентность, authentication и authorization
    - Risk-based E2E и выбор вида теста
 
-9. [Нагрузочное и performance-тестирование](09-performance-testing.md)
+9. [Нагрузочное и performance-тестирование](09-performance-testing.html)
    - Workload model, latency, throughput и saturation
    - Warm-up, coordinated omission, baseline и stop criteria
    - Воспроизводимый пример Grafana k6
 
-10. [Security testing](10-security-testing.md)
+10. [Security testing](10-security-testing.html)
    - Dependency/SBOM scanning, SAST, DAST и secret scanning
    - Тесты контроля доступа
    - OWASP API Security Top 10 — 2023 и обработка секретов
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
-- **Для уверенного старта**: [JUnit](01-junit.md) → [Mockito](03-mockito.md) → [Spring Boot Test](04-spring-boot-test.md) → [Testcontainers](02-testcontainers.md)
-- **Для подготовки к собеседованию**: повторите [лучшие практики](05-best-practices.md), затем пройдите [интервью-гайд](06-interview-guide.md) и проговорите ответы вслух
+- **Для уверенного старта**: [JUnit](01-junit.html) → [Mockito](03-mockito.html) → [Spring Boot Test](04-spring-boot-test.html) → [Testcontainers](02-testcontainers.html)
+- **Для подготовки к собеседованию**: повторите [лучшие практики](05-best-practices.html), затем пройдите [интервью-гайд](06-interview-guide.html) и проговорите ответы вслух
 - **Для улучшения качества текущего проекта**: используйте раздел как чек-лист — изоляция тестов, реалистичные интеграционные сценарии, читаемость и скорость тестового набора
-- **Для проектирования quality gates**: [контракты](07-contract-testing.md) → [API/E2E](08-api-e2e-testing.md) → [performance](09-performance-testing.md) → [security](10-security-testing.md)
+- **Для проектирования quality gates**: [контракты](07-contract-testing.html) → [API/E2E](08-api-e2e-testing.html) → [performance](09-performance-testing.html) → [security](10-security-testing.html)
 
 ## 🧪 Быстрый выбор инструмента
 
 | Задача | Что изучать в первую очередь | Почему |
 |--------|-------------------------------|--------|
-| Проверить бизнес-логику без контекста Spring | [JUnit](01-junit.md) + [Mockito](03-mockito.md) | Быстрые и изолированные unit-тесты |
-| Проверить интеграцию с БД, брокером или внешним сервисом | [Testcontainers](02-testcontainers.md) | Реалистичные зависимости вместо in-memory замен |
-| Протестировать Spring MVC, JPA или весь контекст | [Spring Boot Test](04-spring-boot-test.md) | Позволяет выбрать подходящий test slice |
-| Найти антипаттерны и сделать тесты стабильнее | [Лучшие практики](05-best-practices.md) | Собирает типовые ошибки и способы их избежать |
-| Защитить независимые релизы сервисов | [Контрактное тестирование](07-contract-testing.md) | Проверяет потребности consumer без общего E2E-окружения |
-| Проверить HTTP и критический journey | [API/E2E](08-api-e2e-testing.md) | Разделяет быстрые API-проверки и малый E2E smoke |
-| Проверить SLO под нагрузкой | [Performance testing](09-performance-testing.md) | Связывает workload, latency, throughput и saturation |
-| Проверить security controls и supply chain | [Security testing](10-security-testing.md) | Сочетает access tests, SAST/DAST/SCA и секреты |
+| Проверить бизнес-логику без контекста Spring | [JUnit](01-junit.html) + [Mockito](03-mockito.html) | Быстрые и изолированные unit-тесты |
+| Проверить интеграцию с БД, брокером или внешним сервисом | [Testcontainers](02-testcontainers.html) | Реалистичные зависимости вместо in-memory замен |
+| Протестировать Spring MVC, JPA или весь контекст | [Spring Boot Test](04-spring-boot-test.html) | Позволяет выбрать подходящий test slice |
+| Найти антипаттерны и сделать тесты стабильнее | [Лучшие практики](05-best-practices.html) | Собирает типовые ошибки и способы их избежать |
+| Защитить независимые релизы сервисов | [Контрактное тестирование](07-contract-testing.html) | Проверяет потребности consumer без общего E2E-окружения |
+| Проверить HTTP и критический journey | [API/E2E](08-api-e2e-testing.html) | Разделяет быстрые API-проверки и малый E2E smoke |
+| Проверить SLO под нагрузкой | [Performance testing](09-performance-testing.html) | Связывает workload, latency, throughput и saturation |
+| Проверить security controls и supply chain | [Security testing](10-security-testing.html) | Сочетает access tests, SAST/DAST/SCA и секреты |
 
 ## 🎯 Как использовать
 
 ### Для начинающих
-1. Начните с [JUnit](01-junit.md) — освойте основы модульного тестирования
-2. Изучите [Mockito](03-mockito.md) — научитесь изолировать код от зависимостей
-3. Переходите к [Spring Boot Test](04-spring-boot-test.md) для интеграционных тестов
-4. Освойте [Testcontainers](02-testcontainers.md) для тестирования с реальными БД
+1. Начните с [JUnit](01-junit.html) — освойте основы модульного тестирования
+2. Изучите [Mockito](03-mockito.html) — научитесь изолировать код от зависимостей
+3. Переходите к [Spring Boot Test](04-spring-boot-test.html) для интеграционных тестов
+4. Освойте [Testcontainers](02-testcontainers.html) для тестирования с реальными БД
 
 ### Для подготовки к собеседованиям
 1. Повторите теорию по всем разделам
-2. Изучите [Лучшие практики](05-best-practices.md) и типичные ошибки
-3. Проработайте [Интервью-гайд](06-interview-guide.md)
+2. Изучите [Лучшие практики](05-best-practices.html) и типичные ошибки
+3. Проработайте [Интервью-гайд](06-interview-guide.html)
 4. Практикуйтесь в написании тестов на реальных проектах
 
 ### Чеклист перед собеседованием
@@ -123,7 +126,7 @@
 - Понимаете, когда нужен mock, spy или реальная зависимость.
 - Знаете, почему `@SpringBootTest` нельзя использовать «на всё подряд».
 - Можете аргументировать, зачем Testcontainers обычно лучше H2 для интеграционных тестов.
-- Помните 2–3 типичных антипаттерна из [раздела best practices](05-best-practices.md).
+- Помните 2–3 типичных антипаттерна из [раздела best practices](05-best-practices.html).
 
 ### Для опытных разработчиков
 1. Используйте как справочник по синтаксису и API
@@ -158,12 +161,12 @@
 
 ## 🔗 Связанные темы
 
-- [Java Core](../java/01-java-core.md) — основы языка для понимания тестируемого кода
-- [Spring Framework](../java/03-spring.md) — знание Spring для понимания Spring Boot Test
-- [PostgreSQL](../базы%20данных/postgresql/README.md) — для использования с Testcontainers
-- [CI/CD](../ci-cd/README.md) — как встроить unit- и integration-тесты в обязательные quality gates
-- [Redis с Java/Spring](../базы%20данных/redis/04-java-и-spring.md#testcontainers) — TTL, сериализация и fault-сценарии с настоящим Redis
+- [Java Core](../java/01-java-core.html) — основы языка для понимания тестируемого кода
+- [Spring Framework](../java/03-spring.html) — знание Spring для понимания Spring Boot Test
+- [PostgreSQL](../базы%20данных/postgresql/README.html) — для использования с Testcontainers
+- [CI/CD](../ci-cd/README.html) — как встроить unit- и integration-тесты в обязательные quality gates
+- [Redis с Java/Spring](../базы%20данных/redis/04-java-и-spring.html#testcontainers) — TTL, сериализация и fault-сценарии с настоящим Redis
 
 ---
 
-[← Назад к главной странице](../README.md)
+[← Назад к главной странице](../README.html)
