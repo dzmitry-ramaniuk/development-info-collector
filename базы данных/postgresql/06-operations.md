@@ -11,6 +11,7 @@
    - [2.1 Логические бэкапы](#21-логические-бэкапы)
    - [2.2 Физические бэкапы](#22-физические-бэкапы)
    - [2.3 Point-In-Time Recovery (PITR)](#23-point-in-time-recovery-pitr)
+   - [2.4 Учебная проверка восстановления](#24-учебная-проверка-восстановления)
 4. [3. Репликация и отказоустойчивость](#3-репликация-и-отказоустойчивость)
 5. [4. Масштабирование и высокодоступные топологии](#4-масштабирование-и-высокодоступные-топологии)
 6. [5. Обслуживание и автоматизация](#5-обслуживание-и-автоматизация)
@@ -21,10 +22,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки исправленных разделов:** 2026-10-15 (backup/PITR, synchronous replication, autovacuum); предыдущая общая проверка — 2026-08-04.
 - **Целевая версия или диапазон:** PostgreSQL 16–18
 - **Статус примеров:** `current`
-- **Первичные источники:** [PostgreSQL Documentation](https://www.postgresql.org/docs/); [PostgreSQL Release Notes](https://www.postgresql.org/docs/release/)
+- **Первичные источники:** [pg_dumpall 18](https://www.postgresql.org/docs/18/app-pg-dumpall.html), [PITR](https://www.postgresql.org/docs/18/continuous-archiving.html), [Synchronous Replication](https://www.postgresql.org/docs/18/warm-standby.html#SYNCHRONOUS-REPLICATION), [Routine Vacuuming](https://www.postgresql.org/docs/18/routine-vacuuming.html). Дата означает сверку изменённых рекомендаций с документацией, а не выполнение restore на всех версиях 16–18.
 
 ## 1. Управление конфигурацией
 - **Файлы настроек**: `postgresql.conf`, `pg_hba.conf`, `pg_ident.conf`. Используйте `ALTER SYSTEM` для программного изменения параметров и `SELECT pg_reload_conf();` для применения.
@@ -35,7 +36,7 @@
 ## 2. Резервное копирование
 ### 2.1 Логические бэкапы
 - `pg_dump` — экспорт схемы и данных. Режимы: `-Fc` (custom), `-Fd` (directory), `-Fp` (plain SQL).
-- `pg_dumpall` — весь кластер (роли, конфигурация). Удобно для миграций и обновлений.
+- `pg_dumpall` — логический экспорт баз и глобальных SQL-объектов, включая роли и tablespaces. Он не сохраняет `postgresql.conf`, `pg_hba.conf`, сертификаты или конфигурацию ОС; резервируйте их отдельно.
 - `pg_restore --jobs=N` ускоряет восстановление параллельной загрузкой.
 - Подходит для выборочного восстановления объектов и изменения структуры.
 
@@ -47,25 +48,48 @@
 ### 2.3 Point-In-Time Recovery (PITR)
 - Сочетание базового бэкапа и архивированных WAL позволяет восстановиться к конкретному моменту (`recovery_target_time`, `recovery_target_xid`, `recovery_target_lsn`).
 - Процесс: развернуть бэкап → настроить `restore_command` → создать `recovery.signal` (или `standby.signal` для реплики) → запустить сервер.
-- После восстановления проверьте `pg_last_wal_replay_lsn` и синхронизацию с основным сервером.
+- После восстановления проверьте `pg_last_wal_replay_lsn()`, достижение recovery target и бизнес-данные. PITR к прошлому моменту не предполагает догонять повреждённый primary: сначала изолируйте восстановленный сервер.
+
+### 2.4 Учебная проверка восстановления
+
+Для логического restore создайте отдельную учебную базу и сохраните ожидаемые количества строк/контрольные суммы до backup:
+
+```bash
+pg_dump -Fc -d booking_demo -f booking_demo.dump
+createdb booking_restore_demo
+pg_restore --exit-on-error --no-owner -d booking_restore_demo booking_demo.dump
+psql -X -v ON_ERROR_STOP=1 -d booking_restore_demo -c 'SELECT count(*) FROM booking'
+```
+
+Сравните данные, constraints и права приложения. Роли экспортируйте отдельно через `pg_dumpall --globals-only`; просмотрите SQL перед восстановлением. Удаляйте учебную базу только после проверки, что это именно `booking_restore_demo`.
+
+PITR проверяют отдельным упражнением: включить WAL archive и проверить его доступность → сделать base backup → записать контрольную строку → зафиксировать целевое время → выполнить учебное ошибочное изменение → восстановить backup в **другой PGDATA/порт** с полным WAL и `recovery.signal`. Пример фрагмента recovery-конфигурации:
+
+```properties
+restore_command = 'cp /srv/pg-wal-archive/%f %p'
+recovery_target_time = '2026-10-15 10:00:00+00'
+recovery_target_action = 'pause'
+```
+
+Замените время фактической контрольной точкой упражнения; проверьте pause/replay, наличие контрольной строки и отсутствие ошибочного изменения до promotion. Запишите время от начала restore до готовности приложения (RTO) и разницу между последней нужной записью и восстановленной (RPO). В recovery должен использоваться архив, недоступный для удаления вместе с primary; логический dump не заменяет base backup для PITR.
 
 ## 3. Репликация и отказоустойчивость
 - **Физическая репликация**: `wal_level=replica`, `max_wal_senders`, `hot_standby=on`. Реплика подключается через `primary_conninfo`.
-- **Синхронная репликация**: гарантирует отсутствие потерь, но увеличивает задержку. Настраивается `synchronous_standby_names`.
+- **Синхронная репликация**: `synchronous_standby_names` выбирает standbys, а `synchronous_commit` задаёт, какого подтверждения ждёт COMMIT. При `on` это durable flush требуемых standbys, при `remote_apply` — ещё и replay; `remote_write` не равен fsync. Сохранность подтверждённых записей при failover требует выбора узла с этими записями и fencing старого primary; наличие synchronous настройки само по себе не делает любой failover без потерь.
 - **Логическая репликация**: публикации (`CREATE PUBLICATION`) и подписки (`CREATE SUBSCRIPTION`). Поддерживает выборочные таблицы и версионные обновления.
-- **Слоты репликации**: удерживают WAL, пока реплика не применит изменения. Следите за размером `pg_wal`.
+- **Слоты репликации**: удерживают WAL, необходимый потребителю, согласно его подтверждениям; физическая реплика может подтвердить flush до apply. Следите за `restart_lsn`, неактивными слотами и размером `pg_wal`.
 - **Failover**: автоматизация с помощью Patroni, repmgr, Pacemaker. Тестируйте сценарии переключения.
 - **Cascade replication**: реплика может стать источником для других реплик, разгружая основной сервер.
 
 ## 4. Масштабирование и высокодоступные топологии
 - **Горизонтальное масштабирование**: распределяйте чтение по репликам, учитывая задержку (`pg_stat_replication` → `write_lag`, `replay_lag`).
-- **Шардирование**: Citus, Postgres-XL, pg_shard или самостоятельное разделение по ключу. Требует мониторинга распределённых транзакций.
+- **Шардирование**: Citus либо самостоятельное разделение по ключу; совместимость расширения с PostgreSQL проверяют отдельно. Старые проекты `pg_shard`/Postgres-XL не следует выбирать по одному наличию в историческом списке инструментов.
 - **Прокси и балансировка**: HAProxy, Pgpool-II, Odyssey управляют маршрутами запросов.
 - **Федерация данных**: FDW (`postgres_fdw`, `mysql_fdw`, `file_fdw`) — подключение внешних источников.
 - **Connection pooling**: `pgBouncer` (режим transaction, session, statement) уменьшает накладные расходы на процессы.
 
 ## 5. Обслуживание и автоматизация
-- **Autovacuum**: настройте `autovacuum_vacuum_threshold`, `autovacuum_vacuum_scale_factor`, `autovacuum_analyze_scale_factor`. Для горячих таблиц задавайте параметры на уровне таблицы (`ALTER TABLE ... SET (autovacuum_enabled = false)` и управляйте вручную).
+- **Autovacuum**: оставляйте включённым; для горячих таблиц настройте per-table `autovacuum_vacuum_threshold`, `autovacuum_vacuum_scale_factor`, `autovacuum_analyze_scale_factor`, опираясь на темп изменений и длительность уборки. Отключение обычного autovacuum требует замещающего расписания и наблюдения за dead tuples/XID; anti-wraparound vacuum всё равно может запускаться и не заменяет регулярную уборку.
 - **PLAN**: регулярный `VACUUM (ANALYZE)` после массовых операций, `REINDEX` при bloat.
 - **Регламентные задачи**: `cron`, `pg_cron`, `pgAgent` для плановых работ (бэкапы, анализ, отчёты).
 - **Обновление статистики**: `ANALYZE`, `ALTER TABLE ... SET STATISTICS`, расширение `auto_explain` для анализа тяжёлых запросов.

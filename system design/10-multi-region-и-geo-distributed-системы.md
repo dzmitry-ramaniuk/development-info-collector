@@ -19,10 +19,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — DR options и синхронная/асинхронная сохранность; остальные обзорные рекомендации ревизии 2026-08-04.
 - **Целевая версия или диапазон:** концепции версионно-независимы; технические примеры и API проверены по состоянию на 2026-08-04
 - **Статус примеров:** `current`
-- **Первичные источники:** [AWS Architecture Center](https://aws.amazon.com/architecture/); [Google SRE Books](https://sre.google/books/)
+- **Первичные источники:** [AWS: DR options и active-active](https://docs.aws.amazon.com/whitepapers/latest/disaster-recovery-workloads-on-aws/disaster-recovery-options-in-the-cloud.html), [PostgreSQL 18: synchronous/asynchronous replication](https://www.postgresql.org/docs/18/warm-standby.html), [Raft: quorum и replicated log](https://raft.github.io/raft.pdf).
 
 ## Когда multi-region действительно нужен
 
@@ -50,6 +50,8 @@ flowchart LR
 
 - **Active-passive**: основной регион обслуживает трафик, резервный стоит «наготове» и принимает нагрузку только при failover.
 - **Active-active**: несколько регионов одновременно принимают пользовательский трафик.
+
+Active-active трафик не обязательно означает конкурентные записи одной сущности в нескольких регионах: writes могут оставаться single-writer или распределяться по home region tenant. Укажите отдельно topology трафика, ownership записи и требования к сохранности ACK.
 
 Сравнение:
 

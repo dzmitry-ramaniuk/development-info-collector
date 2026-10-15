@@ -47,17 +47,15 @@
 12. [Практический пример: PostgreSQL → Kafka → Elasticsearch](#практический-пример-postgresql--kafka--elasticsearch)
    - [1. Source Connector (PostgreSQL)](#1-source-connector-postgresql)
    - [2. Sink Connector (Elasticsearch)](#2-sink-connector-elasticsearch)
+   - [3. Проверка поведения и восстановления](#3-проверка-поведения-и-восстановления)
 13. [Вопросы для самопроверки](#вопросы-для-самопроверки)
-
-<script type="module" src="../../assets/mermaid-init.js"></script>
-
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Apache Kafka 3.9–4.0
-- **Статус примеров:** `current`
-- **Первичные источники:** [Apache Kafka Documentation](https://kafka.apache.org/documentation/); [Apache Kafka Javadocs](https://kafka.apache.org/documentation/#api)
+- **Дата проверки исправленных разделов:** 2026-10-15 (Debezium properties, task model, converters и delete contract); предыдущая общая проверка — 2026-08-04.
+- **Целевая версия или диапазон:** Kafka Connect 4.0; конфигурационный baseline Debezium PostgreSQL 3.0.x, JDBC connector 10.9.9, Elasticsearch sink 16.0.0 (Elasticsearch 8.x/9.x).
+- **Статус примеров:** `preview` для полного стороннего pipeline: конфигурации сверены по источникам, совместный deployment перечисленных plugins не запускался. S3/HDFS — обзорные эскизы до фиксации версии конкретного plugin.
+- **Первичные источники:** [Debezium PostgreSQL 3.0](https://debezium.io/documentation/reference/3.0/connectors/postgresql.html), [ExtractNewRecordState](https://debezium.io/documentation/reference/3.0/transformations/event-flattening.html), [Elasticsearch config](https://docs.confluent.io/kafka-connectors/elasticsearch/current/configuration_options.html), [Elasticsearch 16.0 changelog](https://docs.confluent.io/kafka-connectors/elasticsearch/current/changelog.html), [JDBC 10.9 changelog](https://docs.confluent.io/kafka-connectors/jdbc/current/changelog.html). Версии broker, worker, plugin и целевой системы фиксируют независимо.
 
 ## Введение
 
@@ -193,7 +191,7 @@ Change Data Capture для PostgreSQL, MySQL, MongoDB и других СУБД.
     "database.user": "postgres",
     "database.password": "password",
     "database.dbname": "mydb",
-    "database.server.name": "postgres-server",
+    "topic.prefix": "postgres-server",
     "table.include.list": "public.orders,public.customers",
     "plugin.name": "pgoutput",
     "publication.autocreate.mode": "filtered",
@@ -204,7 +202,7 @@ Change Data Capture для PostgreSQL, MySQL, MongoDB и других СУБД.
 
 **Snapshot режимы**
 - `initial`: Начальный снимок, затем CDC
-- `never`: Только CDC, без снимка
+- `no_data`: Не копировать строки начального snapshot; корректная стартовая позиция и сохранность WAL всё равно обязательны
 - `when_needed`: Снимок при необходимости
 - `always`: Всегда делать снимок
 
@@ -226,6 +224,8 @@ Change Data Capture для PostgreSQL, MySQL, MongoDB и других СУБД.
 
 ### S3 Source Connector
 
+Эскиз стороннего plugin: classname, license, доступные formats и параметры зависят от поставщика и версии. Перед запуском закрепите artifact/version и выполните REST config validation; это не встроенный Apache connector.
+
 ```json
 {
   "name": "s3-source",
@@ -246,6 +246,8 @@ Change Data Capture для PostgreSQL, MySQL, MongoDB и других СУБД.
 Sink коннекторы читают данные из Kafka и записывают их во внешние системы.
 
 ### JDBC Sink Connector
+
+Для `record_key`/`record_value` и автоматического DDL требуется подходящая Connect schema. JSON без schemas не равен schemaful Connect Struct. `auto.create`/`auto.evolve` ниже удобны в учебном стенде; production DDL обычно проходит отдельно через migrations.
 
 ```json
 {
@@ -288,10 +290,9 @@ Sink коннекторы читают данные из Kafka и записыв
     "tasks.max": "3",
     "topics": "orders,customers",
     "connection.url": "http://localhost:9200",
-    "type.name": "_doc",
     "key.ignore": "false",
     "schema.ignore": "true",
-    "behavior.on.null.values": "delete",
+    "behavior.on.null.values": "DELETE",
     "batch.size": "2000",
     "max.buffered.records": "20000"
   }
@@ -579,11 +580,11 @@ status.storage.partitions=5
 # Converters по умолчанию
 key.converter=org.apache.kafka.connect.json.JsonConverter
 value.converter=org.apache.kafka.connect.json.JsonConverter
-key.converter.schemas.enable=false
-value.converter.schemas.enable=false
+key.converter.schemas.enable=true
+value.converter.schemas.enable=true
 
 # REST API
-rest.port=8083
+listeners=http://0.0.0.0:8083
 rest.advertised.host.name=localhost
 
 # Plugin path
@@ -644,7 +645,7 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
 }
 ```
 - Количество задач <= количество партиций топика (для sink)
-- Для source: зависит от коннектора (JDBC может использовать 1, Debezium - по задаче на таблицу)
+- Для source task model задаёт plugin: JDBC может распределять таблицы между tasks; Debezium PostgreSQL использует **одну task на connector**, даже при многих таблицах. Увеличение `tasks.max` это не меняет. Другие Debezium connectors имеют свою модель.
 
 ### 2. Batch конфигурация
 
@@ -662,12 +663,14 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
 {
   "errors.tolerance": "all",
   "errors.log.enable": "true",
-  "errors.log.include.messages": "true",
+  "errors.log.include.messages": "false",
   "errors.deadletterqueue.topic.name": "dlq-topic",
   "errors.deadletterqueue.topic.replication.factor": "3",
   "errors.deadletterqueue.context.headers.enable": "true"
 }
 ```
+
+`errors.tolerance=all` допускает пропуск поддерживаемых framework стадиями ошибок, а не делает любые ошибки внешней системы безвредными. DLQ не является автоматическим retry: нужны owner, alert и процедура исправления/replay. Не включайте payload в production logs без необходимости.
 
 ### 4. Использование Schema Registry
 
@@ -687,6 +690,10 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
 
 ## Практический пример: PostgreSQL → Kafka → Elasticsearch
 
+Контракт: `public.orders(id bigint PRIMARY KEY, status text)` → topic `ecommerce-db.public.orders` → index `orders`, document ID равен `id`. Raw Debezium envelope сохраняется в Kafka; unwrap выполняется на sink. Компоненты используют одинаковый schemaful JSON wire format. Пример не задаёт production PKI/secret management.
+
+До регистрации connectors: установите plugins в `plugin.path` и проверьте `/connector-plugins`; настройте `wal_level=logical`, свободные replication slots/walsenders, отдельного replication user с LOGIN/REPLICATION/SELECT. Администратор создаёт publication `orders_publication` для `public.orders` и выдаёт необходимые права; ниже autocreate отключён. Проверьте retained WAL и уникальность `slot.name`; пароли замените ConfigProvider references. Debezium SMT должен быть доступен и sink worker.
+
 ### 1. Source Connector (PostgreSQL)
 
 ```json
@@ -699,14 +706,18 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
     "database.user": "kafka_user",
     "database.password": "kafka_pass",
     "database.dbname": "ecommerce",
-    "database.server.name": "ecommerce-db",
+    "topic.prefix": "ecommerce-db",
     "table.include.list": "public.orders",
     "plugin.name": "pgoutput",
-    "transforms": "unwrap,addTimestamp",
-    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
-    "transforms.unwrap.drop.tombstones": "false",
-    "transforms.addTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
-    "transforms.addTimestamp.timestamp.field": "ingestion_time"
+    "slot.name": "orders_cdc",
+    "publication.name": "orders_publication",
+    "publication.autocreate.mode": "disabled",
+    "snapshot.mode": "initial",
+    "tombstones.on.delete": "true",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "true",
+    "value.converter.schemas.enable": "true"
   }
 }
 ```
@@ -721,14 +732,21 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
     "tasks.max": "3",
     "topics": "ecommerce-db.public.orders",
     "connection.url": "http://elasticsearch:9200",
-    "type.name": "_doc",
     "key.ignore": "false",
     "schema.ignore": "true",
+    "behavior.on.null.values": "DELETE",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "true",
+    "value.converter.schemas.enable": "true",
     "batch.size": "1000",
-    "max.in.flight.requests": "5",
-    "errors.tolerance": "all",
+    "max.in.flight.requests": "1",
+    "flush.synchronously": "true",
+    "errors.tolerance": "none",
     "errors.deadletterqueue.topic.name": "dlq-elasticsearch-orders",
-    "transforms": "extractId,route",
+    "transforms": "unwrap,extractId,route",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.delete.tombstone.handling.mode": "tombstone",
     "transforms.extractId.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
     "transforms.extractId.field": "id",
     "transforms.route.type": "org.apache.kafka.connect.transforms.RegexRouter",
@@ -737,6 +755,18 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
   }
 }
 ```
+
+`flush.synchronously=true` нужен при маршрутизации topic через RegexRouter; один in-flight batch упрощает сохранение порядка обновлений документа. Для sink 16.0 `type.name` из старых Elasticsearch API не нужен. До создания connector проверьте config через `PUT /connector-plugins/{connectorType}/config/validate`; ноль ошибок не доказывает доступность БД или корректность событий.
+
+### 3. Проверка поведения и восстановления
+
+1. INSERT `id=42,status='created'`: дождаться документа `orders/42` с этим status.
+2. UPDATE на `paid`: убедиться, что изменился тот же document ID и второго документа не появилось.
+3. DELETE: source выдаёт delete envelope и tombstone; sink unwrap оставляет tombstone, затем `behavior.on.null.values=DELETE` удаляет document.
+4. Перезапустить worker между записью и фиксацией offsets; после восстановления повторные события должны сходиться к тому же состоянию. Upsert/delete помогают этому сценарию, но не означают атомарную транзакцию Kafka+Elasticsearch.
+5. На отдельном fixture topic отправить запись с ошибочным типом ключа и проверить наблюдаемый отказ task. Отдельно включить DLQ/tolerance для поддерживаемой ошибки conversion, проверить запись в DLQ, alert и управляемый replay; не смешивать этот эксперимент с production CDC topic.
+
+Для каждого шага сохраняйте source LSN, Kafka key/offset и результат чтения index. После теста остановите connector до удаления его replication slot; убедитесь, что slot больше никем не используется. Потеря slot/WAL может потребовать нового snapshot и сверки состояния.
 
 ## Вопросы для самопроверки
 
@@ -756,7 +786,7 @@ log4j.logger.io.confluent.connect.jdbc=DEBUG
    - Централизованное управление схемами, эволюция схем, совместимость
 
 6. **Как обеспечить exactly-once для sink коннекторов?**
-   - Использовать идемпотентные операции (upsert), транзакции в целевой системе
+   - Универсальной атомарной транзакции Kafka+любая цель нет. Гарантия зависит от plugin и target; upsert с устойчивым ключом обеспечивает идемпотентный итог лишь при нужном порядке и семантике обновлений. Проверяйте crash/replay контракт.
 
 7. **В чем разница между JDBC Source и Debezium?**
    - JDBC: polling-based, видит только текущее состояние; Debezium: CDC, видит все изменения

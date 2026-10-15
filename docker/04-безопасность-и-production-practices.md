@@ -17,10 +17,10 @@
 
 ## Актуальность материала
 
-- **Проверено:** 4 августа 2026 года.
+- **Дата проверки исправлений:** 2026-10-15; BuildKit secret mount и Maven consumer. Остальная редакция — 2026-08-04, её повторная сверка не заявляется.
 - **Целевые версии:** Docker Engine/BuildKit 28.x, OCI Image/Distribution 1.1, Java 21 LTS.
 - **Статус примеров:** `current`; policy thresholds зависят от threat model организации.
-- **Первичные источники:** [Docker build best practices](https://docs.docker.com/build/building/best-practices/), [Build secrets](https://docs.docker.com/build/building/secrets/), [Docker resource constraints](https://docs.docker.com/engine/containers/resource_constraints/), [Docker Scout SBOM](https://docs.docker.com/scout/how-tos/view-create-sboms/).
+- **Первичные источники исправлений:** [Build secrets](https://docs.docker.com/build/building/secrets/); [Maven settings/server IDs](https://maven.apache.org/settings.html).
 
 ## Минимальный и воспроизводимый образ
 
@@ -52,13 +52,16 @@ docker scout cves example/orders:1.0
 
 ```dockerfile
 # syntax=docker/dockerfile:1
-RUN --mount=type=secret,id=maven_settings,target=/root/.m2/settings.xml \
-    ./gradlew bootJar --no-daemon
+# Фрагмент Maven build stage; pom.xml, src и Maven Wrapper уже скопированы.
+RUN --mount=type=secret,id=maven_settings,target=/root/.m2/settings.xml,required=true \
+    ./mvnw --batch-mode --settings /root/.m2/settings.xml verify
 ```
 
 ```bash
 docker build --secret id=maven_settings,src="$HOME/.m2/settings.xml" .
 ```
+
+`settings.xml` содержит `<server>` с ID, совпадающим с ID приватного repository в `pom.xml`. Этот пример использует **Maven**, который читает переданный `--settings`; Gradle автоматически этот файл не читает. Для Gradle отдельно настройте `repositories.credentials` из secret-file. Проверка: сборка с доступом к приватной зависимости успешна, без `--secret` остановится на обязательном mount. Не выводите файл в build log.
 
 Runtime secret получает workload из secret manager как короткоживущий credential или read-only file. Environment variables часто видны в inspect, dumps и диагностике; если приложение поддерживает file-based secret, предпочитайте файл с минимальными permissions. Настройте rotation и отзыв.
 

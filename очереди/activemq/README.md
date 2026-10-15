@@ -43,12 +43,14 @@ Apache ActiveMQ — это популярный брокер сообщений 
 
 ### Ключевые возможности
 
-- **Поддержка стандартов**: Полная реализация JMS 1.1 и JMS 2.0
+- **Поддержка стандартов**: JMS/Jakarta Messaging; точный набор возможностей зависит от Classic/Artemis и версии клиента
 - **Множество протоколов**: OpenWire, STOMP, AMQP, MQTT, WebSocket
 - **Гибкая маршрутизация**: Queues, Topics, Virtual Destinations, Composite Destinations
 - **Высокая доступность**: Master/Slave конфигурации, Network of Brokers
-- **Персистентность**: Поддержка различных хранилищ (KahaDB, JDBC, LevelDB)
+- **Персистентность**: KahaDB/JDBC у Classic, journal у Artemis; LevelDB удалена из Classic начиная с 5.17
 - **Расширяемость**: Плагины, interceptors, custom destinations
+
+Основная глава использует закреплённый учебный baseline Classic 6.1.5 с `jakarta.jms`; Artemis и legacy `javax.jms` отделены явно. Практика [acknowledgement](examples/acknowledgement/pom.xml) запускается через `mvn test` с JDK 17+: rollback/redelivery, commit и DLQ проверяются на embedded broker без production-сервисов.
 
 ### Основные сценарии использования
 

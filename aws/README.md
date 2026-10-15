@@ -35,6 +35,7 @@
 8. [SNS: pub/sub, fan-out и уведомления](08-sns.html)
 9. [EventBridge: event bus, правила и интеграции](09-eventbridge.html)
 10. [Cognito: аутентификация, user pools и federation](10-cognito.html)
+11. [DynamoDB: воспроизводимая практика](11-практика-dynamodb.html) — create, conditional write, negative test, Query и cleanup; локальный запуск по умолчанию.
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
