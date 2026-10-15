@@ -76,11 +76,13 @@ jobs:
           trap 'docker rm -f learning-pg >/dev/null 2>&1 || true' EXIT
           ready=false
           for attempt in $(seq 1 30); do
-            if docker exec learning-pg pg_isready -U postgres; then ready=true; break; fi
+            # entrypoint сначала запускает временный сервер только на Unix socket.
+            # TCP открывается уже после завершения initdb и финального запуска.
+            if docker exec learning-pg pg_isready -h 127.0.0.1 -U postgres; then ready=true; break; fi
             sleep 1
           done
           test "$ready" = true
-          docker exec -i learning-pg psql -U postgres -v ON_ERROR_STOP=1 < 'базы данных/postgresql/examples/01-partition-constraints.sql'
+          docker exec -i -e PGPASSWORD=local-demo learning-pg psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 < 'базы данных/postgresql/examples/01-partition-constraints.sql'
       - name: Правила и временные ряды Prometheus
         run: |
           docker run --rm --entrypoint /bin/promtool -v "$PWD/examples/infra/03-observability:/work:ro" -w /work prom/prometheus:v3.5.0 check rules 01-rules.yaml
