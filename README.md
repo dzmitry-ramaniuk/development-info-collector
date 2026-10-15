@@ -185,6 +185,7 @@ permalink: /
 
 1. **Запускаемые примеры и инструкции**
    - [Java Core: контрпримеры и проверки](examples/java-core/README.html)
+   - [Многопоточность: CAS, shutdown и cancellation](examples/java-concurrency/README.html)
 
 Материалы организованы в десять основных разделов:
 

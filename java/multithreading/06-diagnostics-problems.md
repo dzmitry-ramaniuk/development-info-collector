@@ -16,10 +16,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечная сверка: исправление livelock и допустимые исходы публикации в jcstress. Остальной материал не проходил повторную полную проверку; прежняя дата — 2026-08-04.
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Статус примеров:** исправленные стабильные API — `current` (Java SE 17); проверка исполняемого примера описана в [README примеров](../../examples/java-concurrency/README.html). Фрагменты с зависимостями не считаются автоматически запущенными.
+- **Первичные источники:** (точечная сверка) [JLS 17.4.5](https://docs.oracle.com/javase/specs/jls/se17/html/jls-17.html#jls-17.4.5); [OpenJDK jcstress: usage](https://github.com/openjdk/jcstress#usage)
 
 ## Основные проблемы многопоточности
 
@@ -228,34 +228,45 @@ public class LivelockExample {
 }
 ```
 
-**Решение livelock: случайные задержки (backoff):**
+**Решение livelock: изменить правило передачи ресурса:**
+
+Случайная задержка сама по себе не исправляет этот пример: пока оба голодны, каждый владелец всё равно передаёт ложку и выполняет `continue`. Нужно разрешить участнику закончить работу. Ниже ложка — общий монитор; её владелец сначала ест, затем освобождает ресурс.
 
 ```java
 public class LivelockSolution {
-    public void eatWith(Spoon spoon, Diner spouse) {
-        Random random = new Random();
-        
-        while (isHungry) {
-            if (spoon.getOwner() != this) {
-                sleep(1);
-                continue;
-            }
-            
-            if (spouse.isHungry) {
-                System.out.println(name + ": You eat first");
-                spoon.setOwner(spouse);
-                
-                // Случайная задержка нарушает синхронность
-                sleep(random.nextInt(100));
-                continue;
-            }
-            
-            spoon.use();
-            isHungry = false;
+    static class Diner {
+        private final String name;
+        private boolean hungry = true; // Доступ только под монитором spoon.
+
+        Diner(String name) {
+            this.name = name;
         }
+
+        void eatWith(Object spoon) {
+            synchronized (spoon) {
+                if (hungry) {
+                    System.out.println(name + " is eating");
+                    hungry = false;
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Object spoon = new Object();
+        Diner first = new Diner("First");
+        Diner second = new Diner("Second");
+        Thread a = new Thread(() -> first.eatWith(spoon));
+        Thread b = new Thread(() -> second.eatWith(spoon));
+        a.start();
+        b.start();
+        a.join();
+        b.join();
     }
 }
 ```
+
+У каждого участника конечная критическая секция без бесконечного уступания. Порядок еды не задан; `synchronized` не обещает FIFO. Backoff полезен для алгоритмов с повторными попытками, если следующая попытка действительно может выполнить операцию; это отдельное условие прогресса.
 
 ### 3. Starvation (Голодание)
 
@@ -353,7 +364,7 @@ public class RaceConditionExample {
         t1.join();
         t2.join();
         
-        // Ожидаем 20000, но получим меньше из-за race condition
+        // Может быть меньше 20000; успешный запуск не доказывает отсутствие гонки.
         System.out.println("Counter: " + example.counter);
     }
 }
@@ -513,27 +524,36 @@ public class ThreadMonitoring {
 **1. jcstress - Concurrency Stress Tests:**
 
 ```java
+import org.openjdk.jcstress.annotations.*;
+import org.openjdk.jcstress.infra.results.II_Result;
+
 @JCStressTest
-@Outcome(id = "0, 0", expect = Expect.ACCEPTABLE, desc = "Both threads see 0")
-@Outcome(id = "1, 1", expect = Expect.ACCEPTABLE, desc = "Both threads see 1")
-@Outcome(id = "0, 1", expect = Expect.ACCEPTABLE, desc = "T1 sees 0, T2 sees 1")
-@Outcome(id = "1, 0", expect = Expect.FORBIDDEN, desc = "Impossible with proper sync")
+@Outcome(id = "0, -1", expect = Expect.ACCEPTABLE, desc = "Публикация ещё не замечена")
+@Outcome(id = "1, 42", expect = Expect.ACCEPTABLE, desc = "Данные опубликованы")
+@Outcome(expect = Expect.FORBIDDEN, desc = "Другие исходы запрещены")
 @State
-public class CounterTest {
-    private volatile int value = 0;
+public class PublicationTest {
+    private int data;
+    private volatile boolean ready;
     
     @Actor
-    public void actor1(II_Result r) {
-        r.r1 = value;
-        value = 1;
+    public void writer() {
+        data = 42;
+        ready = true;
     }
     
     @Actor
-    public void actor2(II_Result r) {
-        r.r2 = value;
+    public void reader(II_Result r) {
+        boolean observedReady = ready;
+        r.r1 = observedReady ? 1 : 0;
+        r.r2 = observedReady ? data : -1;
     }
 }
 ```
+
+Сохраните класс как `PublicationTest.java` в пакете тестового проекта jcstress, созданного по [официальной инструкции OpenJDK](https://github.com/openjdk/jcstress#usage). Это не обычный JUnit-тест: нужны runner и обработчик аннотаций jcstress.
+
+Если reader увидел `ready=true`, запись `data=42` предшествует volatile-записи, а volatile-чтение — чтению `data`; транзитивность happens-before запрещает `1, 0`. При `ready=false` данные не читаются, поэтому записывается маркер `-1`. В учебном варианте без `volatile` исход `1, 0` разрешён JMM, хотя конкретный запуск может его не наблюдать. Отсутствие запрещённого результата в stress-тесте не заменяет доказательство.
 
 **2. Повторные запуски:**
 

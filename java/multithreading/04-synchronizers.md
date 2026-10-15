@@ -13,10 +13,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечная сверка: CAS-стек и характеристика ConcurrentLinkedQueue. Остальной материал не проходил повторную полную проверку; прежняя дата — 2026-08-04.
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Статус примеров:** исправленные стабильные API — `current` (Java SE 17); проверка исполняемого примера описана в [README примеров](../../examples/java-concurrency/README.html). Фрагменты с зависимостями не считаются автоматически запущенными.
+- **Первичные источники:** (точечная сверка) [AtomicReference](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/atomic/AtomicReference.html); [ConcurrentLinkedQueue](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ConcurrentLinkedQueue.html)
 
 ## Locks: явная блокировка
 
@@ -425,11 +425,11 @@ public class AtomicStack<T> {
     private final AtomicReference<Node<T>> head = new AtomicReference<>();
     
     public void push(T value) {
-        Node<T> newHead = new Node<>(value, null);
         Node<T> oldHead;
+        Node<T> newHead;
         do {
             oldHead = head.get();
-            newHead.next = oldHead;
+            newHead = new Node<>(value, oldHead);
         } while (!head.compareAndSet(oldHead, newHead)); // Retry на конкуренцию
     }
     
@@ -448,6 +448,10 @@ public class AtomicStack<T> {
     }
 }
 ```
+
+При неудачном CAS вершина могла измениться: повторяем чтение и создаём новый узел с нужным `next`. Поля узла остаются `final`; после публикации узел не изменяется. Здесь узлы не переиспользуются и не возвращаются вызывающему коду, поэтому снятый узел нельзя повторно вставить и вызвать классический ABA на ссылке `head`. Нельзя механически переносить этот вывод на стеки с пулом узлов.
+
+Полный вариант с конкурентной проверкой сохранности элементов: [ConcurrencyExamples.java](../../examples/java-concurrency/ConcurrencyExamples.java), [команды запуска](../../examples/java-concurrency/README.html).
 
 **LongAdder для высококонкурентных счётчиков:**
 
@@ -616,7 +620,7 @@ public class EventListeners {
 
 ```java
 public class LockFreeQueue {
-    // Wait-free операции через CAS
+    // Неблокирующий алгоритм; lock-free не означает wait-free
     private final ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
     
     public void enqueue(String item) {
