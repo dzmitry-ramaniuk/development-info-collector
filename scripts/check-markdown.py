@@ -7,7 +7,14 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUDED = {"AGENTS.md", ".github/copilot-instructions.md", ".github/ISSUE_TEMPLATE/revision.md"}
-FILES = sorted(p for p in ROOT.rglob("*.md") if ".git" not in p.parts and p.relative_to(ROOT).as_posix() not in EXCLUDED)
+# README примеров публикуются как инструкции запуска. Остальные Markdown-файлы
+# в examples (например SKILL.md) — исходники, а не учебные HTML-страницы.
+FILES = sorted(
+    p for p in ROOT.rglob("*.md")
+    if not {".git", "work", "target", "node_modules"}.intersection(p.relative_to(ROOT).parts)
+    and ("examples" not in p.relative_to(ROOT).parts or p.name == "README.md")
+    and p.relative_to(ROOT).as_posix() not in EXCLUDED
+)
 LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
 HEADING_RE = re.compile(r"^(#{1,3})\s+(.+?)\s*#*$")
 
@@ -101,6 +108,9 @@ for path in FILES:
         errors.append(f"{path.relative_to(ROOT)}: отсутствует YAML front matter для сборки Jekyll")
     if path.name == "README.md":
         continue
+    actual_sections = [title for _, level, title, _ in headings(path) if level == 2 and title == "Актуальность материала"]
+    if len(actual_sections) != 1:
+        errors.append(f"{path.relative_to(ROOT)}: нужен один блок «Актуальность материала»")
     items = headings(path)
     sections = [item for item in items if item[1] == 2 and item[2] != "Содержание"]
     if len(sections) < 2:
