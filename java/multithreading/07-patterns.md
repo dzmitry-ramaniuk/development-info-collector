@@ -16,10 +16,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечная сверка: приём задач, graceful/immediate shutdown и кооперативная отмена. Остальной материал не проходил повторную полную проверку; прежняя дата — 2026-08-04.
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Статус примеров:** исправленные стабильные API — `current` (Java SE 17); проверка исполняемого примера описана в [README примеров](../../examples/java-concurrency/README.html). Фрагменты с зависимостями не считаются автоматически запущенными.
+- **Первичные источники:** (точечная сверка) [ExecutorService](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ExecutorService.html); [Future](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/Future.html)
 
 ## Producer-Consumer Pattern
 
@@ -70,13 +70,22 @@ public class ProducerConsumerExample {
         }
     }
     
-    public void stop() {
+    // Немедленная отмена: очередь может содержать необработанные задачи.
+    public boolean stop(long timeout, TimeUnit unit) throws InterruptedException {
         running = false;
-        producers.shutdown();
-        consumers.shutdown();
+        producers.shutdownNow(); // Прерывает в том числе queue.put().
+        consumers.shutdownNow(); // Прерывает в том числе queue.take().
+        long budget = unit.toNanos(timeout);
+        long started = System.nanoTime();
+        boolean producersStopped = producers.awaitTermination(budget, TimeUnit.NANOSECONDS);
+        long remaining = Math.max(0, budget - (System.nanoTime() - started));
+        boolean consumersStopped = consumers.awaitTermination(remaining, TimeUnit.NANOSECONDS);
+        return producersStopped && consumersStopped;
     }
 }
 ```
+
+Это протокол **немедленной отмены**: `processTask` и `generateTask` должны кооперативно реагировать на interruption, а очередь может остаться непустой. Один `running=false` не будит поток в `take()`/`put()`, а `shutdown()` не прерывает уже исполняемый цикл. Для graceful drain сначала прекращают и дожидаются производителей, затем заканчивают потребителей после обработки принятых задач. Не смешивайте обе политики в одном обещании API.
 
 **С контролем backpressure через Semaphore:**
 
@@ -122,15 +131,18 @@ public class WorkerPool {
     private final List<Worker> workers = new ArrayList<>();
     private volatile boolean isShutdown = false;
     
+    private final Object lifecycle = new Object();
+
     public WorkerPool(int poolSize, int queueCapacity) {
+        if (poolSize <= 0) throw new IllegalArgumentException("poolSize must be positive");
         this.taskQueue = new LinkedBlockingQueue<>(queueCapacity);
         
         // Создаём рабочие потоки
         for (int i = 0; i < poolSize; i++) {
             Worker worker = new Worker(i);
             workers.add(worker);
-            worker.start();
         }
+        workers.forEach(Thread::start);
     }
     
     private class Worker extends Thread {
@@ -151,10 +163,8 @@ public class WorkerPool {
                         task.run();
                     }
                 } catch (InterruptedException e) {
-                    if (isShutdown) {
-                        break;
-                    }
                     Thread.currentThread().interrupt();
+                    break; // Прерывание означает немедленную отмену, а не drain.
                 } catch (Exception e) {
                     System.err.println("Worker " + id + " error: " + e.getMessage());
                 }
@@ -163,31 +173,48 @@ public class WorkerPool {
         }
     }
     
-    public void submit(Runnable task) throws InterruptedException {
-        if (isShutdown) {
-            throw new IllegalStateException("Pool is shutdown");
+    public void submit(Runnable task) {
+        synchronized (lifecycle) {
+            if (isShutdown || !taskQueue.offer(task)) {
+                throw new RejectedExecutionException("Pool stopped or queue full");
+            }
         }
-        taskQueue.put(task);
     }
     
     public void shutdown() {
-        isShutdown = true;
-        // Прерываем все worker threads
-        workers.forEach(Thread::interrupt);
+        synchronized (lifecycle) {
+            isShutdown = true; // Graceful: poll проснётся сам, очередь будет обработана.
+        }
     }
     
-    public void awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        for (Worker worker : workers) {
-            long remaining = deadline - System.currentTimeMillis();
-            if (remaining <= 0) {
-                break;
-            }
-            worker.join(remaining);
+    public List<Runnable> shutdownNow() {
+        synchronized (lifecycle) {
+            isShutdown = true;
+            List<Runnable> pending = new ArrayList<>();
+            taskQueue.drainTo(pending);
+            workers.forEach(Thread::interrupt);
+            return pending;
         }
+    }
+
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+        long budget = unit.toNanos(timeout);
+        long started = System.nanoTime();
+        for (Worker worker : workers) {
+            long remaining = budget - (System.nanoTime() - started);
+            if (remaining <= 0) {
+                return workers.stream().noneMatch(Thread::isAlive);
+            }
+            TimeUnit.NANOSECONDS.timedJoin(worker, remaining);
+        }
+        return workers.stream().noneMatch(Thread::isAlive);
     }
 }
 ```
+
+Здесь постановка задачи и запрет приёма сериализованы одним `lifecycle`: после `shutdown()` новая задача не попадёт в очередь. Переполнение отклоняет задачу, а не блокирует отправителя под этим монитором. Graceful остановка не прерывает workers; `shutdownNow()` возвращает ещё не взятые задачи и лишь пытается остановить текущие. Пример рассчитан на задачи, которые завершаются либо реагируют на interruption; ошибка `Error`, авария процесса и бесконечная задача не покрываются обещанием drain.
+
+[Полный пример и проверки пустой/полной очереди](../../examples/java-concurrency/README.html) работают без внешних библиотек. Для прикладного кода обычно выбирайте `ThreadPoolExecutor`, а собственный пул используйте как упражнение на жизненный цикл.
 
 ## Fork/Join Pattern
 

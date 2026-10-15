@@ -56,10 +56,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечная сверка: единый монитор для общего состояния и порядок блокировок с коллизиями; раздел JVM-оптимизаций не перепроверялся. Остальной материал не проходил повторную полную проверку; прежняя дата — 2026-08-04.
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Статус примеров:** исправленные стабильные API — `current` (Java SE 17); проверка исполняемого примера описана в [README примеров](../../examples/java-concurrency/README.html). Фрагменты с зависимостями не считаются автоматически запущенными.
+- **Первичные источники:** (точечная сверка) [JLS 17.4.5](https://docs.oracle.com/javase/specs/jls/se17/html/jls-17.html#jls-17.4.5); [ReentrantReadWriteLock](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/locks/ReentrantReadWriteLock.html); [System.identityHashCode](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/System.html#identityHashCode(java.lang.Object)); [Object.hashCode](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html#hashCode())
 
 Ключевое слово `synchronized` — это встроенный механизм синхронизации в Java, обеспечивающий взаимное исключение (mutual exclusion) и гарантии видимости изменений между потоками. Это один из фундаментальных инструментов для создания потокобезопасного кода.
 
@@ -107,7 +107,9 @@ public class BankAccount {
         // Другой поток может выполниться между шагами 1 и 2
     }
     
-    // С synchronized - атомарная операция
+    // Защита двух счетов требует согласованного порядка блокировок!
+    // Этот метод показывает вложенные мониторы, но встречные переводы
+    // могут вызвать deadlock; безопасный вариант приведён ниже.
     public synchronized void transfer(BankAccount to, double amount) {
         if (this.balance >= amount) {
             this.balance -= amount;
@@ -208,20 +210,19 @@ public class FlexibleSync {
         doSomethingElse();
     }
     
-    // Можно использовать разные мониторы для разных данных
-    private final Object readLock = new Object();
-    private final Object writeLock = new Object();
-    private List<String> data = new ArrayList<>();
+    // Чтение и запись одной коллекции используют один и тот же монитор.
+    private final Object dataLock = new Object();
+    private final List<String> data = new ArrayList<>();
     
     public void read() {
-        synchronized (readLock) {
+        synchronized (dataLock) {
             // Операции чтения
             System.out.println(data);
         }
     }
     
     public void write(String item) {
-        synchronized (writeLock) {
+        synchronized (dataLock) {
             // Операции записи
             data.add(item);
         }
@@ -929,30 +930,30 @@ public void processOrder(Order order) {
 
 ```java
 /**
- * Thread-safe cache with separate locks for read and write operations.
+ * Потокобезопасный кэш: один монитор защищает всё состояние map.
  * 
  * Locking strategy:
- * - readLock: protects all read operations (get, containsKey)
- * - writeLock: protects all write operations (put, remove, clear)
+ * - lock: защищает get, put и все будущие операции с cache.
  */
 public class DocumentedCache<K, V> {
-    private final Object readLock = new Object();
-    private final Object writeLock = new Object();
+    private final Object lock = new Object();
     private final Map<K, V> cache = new HashMap<>();
     
     public V get(K key) {
-        synchronized (readLock) {
+        synchronized (lock) {
             return cache.get(key);
         }
     }
     
     public void put(K key, V value) {
-        synchronized (writeLock) {
+        synchronized (lock) {
             cache.put(key, value);
         }
     }
 }
 ```
+
+Чтение и запись одной `HashMap` под независимыми мониторами оставляют data race. Для параллельных читателей используйте пару `readLock()`/`writeLock()` **одного** `ReentrantReadWriteLock`, как в [главе о синхронизаторах](04-synchronizers.html#locks-явная-блокировка). Возвращаемое изменяемое значение кэша требует собственной стратегии синхронизации.
 
 ### 4. Избегайте блокировки на публичных объектах
 
@@ -994,7 +995,11 @@ public class Account {
 
 // ХОРОШО: упорядоченная блокировка
 public class SafeAccount {
-    private final int id;
+    private final long id; // Уникален среди всех счетов, не меняется.
+
+    public SafeAccount(long uniqueId) {
+        this.id = uniqueId;
+    }
     
     public void transfer(SafeAccount to, double amount) {
         SafeAccount first = this.id < to.id ? this : to;
@@ -1210,19 +1215,38 @@ class Account {
 
 // ХОРОШО
 class SafeAccount {
+    private static final Object HASH_TIE_LOCK = new Object();
+    private int balance;
+
     void transferTo(SafeAccount other, int amount) {
-        Object lock1 = System.identityHashCode(this) < System.identityHashCode(other) ? this : other;
-        Object lock2 = lock1 == this ? other : this;
-        
-        synchronized (lock1) {
-            synchronized (lock2) {
-                this.balance -= amount;
-                other.balance += amount;
+        if (this == other) return;
+        int mine = System.identityHashCode(this);
+        int theirs = System.identityHashCode(other);
+        if (mine < theirs) {
+            transferUnderLocks(other, this, other, amount);
+        } else if (mine > theirs) {
+            transferUnderLocks(other, other, this, amount);
+        } else {
+            // identityHashCode не уникален. Сериализуем случай коллизии.
+            synchronized (HASH_TIE_LOCK) {
+                transferUnderLocks(other, this, other, amount);
             }
         }
     }
+
+    private void transferUnderLocks(SafeAccount to, SafeAccount first, SafeAccount second, int amount) {
+        synchronized (first) {
+            synchronized (second) {
+                balance -= amount;
+                to.balance += amount;
+            }
+        }
+    }
+
 }
 ```
+
+Хеш задаёт порядок только для неравных значений. При коллизии общий tie-lock захватывается **до** обоих счетов. Этот учебный пример показывает блокировки; проверка суммы, остатка и тип для денег относятся к отдельному бизнес-инварианту. Если есть уникальный неизменяемый ID, проще упорядочивать по нему.
 
 ### 6. Синхронизация на null или на разных объектах
 

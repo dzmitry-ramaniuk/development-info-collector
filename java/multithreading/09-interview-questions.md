@@ -11,10 +11,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечная сверка: shutdownNow и отличие таймаута результата от отмены. Остальной материал не проходил повторную полную проверку; прежняя дата — 2026-08-04.
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Статус примеров:** исправленные стабильные API — `current` (Java SE 17); проверка исполняемого примера описана в [README примеров](../../examples/java-concurrency/README.html). Фрагменты с зависимостями не считаются автоматически запущенными.
+- **Первичные источники:** (точечная сверка) [CompletableFuture](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/CompletableFuture.html); [ExecutorService](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ExecutorService.html)
 
 ## Базовые вопросы
 
@@ -83,7 +83,7 @@ try {
     try {
         // Шаг 2: Ждём завершения текущих задач с таймаутом
         if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-            // Шаг 3: Принудительно останавливаем при таймауте
+            // Шаг 3: Запрашиваем кооперативную остановку при таймауте
             List<Runnable> notExecuted = executor.shutdownNow();
             System.out.println("Cancelled tasks: " + notExecuted.size());
             
@@ -100,7 +100,7 @@ try {
 }
 ```
 
-**Важно:** Задачи должны корректно обрабатывать `InterruptedException` и проверять флаг прерывания.
+**Важно:** `shutdownNow()` лишь пытается прервать задачи. Они должны корректно обрабатывать `InterruptedException` и проверять флаг прерывания; остановка не гарантируется, а `awaitTermination` может вернуть `false`.
 
 **4. Что такое deadlock и как его обнаружить?**
 
@@ -167,11 +167,14 @@ future.exceptionally(ex -> "Fallback value")
       .handle((result, ex) -> ex != null ? "Error" : result);
 ```
 
-4. **Таймауты и отмена (Java 9+):**
+4. **Таймаут результата (эти методы доступны с Java 9):**
 ```java
-future.orTimeout(5, TimeUnit.SECONDS)
-      .completeOnTimeout("Default", 3, TimeUnit.SECONDS);
+future.orTimeout(5, TimeUnit.SECONDS); // Ошибка TimeoutException.
+// Альтернативная политика для другого future:
+otherFuture.completeOnTimeout("Default", 3, TimeUnit.SECONDS);
 ```
+
+Эти методы меняют результат future, а не останавливают работу. У базового `CompletableFuture.cancel(true)` параметр `true` не вызывает interruption; для фактической отмены нужно управлять исходной задачей/HTTP-запросом. См. [таймаут и отмена операции](03-async-coordination.html#таймаут-результата-и-отмена-операции).
 
 **Преимущества над Future:**
 - Неблокирующее комбинирование результатов

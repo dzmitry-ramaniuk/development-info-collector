@@ -7,6 +7,7 @@
 
 1. [Актуальность материала](#актуальность-материала)
 2. [CompletableFuture: асинхронные конвейеры](#completablefuture-асинхронные-конвейеры)
+   - [Таймаут результата и отмена операции](#таймаут-результата-и-отмена-операции)
 3. [Structured Concurrency: матрица JDK](#structured-concurrency-матрица-jdk)
 4. [Future и его ограничения](#future-и-его-ограничения)
 5. [Как выбирать подход](#как-выбирать-подход)
@@ -15,10 +16,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечная сверка: контракты CompletableFuture, таймаута и отмены HTTP; матрица Structured Concurrency не перепроверялась. Остальной материал не проходил повторную полную проверку; прежняя дата — 2026-08-04.
 - **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Статус примеров:** исправленные стабильные API — `current` (Java SE 17); проверка исполняемого примера описана в [README примеров](../../examples/java-concurrency/README.html). Structured Concurrency — `preview`, отдельно привязана к JDK 24; этот preview-пример не запускался.
+- **Первичные источники:** (точечная сверка) [CompletableFuture](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/CompletableFuture.html); [Future](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/Future.html); [HttpClient](https://docs.oracle.com/en/java/javase/17/docs/api/java.net.http/java/net/http/HttpClient.html); [HttpRequest.Builder](https://docs.oracle.com/en/java/javase/17/docs/api/java.net.http/java/net/http/HttpRequest.Builder.html)
 
 ## CompletableFuture: асинхронные конвейеры
 
@@ -45,7 +46,7 @@ CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
 // Получение результата (блокирующая операция)
 String result = future.get(); // Бросает ExecutionException, InterruptedException
 
-// Получение с таймаутом (Java 9+)
+// Получение с таймаутом (Future.get(timeout) доступен с Java 5)
 String resultWithTimeout = future.get(5, TimeUnit.SECONDS); // TimeoutException
 
 // Неблокирующее получение
@@ -61,11 +62,11 @@ CompletableFuture<String> result = CompletableFuture
         return fetchUserId();
     })
     .thenApply(userId -> {
-        // Синхронная трансформация (выполняется в том же потоке)
+        // Без Async: нет гарантии конкретного потока исполнения.
         return "User-" + userId;
     })
     .thenApplyAsync(userName -> {
-        // Асинхронная трансформация (новый поток из пула)
+        // Async: задача передаётся executor; создание нового потока не гарантируется.
         return fetchUserDetails(userName);
     })
     .thenApply(userDetails -> {
@@ -165,6 +166,39 @@ public class AsyncHttpService {
     }
 }
 ```
+
+### Таймаут результата и отмена операции
+
+`get(timeout)` ограничивает ожидание вызывающего потока; `orTimeout()` завершает сам `CompletableFuture` с ошибкой. Они не останавливают поставщика результата. В базовом `CompletableFuture.cancel(true)` флаг interruption также не используется для управления вычислением. Отмена должна дойти до операции: например, до `Future<?>`, полученного от `ExecutorService.submit`, либо до механизма отмены HTTP-клиента.
+
+```java
+// executor и timer принадлежат сервису; при закрытии сервиса их завершают.
+CompletableFuture<String> result = new CompletableFuture<>();
+Future<?> operation = executor.submit(() -> {
+    try {
+        // Блокирующая операция должна поддерживать interruption или иметь I/O timeout.
+        result.complete(loadInterruptibly());
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        result.completeExceptionally(e);
+    } catch (Exception e) {
+        result.completeExceptionally(e);
+    }
+});
+ScheduledFuture<?> deadline = timer.schedule(() -> {
+    if (result.completeExceptionally(new TimeoutException("Request deadline"))) {
+        operation.cancel(true); // Только запрос на кооперативную остановку.
+    }
+}, 5, TimeUnit.SECONDS);
+result.whenComplete((value, error) -> {
+    deadline.cancel(false);
+    if (result.isCancelled()) operation.cancel(true);
+});
+```
+
+Для JDK 17 `HttpRequest.Builder.timeout(Duration)` задаёт таймаут запроса. У стандартной реализации `HttpClient` interruption блокирующего `send` и отмена исходного future от `sendAsync` пытаются прекратить обмен; это не отменяет уже выполненное действие сервера. Не переносите эти свойства автоматически на обёртку `supplyAsync` или на произвольный HTTP-клиент.
+
+Для fan-out сохраните handles всех операций, примените один общий deadline и определите политику частичного успеха. `allOf()` ожидает все завершения и может завершиться с ошибкой; `anyOf()` означает первое завершение, включая ошибку. Ни один из них сам не отменяет оставшиеся операции. Разбор и критерии находятся в [упражнении 2](08-exercises.html#упражнение-2-асинхронные-http-запросы-с-таймаутом); [исполняемый пример](../../examples/java-concurrency/README.html) отдельно проверяет таймаут результата и interruption underlying Future.
 
 ## Structured Concurrency: матрица JDK
 
