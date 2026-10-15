@@ -18,13 +18,15 @@
 8. [7. Транзакции и WAL](#7-транзакции-и-wal)
 9. [8. Взаимодействие с VACUUM](#8-взаимодействие-с-vacuum)
 10. [9. Журналирование и наблюдение](#9-журналирование-и-наблюдение)
+11. [10. Практикум в двух сессиях](#10-практикум-в-двух-сессиях)
+12. [11. Вопросы для самопроверки](#11-вопросы-для-самопроверки)
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки исправленных разделов:** 2026-10-15 (изоляция, блокировки и практикум); предыдущая общая проверка — 2026-08-04.
 - **Целевая версия или диапазон:** PostgreSQL 16–18
 - **Статус примеров:** `current`
-- **Первичные источники:** [PostgreSQL Documentation](https://www.postgresql.org/docs/); [PostgreSQL Release Notes](https://www.postgresql.org/docs/release/)
+- **Первичные источники:** [PostgreSQL 18: Transaction Isolation](https://www.postgresql.org/docs/18/transaction-iso.html), [Explicit Locking](https://www.postgresql.org/docs/18/explicit-locking.html). Сверка документации не означает запуск всех примеров на каждой версии 16–18.
 
 ## 1. Основы транзакций
 - Транзакция — атомарная последовательность операторов между `BEGIN` и `COMMIT`/`ROLLBACK`.
@@ -37,7 +39,7 @@
 | Уровень | Грязное чтение | Неповторяющееся чтение | Фантомы | Особенности |
 |---------|----------------|------------------------|---------|-------------|
 | READ COMMITTED | ❌ | ✅ | ✅ | Каждое выражение видит состояние на начало выполнения. |
-| REPEATABLE READ | ❌ | ❌ | ⚠️ (подавлены MVCC + predicate locks) | Снимок на момент `BEGIN`. |
+| REPEATABLE READ | ❌ | ❌ | ❌ в PostgreSQL | Один MVCC-снимок с первого оператора, не являющегося управлением транзакцией; write skew возможен. |
 | SERIALIZABLE | ❌ | ❌ | ❌ | SSI отслеживает опасные конфликты и может завершить транзакцию ошибкой `serialization_failure`. |
 | READ UNCOMMITTED | ❌ | ✅ | ✅ | Синоним READ COMMITTED в PostgreSQL. |
 
@@ -46,22 +48,24 @@
 - REPEATABLE READ — для отчётов, когда важна стабильность набора данных.
 - SERIALIZABLE — для финансовых операций, требующих строгой последовательности; закладывайте повтор попыток.
 
+Predicate locks (`SIReadLock`) используются **SSI на SERIALIZABLE**, чтобы обнаруживать опасные зависимости. Они не блокируют запись диапазона. REPEATABLE READ предотвращает фантомы за счёт стабильного снимка, но не гарантирует сериализуемость.
+
 ## 3. Типичные аномалии и их предотвращение
-- **Lost Update**: две транзакции читают одну строку и обновляют её без блокировок. Решения: `SELECT ... FOR UPDATE`, сериализация на уровне приложения, SERIALIZABLE.
-- **Non-Repeatable Read**: повторный SELECT возвращает разные данные. Решение: REPEATABLE READ, `SELECT ... FOR SHARE`.
-- **Phantom Read**: набор строк меняется между запросами. Решение: SERIALIZABLE, блокировка диапазона `FOR SHARE`, `FOR KEY SHARE`.
+- **Lost Update**: read-modify-write с записью вычисленного в приложении значения может затереть конкурентное изменение. Решения: атомарный `UPDATE ... SET value = value + ...`, `FOR UPDATE` либо проверка версии при записи.
+- **Non-Repeatable Read**: повторный SELECT возвращает другие данные. Для стабильного снимка используйте REPEATABLE READ; row lock защищает только выбранные строки и только от конфликтующих операций.
+- **Phantom Read**: в READ COMMITTED повторный поиск может увидеть новые строки. REPEATABLE READ сохраняет прежний снимок; SERIALIZABLE дополнительно защищает от serialization anomalies. `FOR SHARE` и `FOR KEY SHARE` не блокируют вставку новых подходящих строк.
 - **Write Skew**: логический конфликт без прямого пересечения строк. PostgreSQL обнаруживает и откатывает транзакцию на SERIALIZABLE.
 
 ## 4. Блокировки
 ### 4.1 Уровни блокировок
-- **Row-Level**: `FOR UPDATE`, `FOR NO KEY UPDATE`, `FOR SHARE`, `FOR KEY SHARE`, модифицируют `xmin/xmax` строк.
+- **Row-Level**: `FOR UPDATE`, `FOR NO KEY UPDATE`, `FOR SHARE`, `FOR KEY SHARE` блокируют выбранные строки; lock metadata может записываться в tuple header (`xmax`/MultiXact). Это не блокировки отсутствующих строк или диапазонов.
 - **Table-Level**: `ACCESS SHARE`, `ROW SHARE`, `ROW EXCLUSIVE`, `SHARE`, `SHARE ROW EXCLUSIVE`, `EXCLUSIVE`, `ACCESS EXCLUSIVE`.
 - **Advisory Locks**: `pg_advisory_lock`, `pg_try_advisory_lock`, `pg_advisory_xact_lock` — пользовательские блокировки на ключе `BIGINT` или паре `INT`.
 
 ### 4.2 Диагностика блокировок
 - `pg_locks` показывает активные блокировки, типы, объекты и ожидания.
 - `pg_stat_activity` (поля `wait_event_type`, `wait_event`) помогает определить, какие процессы ждут.
-- `SELECT * FROM pg_blocking_pids(pid);` — идентификаторы процессов, которые блокируют текущий PID.
+- `SELECT pid, pg_blocking_pids(pid) FROM pg_stat_activity WHERE cardinality(pg_blocking_pids(pid)) > 0;` — ожидающие сессии и их blockers.
 - Лог `log_lock_waits` + `deadlock_timeout` фиксируют длительные ожидания.
 
 ### 4.3 Практические советы
@@ -71,10 +75,10 @@
 - Настройте `idle_in_transaction_session_timeout`, чтобы автоматически завершать забытые транзакции.
 
 ## 5. Управление конкурентным доступом
-- Используйте оптимистичные стратегии (`SELECT ... FOR SHARE` + проверка версии) для операций чтение-проверка-запись.
+- Для optimistic locking выполните `UPDATE ... SET value = ..., version = version + 1 WHERE id = ... AND version = ...` и проверьте число обновлённых строк. Предварительный `FOR SHARE` — пессимистическая блокировка и не нужен для этого протокола.
 - Обновляйте строки пакетами (`UPDATE ... WHERE id IN (...)`) вместо по одной, чтобы уменьшить overhead.
 - Для очередей задач используйте `FOR UPDATE SKIP LOCKED` с `LIMIT`, чтобы распределять работу между воркерами.
-- При массовых операциях применяйте `LOCK TABLE ... IN SHARE MODE` для стабильных снимков.
+- Для согласованного отчёта обычно достаточно подходящего уровня изоляции. `LOCK TABLE ... IN SHARE MODE` блокирует конкурентные изменения таблицы; используйте его только для явно сформулированного инварианта и с ограничением ожидания.
 
 ## 6. Двухфазные и распределённые транзакции
 - `PREPARE TRANSACTION` → `COMMIT/ROLLBACK PREPARED` реализует двухфазный commit. Требуется настроить `max_prepared_transactions`.
@@ -89,11 +93,30 @@
 ## 8. Взаимодействие с VACUUM
 - `VACUUM` удаляет невидимые версии и обновляет карты видимости; длительные транзакции мешают `vacuum freeze` и могут вызвать wraparound.
 - Следите за `age(datfrozenxid)` и настройте `autovacuum_freeze_max_age`, `vacuum_freeze_table_age`.
-- Долгие read-only транзакции удерживают старые снимки и увеличивают объем `pg_wal` (реплики ждут replay). Планируйте отчёты так, чтобы они не блокировали автovacuum.
+- Долгие read-only транзакции удерживают старые снимки и могут мешать уборке версий. На standby возможен конфликт с WAL replay; `hot_standby_feedback` переносит часть цены в bloat primary. Удержание WAL слотами анализируют отдельно: само чтение на primary не означает удержание WAL.
 
 ## 9. Журналирование и наблюдение
 - Включите `log_statement = 'ddl'` и `log_duration` для аудита важных операций.
 - Используйте `pg_stat_xact_user_tables`, `pg_stat_xact_user_functions` для статистики по текущей транзакции.
 - Метрики блокировок доступны через `pg_locks`, `pg_stat_database_conflicts`, `pg_stat_replication` (конфликты на репликах).
 
-Глубокое понимание уровней изоляции, блокировок и взаимодействия с WAL помогает строить надёжные и масштабируемые приложения на PostgreSQL.
+## 10. Практикум в двух сессиях
+
+Используйте отдельную учебную БД. Подготовка в автокоммите:
+
+```sql
+CREATE TABLE isolation_demo (id integer PRIMARY KEY, active boolean NOT NULL);
+INSERT INTO isolation_demo VALUES (1, true), (2, true);
+```
+
+**Фантом и границы row lock:** сессия A выполняет `BEGIN; SELECT * FROM isolation_demo WHERE active FOR SHARE;`. Сессия B выполняет `INSERT INTO isolation_demo VALUES (3, true);` в автокоммите. Вставка завершается без ожидания A. Повторный SELECT в A видит третью строку на READ COMMITTED; завершите A через `ROLLBACK`. При повторении с `BEGIN ISOLATION LEVEL REPEATABLE READ` новый INSERT B не появится в снимке A, хотя физически будет записан.
+
+**Write skew:** сначала в автокоммите верните ровно две активные строки. В обеих сессиях выполните `BEGIN ISOLATION LEVEL REPEATABLE READ; SELECT count(*) FROM isolation_demo WHERE active;`. После того как обе увидели 2, A делает `UPDATE isolation_demo SET active = false WHERE id = 1;`, B — такой же UPDATE для `id = 2`; обе делают COMMIT. Инвариант «хотя бы один active» нарушен. Повторите с SERIALIZABLE: одна из транзакций получит SQLSTATE `40001` на UPDATE или COMMIT.
+
+Приложение повторяет **всю** транзакцию: rollback → bounded backoff → новый BEGIN → повторное чтение и проверка инварианта → запись → COMMIT. Отправку писем/HTTP до успешного COMMIT такой retry не делает безопасной: вынесите эффект в outbox или обеспечьте его идемпотентность. После практикума удалите `isolation_demo`.
+
+## 11. Вопросы для самопроверки
+
+1. Почему `FOR SHARE` не защищает от вставки новой строки по тому же условию?
+2. Почему стабильный снимок REPEATABLE READ не предотвращает write skew?
+3. Что нужно повторить после `40001` и почему нельзя повторять только последний UPDATE?

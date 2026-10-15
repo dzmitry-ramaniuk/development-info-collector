@@ -47,10 +47,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Apache Kafka 3.9–4.0
+- **Дата проверки исправленных API и практикума:** 2026-10-15; предыдущая общая проверка — 2026-08-04.
+- **Целевая версия или диапазон:** Kafka Streams 4.0.2, Java 17+; production broker topology описана отдельно.
 - **Статус примеров:** `current`
-- **Первичные источники:** [Apache Kafka Documentation](https://kafka.apache.org/documentation/); [Apache Kafka Javadocs](https://kafka.apache.org/documentation/#api)
+- **Первичные источники:** [KafkaStreams API 4.0](https://kafka.apache.org/40/javadoc/org/apache/kafka/streams/KafkaStreams.html), [Materialized](https://kafka.apache.org/40/javadoc/org/apache/kafka/streams/kstream/Materialized.html), [RocksDBConfigSetter](https://kafka.apache.org/40/javadoc/org/apache/kafka/streams/state/RocksDBConfigSetter.html), [StreamsConfig](https://kafka.apache.org/40/javadoc/org/apache/kafka/streams/StreamsConfig.html). Сверка API и unit-практикум не подтверждают failover реального кластера.
 
 ## Введение
 
@@ -64,6 +64,8 @@
 - **Exactly-once semantics**: Гарантия ровно одной обработки сообщения
 - **Stateful обработка**: Встроенная поддержка локального состояния с персистентностью
 - **Интеграция с Kafka**: Нативная работа с топиками, партициями и consumer groups
+
+Примеры с `Order`, `Customer`, `JsonSerde` ниже — фрагменты с доменной моделью приложения; для `JsonSerde` нужна согласованная версия Spring Kafka. Полный небольшой проект с явными Serdes, window/grace/retention и TopologyTestDriver находится в [examples/streams](examples/streams/pom.xml). Запуск из этого каталога: `mvn test` с JDK 17+. Он не требует broker и не проверяет межпроцессное восстановление.
 
 ## Основные концепции
 
@@ -104,7 +106,7 @@ KTable<String, UserProfile> users = builder.table("users-topic");
 StreamsBuilder builder = new StreamsBuilder();
 
 // Source: чтение из топика
-KStream<String, Order> orders = builder.stream("orders");
+KStream<String, Order> orders = builder.stream("orders", Consumed.with(Serdes.String(), orderSerde));
 
 // Processor: трансформация данных
 KStream<String, EnrichedOrder> enriched = orders
@@ -373,14 +375,17 @@ ReadOnlyKeyValueStore<String, Long> store =
 Long count = store.get("user-123");
 
 // Итерация по всем ключам
-KeyValueIterator<String, Long> all = store.all();
-while (all.hasNext()) {
-    KeyValue<String, Long> entry = all.next();
-    System.out.println(entry.key + ": " + entry.value);
+try (KeyValueIterator<String, Long> all = store.all()) {
+    while (all.hasNext()) {
+        KeyValue<String, Long> entry = all.next();
+        System.out.println(entry.key + ": " + entry.value);
+    }
 }
 
 // Диапазонный запрос
-KeyValueIterator<String, Long> range = store.range("a", "m");
+try (KeyValueIterator<String, Long> range = store.range("a", "m")) {
+    while (range.hasNext()) System.out.println(range.next());
+}
 ```
 
 ## Обработка времени
@@ -441,12 +446,12 @@ props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG,
 
 // Оптимизация производительности
 props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, 4);
-props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 10 * 1024 * 1024L);
+props.put(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 10 * 1024 * 1024L);
 props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000);
 
 // Обработка ошибок
-props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
-    LogAndContinueExceptionHandler.class);
+props.put(StreamsConfig.DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+    LogAndFailExceptionHandler.class);
 
 // Exactly-once семантика
 props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, 
@@ -461,14 +466,15 @@ props.put(StreamsConfig.STATE_DIR_CONFIG, "/tmp/kafka-streams");
 **Настройка кэширования**
 ```java
 Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("store-name")
-    .withCachingEnabled()
-    .withLoggingDisabled();  // отключить changelog topic
+    .withCachingEnabled(); // changelog сохраняется: нужен для восстановления
 ```
+
+`withLoggingDisabled()` убирает резервную копию state в changelog и автоматическое восстановление этого store при потере локального диска/переносе task. Это допустимо лишь при отдельном доказанном способе реконструкции или для временного состояния. Local RocksDB не заменяет changelog. Cache уменьшает число downstream updates до flush; это влияет на наблюдаемый поток обновлений, а не на точность итоговой агрегации.
 
 **Batch processing**
 ```java
 // Увеличить размер batch для уменьшения накладных расходов
-props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 100 * 1024 * 1024L);
+props.put(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 100 * 1024 * 1024L);
 props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 5000);
 ```
 
@@ -487,23 +493,25 @@ props.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG,
 ```java
 public class CustomDeserializationHandler 
     implements DeserializationExceptionHandler {
+    @Override
+    public void configure(Map<String, ?> configs) { }
     
     @Override
     public DeserializationHandlerResponse handle(
-        ProcessorContext context,
+        ErrorHandlerContext context,
         ConsumerRecord<byte[], byte[]> record,
         Exception exception) {
         
-        log.error("Deserialization error", exception);
+        System.err.println("Deserialization error: " + exception.getClass().getSimpleName());
         
         // Продолжить обработку или остановить
-        return DeserializationHandlerResponse.CONTINUE;
-        // return DeserializationHandlerResponse.FAIL;
+        return DeserializationHandlerResponse.FAIL;
+        // CONTINUE допустим только при явно принятой потере/карантине записи.
     }
 }
 
 props.put(
-    StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
+    StreamsConfig.DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG,
     CustomDeserializationHandler.class
 );
 ```
@@ -512,18 +520,22 @@ props.put(
 ```java
 public class CustomProductionHandler implements ProductionExceptionHandler {
     @Override
+    public void configure(Map<String, ?> configs) { }
+
+    @Override
     public ProductionExceptionHandlerResponse handle(
+        ErrorHandlerContext context,
         ProducerRecord<byte[], byte[]> record,
         Exception exception) {
         
-        log.error("Production error", exception);
+        System.err.println("Production error: " + exception.getClass().getSimpleName());
         
-        return ProductionExceptionHandlerResponse.CONTINUE;
+        return ProductionExceptionHandlerResponse.FAIL;
     }
 }
 
 props.put(
-    StreamsConfig.DEFAULT_PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG,
+    StreamsConfig.PRODUCTION_EXCEPTION_HANDLER_CLASS_CONFIG,
     CustomProductionHandler.class
 );
 ```
@@ -533,17 +545,17 @@ props.put(
 ```java
 KafkaStreams streams = new KafkaStreams(topology, props);
 
-streams.setUncaughtExceptionHandler((Thread thread, Throwable throwable) -> {
-    log.error("Uncaught exception in thread " + thread.getName(), throwable);
+streams.setUncaughtExceptionHandler(throwable -> {
+    log.error("Uncaught exception in thread " + Thread.currentThread().getName(), throwable);
     
     // Заменить поток или остановить приложение
-    return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD;
+    return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT;
 });
 ```
 
 ### State Store восстановление
 
-При сбое приложения Kafka Streams автоматически восстанавливает состояние из changelog topics:
+При включённом changelog Kafka Streams восстанавливает соответствующий state store; source KTable также может использовать свой source topic. Нужны сохранённые internal topics, достаточная retention и корректные Serdes. `REPLACE_THREAD` не лечит детерминированную ошибку записи: poison record может снова уронить поток. `CONTINUE` в deserialization/production handler означает пропуск записи/результата; выбирайте его только вместе с наблюдением, карантином и процедурой replay, а не как универсальный recovery.
 
 ```java
 // Мониторинг восстановления
@@ -565,10 +577,10 @@ streams.setStateListener((newState, oldState) -> {
 public void testOrderProcessing() {
     // Создание топологии
     StreamsBuilder builder = new StreamsBuilder();
-    KStream<String, Order> orders = builder.stream("orders");
+    KStream<String, Order> orders = builder.stream("orders", Consumed.with(Serdes.String(), orderSerde));
     orders
         .filter((key, order) -> order.getAmount() > 100)
-        .to("large-orders");
+        .to("large-orders", Produced.with(Serdes.String(), orderSerde));
     
     Topology topology = builder.build();
     
@@ -697,9 +709,19 @@ KStream<String, Order> rekeyed = orders
 ```java
 // Настройка grace period и retention
 TimeWindows windows = TimeWindows
-    .ofSizeAndGrace(Duration.ofMinutes(5), Duration.ofMinutes(1))
-    .until(Duration.ofHours(24));  // retention период
+    .ofSizeAndGrace(Duration.ofMinutes(5), Duration.ofMinutes(1));
+Materialized<String, Long, WindowStore<Bytes, byte[]>> materialized =
+    Materialized.<String, Long, WindowStore<Bytes, byte[]>>as("window-counts")
+        .withKeySerde(Serdes.String())
+        .withValueSerde(Serdes.Long())
+        .withRetention(Duration.ofHours(24));
+KTable<Windowed<String>, Long> counts = events
+    .groupByKey(Grouped.with(Serdes.String(), eventSerde))
+    .windowedBy(windows)
+    .count(materialized);
 ```
+
+Retention store должна быть не меньше window size + grace. Закрытие окна зависит от stream-time, поэтому тестируйте поздний event после записи, продвинувшей stream-time; ожидание по wall clock само по себе окно не закрывает.
 
 ### 3. Идемпотентность обработки
 
@@ -710,6 +732,8 @@ props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG,
 
 // Транзакционный ID генерируется автоматически на основе application.id
 ```
+
+EOS атомарно связывает входные offsets, state changelog и выходные Kafka records. HTTP, почта и запись в стороннюю БД в эту Kafka-транзакцию не входят; для них нужны outbox/idempotency/другой протокол. Вручную включать отдельный producer поверх Streams для «усиления EOS» не требуется.
 
 ### 4. Масштабирование приложения
 
@@ -726,15 +750,24 @@ Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
 
 ```java
 // Ограничение памяти для кэша
-props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 100 * 1024 * 1024L);
+props.put(StreamsConfig.STATESTORE_CACHE_MAX_BYTES_CONFIG, 100 * 1024 * 1024L);
 
 // RocksDB тюнинг
-RocksDBConfigSetter configSetter = (storeName, options, configs) -> {
-    options.setMaxWriteBufferNumber(3);
-    options.setWriteBufferSize(16 * 1024 * 1024L);
-};
+public class BoundedRocksDBConfig implements RocksDBConfigSetter {
+    @Override
+    public void setConfig(String storeName, org.rocksdb.Options options,
+                          Map<String, Object> configs) {
+        options.setMaxWriteBufferNumber(3);
+        options.setWriteBufferSize(16 * 1024 * 1024L);
+    }
 
-props.put(StreamsConfig.ROCKSDB_CONFIG_SETTER_CLASS_CONFIG, configSetter);
+    @Override
+    public void close(String storeName, org.rocksdb.Options options) {
+        // Собственных RocksObject не создавали; options принадлежит Streams.
+    }
+}
+// Передаётся Class, а не instance; это public class с доступным no-arg constructor.
+props.put(StreamsConfig.ROCKSDB_CONFIG_SETTER_CLASS_CONFIG, BoundedRocksDBConfig.class);
 ```
 
 ## Практический пример: Real-time Analytics
@@ -768,12 +801,15 @@ public class OrderAnalyticsApp {
             .selectKey((key, order) -> order.getCustomerId())
             .join(
                 customers,
-                (order, customer) -> new EnrichedOrder(order, customer)
+                (order, customer) -> new EnrichedOrder(order, customer),
+                Joined.with(Serdes.String(), new JsonSerde<>(Order.class),
+                    new JsonSerde<>(Customer.class))
             );
         
         // 3. Агрегация по временным окнам
         KTable<Windowed<String>, OrderStats> hourlyStats = enrichedOrders
-            .groupBy((key, order) -> order.getCategory())
+            .groupBy((key, order) -> order.getCategory(),
+                Grouped.with(Serdes.String(), new JsonSerde<>(EnrichedOrder.class)))
             .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofHours(1)))
             .aggregate(
                 OrderStats::new,
@@ -794,14 +830,14 @@ public class OrderAnalyticsApp {
         // 5. Обнаружение аномалий
         enrichedOrders
             .filter((key, order) -> order.getAmount() > 10000)
-            .to("high-value-orders");
+            .to("high-value-orders", Produced.with(Serdes.String(), new JsonSerde<>(EnrichedOrder.class)));
         
         // 6. Запуск приложения
         KafkaStreams streams = new KafkaStreams(builder.build(), props);
         
-        streams.setUncaughtExceptionHandler((thread, throwable) -> {
+        streams.setUncaughtExceptionHandler(throwable -> {
             System.err.println("Uncaught exception: " + throwable);
-            return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.REPLACE_THREAD;
+            return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_CLIENT;
         });
         
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
@@ -820,7 +856,7 @@ public class OrderAnalyticsApp {
    - Требование одинакового партиционирования для join операций между KStream-KStream и KStream-KTable
 
 3. **Как обеспечить exactly-once семантику?**
-   - Установить `processing.guarantee=exactly_once_v2`, включить idempotent producer
+   - Установить `processing.guarantee=exactly_once_v2`; Streams настраивает внутренние транзакционные producers. Внешние эффекты требуют отдельного протокола.
 
 4. **Что происходит при сбое экземпляра Kafka Streams?**
    - Rebalancing, переназначение партиций, восстановление state stores из changelog topics

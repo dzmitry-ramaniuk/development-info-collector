@@ -51,10 +51,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Apache Kafka 3.9–4.0
+- **Дата проверки исправленных разделов:** 2026-10-15 (compatibility, Avro types и тесты); предыдущая общая проверка — 2026-08-04.
+- **Целевая версия или диапазон:** Avro 1.12.0; Confluent Schema Registry REST API 7.9. Версия broker не определяет версию Schema Registry или serializer.
 - **Статус примеров:** `current`
-- **Первичные источники:** [Apache Kafka Documentation](https://kafka.apache.org/documentation/); [Apache Kafka Javadocs](https://kafka.apache.org/documentation/#api)
+- **Первичные источники:** [Confluent 7.9: Schema Evolution](https://docs.confluent.io/platform/7.9/schema-registry/fundamentals/schema-evolution.html), [REST API](https://docs.confluent.io/platform/7.9/schema-registry/develop/api.html), [Avro 1.12: Schema Resolution](https://avro.apache.org/docs/1.12.0/specification/#schema-resolution), [Monitoring](https://docs.confluent.io/platform/7.9/schema-registry/monitoring.html). Проверка reader/writer в примерах не является проверкой запущенного Registry.
 
 ## Введение
 
@@ -81,39 +81,17 @@
 
 ### Компоненты
 
+```mermaid
+flowchart LR
+  P[Producer с serializer] -->|ID схемы и данные| K[Kafka broker]
+  K -->|Чтение records| C[Consumer с deserializer]
+  P -. Регистрация схемы и получение ID .-> R[Schema Registry]
+  C -. Получение writer schema по ID .-> R
 ```
-┌─────────────────┐
-│   Producer      │
-│  (с Avro        │
-│   Serializer)   │
-└────────┬────────┘
-         │ 1. Получить/зарегистрировать схему
-         │ 2. Получить schema ID
-         ▼
-┌─────────────────────┐
-│ Schema Registry     │
-│ - Хранит схемы      │
-│ - Проверяет         │
-│   совместимость     │
-└─────────────────────┘
-         │ 3. Отправить [ID схемы + данные]
-         ▼
-┌─────────────────┐
-│   Kafka Broker  │
-└────────┬────────┘
-         │ 4. Читать сообщение
-         ▼
-┌─────────────────┐
-│   Consumer      │
-│  (с Avro        │
-│   Deserializer) │
-└────────┬────────┘
-         │ 5. Получить схему по ID
-         ▼
-┌─────────────────────┐
-│ Schema Registry     │
-└─────────────────────┘
-```
+
+<script type="module" src="../../assets/mermaid-init.js"></script>
+
+Registry обслуживает схемы; payload producer отправляет непосредственно broker. Кэширование схем клиентом уменьшает число REST-вызовов, но startup/new schema всё ещё зависят от доступности Registry.
 
 ### Subject и версии
 
@@ -298,13 +276,13 @@ props.put("schema.registry.url", "http://localhost:8081");
 
 ### Backward Compatibility (по умолчанию)
 
-Новая схема может читать данные, написанные старой схемой.
+**BACKWARD = new reader ← old writer**: consumer с новой схемой читает данные предыдущего producer. Для replay всей истории нужен `BACKWARD_TRANSITIVE`, а не только сравнение с последней версией.
 
 **Правила**
-- ✅ Можно добавлять необязательные поля (с default значениями)
-- ✅ Можно удалять необязательные поля
-- ❌ Нельзя удалять обязательные поля
-- ❌ Нельзя менять тип поля
+- Avro reader может добавить поле с default, используемым при отсутствии поля в old writer.
+- Удаление поля допустимо даже без default в старой схеме: новый reader его больше не запрашивает.
+- Добавление поля без default несовместимо; `nullable` без default само по себе не решает отсутствие поля в старых данных.
+- Тип меняют только при разрешённом reader/writer promotion, например old writer `int` → new reader `long`.
 
 **Пример**
 ```json
@@ -334,12 +312,12 @@ props.put("schema.registry.url", "http://localhost:8081");
 
 ### Forward Compatibility
 
-Старая схема может читать данные, написанные новой схемой.
+**FORWARD = old reader ← new writer**: прежний consumer читает данные нового producer.
 
 **Правила**
-- ✅ Можно удалять поля
-- ✅ Можно добавлять обязательные поля (с default)
-- ❌ Нельзя добавлять поля без default
+- В Avro новый writer может добавить поле, в том числе без default: old reader его игнорирует.
+- Удаление поля допустимо, только если old reader может заполнить его своим default.
+- Если old reader требует `name: string` без default, удалять `name` из нового writer нельзя.
 
 **Пример**
 ```json
@@ -367,6 +345,8 @@ props.put("schema.registry.url", "http://localhost:8081");
 
 **Use case**: Обновляем producers первыми, потом consumers
 
+**Контрпримеры Avro:** старая `User{id: string, name: string}` → новая `User{id: string}` проходит BACKWARD и не проходит FORWARD. Старая `User{id: string}` → новая с `email: string` без default проходит FORWARD и не проходит BACKWARD. Fullname `User` и namespace во всех парах сохраняются. Эти направления проверяет [AvroCompatibilityTest](examples/streams/src/test/java/learning/AvroCompatibilityTest.java), включая чтение настоящего binary payload с reader-default.
+
 ### Full Compatibility
 
 Комбинация backward и forward — новая и старая схемы совместимы в обе стороны.
@@ -377,6 +357,16 @@ props.put("schema.registry.url", "http://localhost:8081");
 - ❌ Строгие ограничения на изменения
 
 **Use case**: Можно обновлять producers и consumers в любом порядке
+
+Проверки формата не гарантируют бизнес-совместимость: например, смена единиц `amount` при прежнем `double` незаметна Schema Registry. Матрица выше относится к **Avro**:
+
+| Формат | Что дополнительно проверять |
+|---|---|
+| Avro | Writer schema + reader schema, fullname/aliases, defaults, разрешённые promotions |
+| Protobuf | Номера и wire types полей, unknown fields, `oneof`; удалённые номера/имена резервировать и не переиспользовать |
+| JSON Schema | `required`, `additionalProperties`, ограничения значений и открытая/закрытая модель; default не равен автоматическому заполнению reader как в Avro |
+
+Для Protobuf/JSON Schema проверяйте правила выбранного формата в Registry; не переносите на них Avro-список разрешённых операций. Для rollout составьте матрицу реальных producer/consumer версий, истории и rollback-window. См. также [контрактное тестирование](../../тестирование/07-contract-testing.html).
 
 ### None
 
@@ -583,7 +573,7 @@ kafkastore.topic=_schemas
 kafkastore.topic.replication.factor=3
 
 # Listeners
-listeners=http://0.0.0.0:8081
+listeners=https://0.0.0.0:8081
 
 # Режим совместимости по умолчанию
 schema.compatibility.level=BACKWARD
@@ -688,10 +678,12 @@ props.put("value.subject.name.strategy",
 
 ### 4. Версионирование
 
-Включайте версию в namespace или имя:
+Сохраняйте fullname record при совместимой эволюции. Версии уже ведутся в subject; смена namespace с `v1` на `v2` меняет идентичность Avro-типа и не является безопасным способом пометить обычную новую версию. Для осознанного нового контракта выделите отдельный subject/topic и план миграции; aliases проверяйте в обоих нужных направлениях.
+
+Стабильный namespace:
 ```json
 {
-  "namespace": "com.mycompany.orders.v2",
+  "namespace": "com.mycompany.orders",
   "name": "Order"
 }
 ```
@@ -713,15 +705,11 @@ props.put("value.subject.name.strategy",
 ```json
 {
   "name": "createdAt",
-  "type": "long",
-  "logicalType": "timestamp-millis"
+  "type": {"type": "long", "logicalType": "timestamp-millis"}
 },
 {
   "name": "price",
-  "type": "bytes",
-  "logicalType": "decimal",
-  "precision": 10,
-  "scale": 2
+  "type": {"type": "bytes", "logicalType": "decimal", "precision": 10, "scale": 2}
 }
 ```
 
@@ -747,9 +735,11 @@ curl http://localhost:8081/
 scrape_configs:
   - job_name: 'schema-registry'
     static_configs:
-      - targets: ['schema-registry:8081']
+      - targets: ['schema-registry:7072']
     metrics_path: '/metrics'
 ```
+
+`:7072/metrics` предполагает отдельно подключённый JMX Exporter с правилами для Schema Registry. REST listener `:8081` не предоставляет Prometheus `/metrics` автоматически. Проверяйте имена MBeans и exporter series на фактической версии; доступность `GET /` не проверяет возможность зарегистрировать/прочитать схему в Kafka-backed storage. Для local HTTP примеров ниже нужен отдельный dev listener; production BASIC credentials передавайте только по HTTPS.
 
 ## Тестирование
 
@@ -777,10 +767,14 @@ public void testSchemaCompatibility() {
 ```java
 @Test
 public void testWithMockSchemaRegistry() {
-    MockSchemaRegistry mockRegistry = new MockSchemaRegistry();
+    SchemaRegistryClient mockRegistry = new MockSchemaRegistryClient();
     
     KafkaAvroSerializer serializer = new KafkaAvroSerializer(mockRegistry);
     KafkaAvroDeserializer deserializer = new KafkaAvroDeserializer(mockRegistry);
+    Map<String, Object> configs = Map.of("schema.registry.url", "mock://practice",
+        "specific.avro.reader", true);
+    serializer.configure(configs, false);
+    deserializer.configure(configs, false);
     
     Order order = createTestOrder();
     byte[] bytes = serializer.serialize("orders", order);
@@ -789,6 +783,8 @@ public void testWithMockSchemaRegistry() {
     assertEquals(order, deserialized);
 }
 ```
+
+Это фрагмент с generated Avro `Order` и зависимостью Confluent serializer той же линии, что Registry; mock не проверяет REST, auth или persistence. Независимый от Registry Maven-практикум [examples/streams](examples/streams/pom.xml) запускается `mvn test`: он проверяет Avro resolution и payload, включая несовместимые пары. Перед публикацией схемы дополнительно выполните compatibility REST API на нужном subject и replay старых fixture payloads.
 
 ## Вопросы для самопроверки
 

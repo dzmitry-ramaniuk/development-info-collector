@@ -26,10 +26,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки исправленных разделов:** 2026-10-15 (FK, triggers, routing и rebalance); предыдущая общая проверка — 2026-08-04.
 - **Целевая версия или диапазон:** PostgreSQL 16–18
 - **Статус примеров:** `current`
-- **Первичные источники:** [PostgreSQL Documentation](https://www.postgresql.org/docs/); [PostgreSQL Release Notes](https://www.postgresql.org/docs/release/)
+- **Первичные источники:** [PostgreSQL 18: Partitioning](https://www.postgresql.org/docs/18/ddl-partitioning.html), [CREATE TRIGGER](https://www.postgresql.org/docs/18/sql-createtrigger.html), [Python: hash randomization](https://docs.python.org/3/reference/datamodel.html#object.__hash__), [Citus: rebalance](https://docs.citusdata.com/en/stable/develop/api_udf.html#citus-rebalance-start). Сверка источников и запуск стенда — разные проверки.
 
 ## Введение
 
@@ -291,12 +291,14 @@ CREATE TABLE events (
 ```
 
 2. **Внешние ключи:**
-   - Партиционированная таблица не может быть целью FK из непартиционированной
-   - FK из партиционированной таблицы должен включать ключ партиционирования
+   - В PostgreSQL 16–18 FK допустимы как из партиционированной таблицы, так и на неё.
+   - Входящий FK должен ссылаться на подходящий `PRIMARY KEY`/`UNIQUE`; если это ключ родительской partitioned table, он включает её partition key. Это ограничение ссылочного ключа, а не требование добавлять свой partition key в каждый исходящий FK.
 
 3. **Триггеры:**
-   - Row-level триггеры создаются на партициях, не на родительской таблице
-   - Statement-level триггеры работают на родительской таблице
+   - `CREATE TRIGGER ... FOR EACH ROW` на partitioned parent создаёт клоны на существующих и будущих партициях; `BEFORE ROW INSERT` не может изменить выбранную целевую партицию.
+   - Statement-level триггер срабатывает на таблице, указанной в операторе: INSERT в parent и прямой INSERT в leaf имеют разные statement-level triggers.
+
+Проверьте оба направления FK и row-trigger через [самодостаточный SQL-практикум](examples/01-partition-constraints.sql): `psql -X -v ON_ERROR_STOP=1 -d учебная_бд -f examples/01-partition-constraints.sql`. Он создаёт отдельную схему внутри транзакции и удаляет её через ROLLBACK.
 
 4. **Производительность:**
    - Большое количество партиций (>1000) может замедлить планирование запросов
@@ -406,11 +408,16 @@ CREATE FOREIGN TABLE users_shard2 PARTITION OF users
 ```python
 # Пример на Python
 import hashlib
+import psycopg2
 
 def get_shard_connection(user_id, shard_connections):
     """Определяет шард на основе user_id"""
     shard_count = len(shard_connections)
-    shard_id = hash(str(user_id)) % shard_count
+    if shard_count == 0:
+        raise ValueError("Список шардов пуст")
+    # Контракт: UTF-8 decimal ID, SHA-256, первые 8 байт, big-endian.
+    digest = hashlib.sha256(str(user_id).encode("utf-8")).digest()
+    shard_id = int.from_bytes(digest[:8], "big") % shard_count
     return shard_connections[shard_id]
 
 # Конфигурация подключений
@@ -425,7 +432,12 @@ user_id = 12345
 conn = get_shard_connection(user_id, shard_connections)
 cursor = conn.cursor()
 cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+rows = cursor.fetchall()
+cursor.close()
+# В приложении возвращайте connection в пул, а не создавайте его на каждый запрос.
 ```
+
+Встроенный `hash(str(...))` Python зависит от seed процесса и не подходит для постоянного routing. Порядок `shard_connections`, кодирование и hash algorithm должны совпадать у всех клиентов. Этот SHA-256-пример **не совпадает** с внутренним hash PostgreSQL `PARTITION BY HASH`. При изменении количества шардов modulo перенаправит многие ID: сначала перенесите данные и переключите versioned routing, либо используйте каталог размещений/virtual buckets. [Проверка стабильности в независимых процессах](examples/02-stable-routing.py) запускается обычным `python3` без внешних зависимостей.
 
 **Преимущества:**
 - Полный контроль над логикой распределения
@@ -479,6 +491,7 @@ CREATE TABLE events (
     event_id BIGSERIAL,
     user_id BIGINT NOT NULL,
     event_type VARCHAR(50),
+    country_code VARCHAR(2),
     event_data JSONB,
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -536,15 +549,17 @@ JOIN orders o USING (user_id)
 GROUP BY u.username;
 ```
 
-#### Репартиционирование
+#### Перебалансировка размещений
 
 ```sql
--- Изменение количества шардов
+-- Перенос существующих shard placements между workers
 SELECT citus_rebalance_start();
 
 -- Мониторинг репартиционирования
 SELECT * FROM citus_rebalance_status();
 ```
+
+Rebalance перераспределяет размещения, а не автоматически увеличивает число shards. Изменение shard count/splitting — отдельная операция, зависящая от версии Citus и ограничений таблицы; сначала проверьте её API, colocation и допустимые блокировки. Версию расширения фиксируйте отдельно от PostgreSQL.
 
 ### Ручная реализация шардинга
 
@@ -610,7 +625,7 @@ CREATE TABLE events_shard1_2024_01 PARTITION OF events_shard1
    - Равномерное распределение для hash-партиционирования
 
 2. **Размер партиций:**
-   - Оптимально: 10-100 ГБ на партицию
+   - Выберите целевой размер из скорости обслуживания, pruning, retention и нагрузки; диапазон 10–100 ГБ может быть только исходной гипотезой
    - Слишком маленькие партиции — накладные расходы на планирование
    - Слишком большие — потеря преимуществ партиционирования
 
@@ -650,7 +665,7 @@ WHERE schemaname = 'public' AND tablename LIKE 'measurements_%';
 2. **Количество шардов:**
    - Планируйте с запасом на рост
    - Изменение количества шардов — сложная операция
-   - Типично: начинайте с 4-8 шардов, масштабируйте до 32-64
+   - Начальное число обоснуйте объёмом, throughput, tenant skew и ценой rebalance; универсального числа шардов нет
 
 3. **Распределённые транзакции:**
    - По возможности избегайте транзакций между шардами
