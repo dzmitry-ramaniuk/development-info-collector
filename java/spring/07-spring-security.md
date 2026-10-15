@@ -35,10 +35,11 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечно проверены mapping scopes/roles и путь Bearer authentication по документации Spring Security 6.5; это не означает повторную проверку всех примеров страницы.
 - **Целевая версия или диапазон:** Java 17–25, Spring Security 6.5.x, Spring Boot 3.5.x
-- **Статус примеров:** `current`
+- **Статус примеров:** `current` для исправленных фрагментов в указанной области проверки; остальные примеры не пересобирались.
 - **Первичные источники:** [Spring Security Reference](https://docs.spring.io/spring-security/reference/6.5/); [Spring Boot Reference](https://docs.spring.io/spring-boot/3.5/reference/); [OAuth 2.0 Security Best Current Practice (RFC 9700)](https://www.rfc-editor.org/rfc/rfc9700); [JSON Web Token Best Current Practices (RFC 8725)](https://www.rfc-editor.org/rfc/rfc8725)
+- **Источники точечной проверки:** [JWT authorization](https://docs.spring.io/spring-security/reference/6.5/servlet/oauth2/resource-server/jwt.html#oauth2resourceserver-jwt-authorization); [DelegatingJwtGrantedAuthoritiesConverter](https://docs.spring.io/spring-security/reference/6.5/api/java/org/springframework/security/oauth2/server/resource/authentication/DelegatingJwtGrantedAuthoritiesConverter.html).
 
 > Материал описывает servlet-приложения. Для WebFlux используются `SecurityWebFilterChain` и реактивный `SecurityContext`; смешивать servlet- и reactive API нельзя.
 
@@ -240,14 +241,12 @@ package example.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.authentication.DelegatingJwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -257,7 +256,7 @@ class ApiSecurityConfig {
     @Bean
     SecurityFilterChain apiSecurity(
             HttpSecurity http,
-            Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter)
+            JwtAuthenticationConverter jwtAuthenticationConverter)
             throws Exception {
         http
             .securityMatcher("/api/**")
@@ -275,13 +274,15 @@ class ApiSecurityConfig {
     }
 
     @Bean
-    Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
-        authorities.setAuthoritiesClaimName("roles");
-        authorities.setAuthorityPrefix("ROLE_");
+    JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter scopes = new JwtGrantedAuthoritiesConverter();
+        JwtGrantedAuthoritiesConverter roles = new JwtGrantedAuthoritiesConverter();
+        roles.setAuthoritiesClaimName("roles");
+        roles.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authorities);
+        converter.setJwtGrantedAuthoritiesConverter(
+            new DelegatingJwtGrantedAuthoritiesConverter(scopes, roles));
         converter.setPrincipalClaimName("sub");
         return converter;
     }
@@ -289,6 +290,8 @@ class ApiSecurityConfig {
 ```
 
 Отключение CSRF здесь обосновано только тем, что `/api/**` принимает Bearer token из `Authorization` и не использует автоматически прикрепляемые браузером credentials. Если браузер аутентифицируется cookie, CSRF необходимо оставить включённым, даже если значение cookie содержит JWT.
+
+Стандартный converter сохраняет `scope`/`scp` → `SCOPE_…`, а второй добавляет доверенный claim `roles` → `ROLE_…`. Например, `scope: "orders.read"` и `roles: ["ADMIN"]` дают обе authorities. Замена стандартного converter одним converter для `roles` лишила бы пользователя scopes. Роль `ADMIN` сама по себе не обходит правило `SCOPE_orders.read`: такое исключение нужно явно описать в политике доступа.
 
 `issuer-uri` включает discovery ключей и проверку `iss`; свойство `audiences` требует ожидаемую аудиторию. Для нестандартных claims или более ранних версий конфигурации создайте `JwtDecoder` и объедините `JwtValidators.createDefaultWithIssuer(issuer)` с собственным `OAuth2TokenValidator<Jwt>` для `aud`. Не заменяйте стандартные validators одним кастомным — иначе легко потерять проверку времени жизни или issuer.
 
@@ -439,12 +442,14 @@ Headers — defense in depth. Они не исправляют XSS, неверн
 
 ## Тестирование с spring-security-test
 
-Следующий slice-test проверяет не только happy path, но и границы 401/403. Конфигурация `jwt()` создаёт тестовый `JwtAuthenticationToken`; реальную криптографическую валидацию decoder нужно отдельно проверять интеграционным тестом с тестовым issuer/JWKS.
+Следующий slice-test проверяет путь `Authorization: Bearer` → фильтр → decoder → настоящий converter → авторизация. Decoder подменён, поэтому подпись и validators здесь не проверяются. Самодостаточный [Maven-пример с RS256, настоящим NimbusJwtDecoder и негативными тестами](../../examples/spring-security/README.md) проверяет также подпись, issuer, audience и срок действия. Команда запуска: `mvn -f examples/spring-security/pom.xml test`.
+
+`jwt().authorities(...)` полезен для изолированной проверки правил доступа, но он подставляет готовую identity и не проверяет production mapping claims. Для проверки converter отправляйте Bearer header:
 
 ```java
 package example.security;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -452,7 +457,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -475,15 +480,22 @@ class OrderSecurityTest {
 
     @Test
     void tokenWithoutScopeIsForbidden() throws Exception {
-        mvc.perform(get("/api/orders/42").with(jwt()))
+        when(jwtDecoder.decode("without-scope")).thenReturn(
+            Jwt.withTokenValue("without-scope").header("alg", "RS256")
+                .subject("alice").claim("roles", java.util.List.of("USER")).build());
+        mvc.perform(get("/api/orders/42")
+                .header("Authorization", "Bearer without-scope"))
             .andExpect(status().isForbidden());
     }
 
     @Test
     void tokenWithScopeCanReadOrder() throws Exception {
-        mvc.perform(get("/api/orders/42").with(jwt()
-                .jwt(token -> token.subject("alice"))
-                .authorities(new SimpleGrantedAuthority("SCOPE_orders.read"))))
+        when(jwtDecoder.decode("with-scope")).thenReturn(
+            Jwt.withTokenValue("with-scope").header("alg", "RS256")
+                .subject("alice").claim("scope", "orders.read")
+                .claim("roles", java.util.List.of("USER")).build());
+        mvc.perform(get("/api/orders/42")
+                .header("Authorization", "Bearer with-scope"))
             .andExpect(status().isOk());
     }
 }

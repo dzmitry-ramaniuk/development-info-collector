@@ -67,10 +67,11 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Дата проверки:** 2026-10-15 (точечная проверка указанной ниже области; остальная редакция — 2026-08-04)
+- **Целевая версия или диапазон:** Java 17+; Testcontainers 1.21.3; JUnit Jupiter 5.12.2; примеры не перенесены автоматически на Testcontainers 2.x
 - **Статус примеров:** `current`
-- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+- **Первичные источники:** [Testcontainers 1.21.3: quickstart](https://github.com/testcontainers/testcontainers-java/blob/1.21.3/docs/quickstart/junit_5_quickstart.md); [configuration](https://github.com/testcontainers/testcontainers-java/blob/1.21.3/docs/features/configuration.md)
+- **Область проверки:** сверены зависимости и конфигурация линии 1.21.3; отдельный RedisIT запускается профилем `containers`. Все остальные контейнеры главы в этой редакции не проверялись.
 
 Testcontainers — это Java-библиотека, которая позволяет запускать Docker-контейнеры непосредственно из тестов. Это решение особенно полезно для интеграционного тестирования, когда требуется взаимодействие с реальными базами данных, брокерами сообщений, кэшами и другими внешними зависимостями.
 
@@ -118,13 +119,34 @@ Docker Engine
 
 ### Актуальность версий
 
-> Актуально на **март 2026**: используйте единую переменную `testcontainers.version` в сборке и регулярно сверяйте её с официальным changelog Testcontainers.
+> Учебный baseline — **Testcontainers 1.21.3**. Перенос на 2.x выполняйте отдельно: major-версии нельзя объявлять совместимыми одним диапазоном без сборки и проверки миграции.
 
 - Минимальная рекомендуемая платформа: **Java 17+**
 - Версии Docker-образов в примерах закрепляйте явно (без `latest`)
 - Обновляйте версии централизованно через BOM/переменные Maven или Gradle
 
 ### Базовая зависимость (Maven)
+
+Ниже секции одного `pom.xml`; дополнительные модули должны использовать тот же BOM. Полный запускаемый [проект](../examples/testing/pom.xml): `mvn -f examples/testing/pom.xml test` для проверок без Docker, `mvn -f examples/testing/pom.xml -Pcontainers verify` для RedisIT. Интеграционный профиль требует доступного Docker daemon и доступа к registry; его не считают выполненным, если Docker недоступен.
+
+```xml
+<properties>
+    <testcontainers.version>1.21.3</testcontainers.version>
+</properties>
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-bom</artifactId>
+            <version>${testcontainers.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+В секцию `<dependencies>` добавьте:
 
 ```xml
 <dependency>
@@ -146,8 +168,12 @@ Docker Engine
 ### Базовая зависимость (Gradle)
 
 ```groovy
-testImplementation 'org.testcontainers:testcontainers:${testcontainers.version}'
-testImplementation 'org.testcontainers:junit-jupiter:${testcontainers.version}'
+dependencies {
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.21.3')
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+}
+test { useJUnitPlatform() }
 ```
 
 ### Специализированные модули
@@ -187,13 +213,8 @@ Testcontainers предоставляет готовые модули для п�
     <scope>test</scope>
 </dependency>
 
-<!-- Redis -->
-<dependency>
-    <groupId>org.testcontainers</groupId>
-    <artifactId>redis</artifactId>
-    <version>${testcontainers.version}</version>
-    <scope>test</scope>
-</dependency>
+<!-- Redis в этом baseline запускается через GenericContainer из core.
+     org.testcontainers:redis здесь не требуется; Redis client подключается отдельно. -->
 
 <!-- Elasticsearch -->
 <dependency>
@@ -747,20 +768,14 @@ testcontainers.reuse.enable=true
 
 ### Конфигурационный файл
 
-Создайте файл `.testcontainers.properties` в корне проекта:
+Для настроек проекта создайте `src/test/resources/testcontainers.properties` (classpath). Файл `.testcontainers.properties` с точкой читается из домашнего каталога пользователя, а не автоматически из корня проекта. Опцию experimental reuse включают отдельно для локальной разработки; в CI используют обычный управляемый lifecycle.
 
 ```properties
-# Переиспользование контейнеров
-testcontainers.reuse.enable=true
-
-# Образ Ryuk для очистки контейнеров
-ryuk.container.image=testcontainers/ryuk:0.5.1
-
 # Проверка доступности Docker
 checks.disable=false
 
-# Таймаут запуска контейнера (секунды)
-startup.timeout=300
+# Таймаут скачивания образа (секунды)
+pull.timeout=120
 ```
 
 ### Переменные окружения
@@ -771,12 +786,9 @@ Testcontainers поддерживает настройку через перем
 # Использовать локальный Docker socket
 export DOCKER_HOST=unix:///var/run/docker.sock
 
-# Для legacy-настроек Docker Desktop (не рекомендуется для новых окружений)
-# Включайте только в контролируемой среде, учитывая риски безопасности
-export DOCKER_HOST=tcp://localhost:2375
-
-# Включить режим отладки
-export TESTCONTAINERS_DEBUG=true
+# Для диагностики настройте уровень DEBUG у логгера org.testcontainers
+# средствами используемого logging backend. Не заменяйте рабочий socket
+# незащищённым TCP endpoint ради обхода ошибки подключения.
 ```
 
 ### Использование локального Docker Registry

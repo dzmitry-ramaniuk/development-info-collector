@@ -54,14 +54,17 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Дата проверки:** 2026-10-15 (точечная проверка указанной ниже области; остальная редакция — 2026-08-04)
+- **Целевая версия или диапазон:** Java 17+; Spring Boot 3.5.0; Testcontainers 1.21.3 для приведённой интеграции
 - **Статус примеров:** `current`
-- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+- **Первичные источники:** [Spring Boot 3.5 testing dependencies](https://docs.spring.io/spring-boot/3.5/reference/testing/test-scope-dependencies.html); [Testcontainers 1.21.3](https://github.com/testcontainers/testcontainers-java/tree/1.21.3)
+- **Область проверки:** сверены зависимости и связь с воспроизводимыми примерами. MVC/JPA-фрагменты требуют показанного в тексте приложения и не запускались все вместе.
 
 Spring Boot Test — мощный инструмент для интеграционного тестирования Spring-приложений. Он позволяет поднимать только нужные части контекста и тестировать взаимодействие между компонентами без полного запуска приложения.
 
 ## Введение и зависимости
+
+Код ниже — фрагменты приложения с `User`, `UserRepository` и HTTP endpoints, а не один самостоятельный файл. Полный [Security MVC-проект](../examples/spring-security/pom.xml) демонстрирует реальный фильтр Bearer authentication и отрицательные сценарии; [проект JUnit/Mockito/Testcontainers](../examples/testing/pom.xml) закрепляет отдельный тестовый baseline. Для Spring Boot 3.5 новые примеры переопределения bean следует писать с `@MockitoBean`; показанный ниже `@MockBean` ещё доступен, но deprecated, и оставлен для чтения существующих тестов.
 
 ### Maven зависимость
 
@@ -651,7 +654,7 @@ class UserJdbcRepositoryTest {
 
 ### Пример с PostgreSQL
 
-> Актуально на **март 2026**: используйте общий `testcontainers.version` и Java 17+ в тестовом контуре.
+> Для этих координат выбран **Testcontainers 1.21.3**, Java 17+ и Spring Boot 3.5.0. Задайте `testcontainers.version=1.21.3` в properties или импортируйте BOM, как показано в [главе Testcontainers](02-testcontainers.html#базовая-зависимость-maven).
 
 ```java
 import org.junit.jupiter.api.Test;

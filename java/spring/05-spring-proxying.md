@@ -37,10 +37,12 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — точечно сверены выбор прокси, Objenesis и отличие proxy mode от AspectJ weaving; остальные примеры не проходили повторную проверку.
 - **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
-- **Статус примеров:** `current`
+- **Статус примеров:** `current` для исправленных фрагментов в указанной области проверки; остальные примеры не пересобирались.
 - **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
+- **Источники точечной проверки:** [Proxying Mechanisms 6.2](https://docs.spring.io/spring-framework/reference/6.2/core/aop/proxying.html); [EnableAspectJAutoProxy API 6.2](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/context/annotation/EnableAspectJAutoProxy.html); [Transactional modes 6.2](https://docs.spring.io/spring-framework/reference/6.2/data-access/transaction/declarative/annotations.html); [Spring Boot 3.5 AOP](https://docs.spring.io/spring-boot/3.5/reference/features/aop.html).
+- **Воспроизводимая проверка:** [Maven-проект с тестом внешнего транзакционного вызова и self-invocation в proxy mode](../../examples/spring-behavior/pom.xml); запуск из корня: `mvn -f examples/spring-behavior/pom.xml verify`. AspectJ weaving этот тест не включает.
 
 ## Введение в проксирование
 
@@ -126,7 +128,7 @@ UserService proxy = Proxy.newProxyInstance(
 
 **Преимущества JDK Dynamic Proxy:**
 - Встроен в JDK, не требует дополнительных библиотек
-- Производительность немного выше CGLIB
+- Стоимость вызова зависит от JVM, advice и профиля нагрузки; универсального преимущества перед CGLIB нет
 - Поддерживается всеми версиями Java
 
 **Недостатки:**
@@ -176,9 +178,8 @@ OrderService proxy = (OrderService) enhancer.create();
 
 **Недостатки:**
 - Требует библиотеку CGLIB (включена в Spring)
-- Немного медленнее JDK Dynamic Proxy
 - Не работает с `final` классами и методами
-- Требует конструктор без параметров (или параметризованный конструктор + callback)
+- При обычном Spring AOP создание CGLIB-прокси через Objenesis обходит конструктор; это отличается от ручного `Enhancer.create()` в примере выше
 
 ### Сравнение подходов
 
@@ -186,16 +187,16 @@ OrderService proxy = (OrderService) enhancer.create();
 |----------------|-------------------|-------------|
 | **Требования** | Наличие интерфейса | Не-final класс |
 | **Механизм** | Реализация интерфейса | Наследование класса |
-| **Производительность** | Немного быстрее | Немного медленнее |
+| **Производительность** | Зависит от нагрузки и advice | Зависит от нагрузки и advice |
 | **Зависимости** | Встроен в JDK | Требует CGLIB (в Spring) |
 | **Final методы** | N/A | Не проксируются |
 | **Private методы** | N/A | Не проксируются |
-| **Конструктор** | Не вызывается | Вызывается дважды |
+| **Конструктор целевого объекта** | Создание proxy не создаёт target заново | Обычно не вызывается повторно благодаря Objenesis |
 
 **Рекомендации:**
 - Предпочитайте программирование к интерфейсам — используйте JDK Dynamic Proxy по умолчанию
 - Для legacy-кода без интерфейсов используйте CGLIB
-- В Spring Boot CGLIB используется по умолчанию с версии 4.0 для AOP
+- В Spring Boot 3.5 автоконфигурация AOP использует CGLIB по умолчанию; `spring.aop.proxy-target-class=false` разрешает выбор JDK-прокси для интерфейсов. Отличайте это от defaults чистого Spring Framework.
 
 ## Проксирование в Spring AOP
 
@@ -487,13 +488,21 @@ public class UserService {
 }
 ```
 
-**4. AspectJ weaving (рекомендуется для сложных случаев):**
+**4. AspectJ weaving (отдельный режим, требующий настройки):**
 ```java
-@EnableAspectJAutoProxy(mode = AdviceMode.ASPECTJ)
+import org.springframework.context.annotation.AdviceMode;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+@Configuration
 @EnableTransactionManagement(mode = AdviceMode.ASPECTJ)
+class AspectJTransactionConfig {
+}
 ```
 
-AspectJ модифицирует байт-код класса, поэтому внутренние вызовы тоже работают корректно.
+`@EnableAspectJAutoProxy` включает **proxy-based** обработку `@Aspect`, не имеет параметра `mode` и не включает weaving. Для транзакционного AspectJ нужны `spring-aspects` и реально настроенный compile-time или load-time weaving (включая AspectJ agent для выбранного LTW-сценария). Одна аннотация выше байт-код не изменяет. При weaving advice внедряется в байт-код, поэтому self-invocation может перехватываться.
+
+Проверка понимания: для одного сервиса сравните внешний вызов `updateUser()` и внутренний вызов через `updateMultipleUsers()`. В proxy mode только первый вызов запускает interceptor; затем вынесите транзакционный метод в отдельный bean и подтвердите транзакцию во втором сценарии. Если экспериментируете с AspectJ, отдельно докажите, что weaving действительно включён, прежде чем ожидать изменения поведения.
 
 ### Final методы и классы
 
@@ -564,37 +573,9 @@ public class UserService {
 
 ## Производительность прокси
 
-**Накладные расходы на создание прокси:**
-- JDK Dynamic Proxy: ~1-2 мс на создание одного прокси
-- CGLIB: ~3-5 мс на создание одного прокси
+Стоимость создания proxy и стоимость каждого вызова — разные измерения. Результат зависит от JVM/JIT, прогрева, интерфейса, цепочки interceptors и бизнес-операции. Универсальные значения в наносекундах и утверждение «JDK proxy всегда быстрее CGLIB» без воспроизводимого benchmark вводят в заблуждение.
 
-Создание прокси происходит один раз при старте приложения, поэтому влияние на общую производительность минимально.
-
-**Накладные расходы на вызов методов:**
-- Прямой вызов: ~1 ns
-- JDK Dynamic Proxy: ~10-20 ns (overhead ~10-20x)
-- CGLIB: ~15-30 ns (overhead ~15-30x)
-
-Для большинства приложений это незаметно, так как бизнес-логика занимает гораздо больше времени.
-
-**Бенчмарк пример:**
-```java
-// Прямой вызов: 1,000,000 ops/ms
-// JDK Proxy:     50,000-100,000 ops/ms
-// CGLIB Proxy:   30,000-60,000 ops/ms
-```
-
-**Оптимизация:**
-1. Избегайте ненужных прокси:
-   ```java
-   @EnableAspectJAutoProxy(proxyTargetClass = false) // JDK по умолчанию
-   ```
-
-2. Используйте `@Lazy` для тяжёлых бинов
-
-3. Для критичных по производительности участков рассмотрите AspectJ compile-time weaving
-
-4. Кэшируйте результаты вместо создания множества прокси
+Для измерения подготовьте JMH-сценарии прямого вызова, JDK proxy и CGLIB proxy с одинаковым target и advice; отдельно сравните пустой метод и реальную операцию. Зафиксируйте версии JDK/Spring, forks, warmup и измерительные итерации. Создание proxy измеряйте отдельно от steady-state вызовов. Затем сопоставьте результат с профилем всего запроса, прежде чем менять архитектуру или переходить на weaving.
 
 ## Отладка и диагностика прокси
 
@@ -784,7 +765,7 @@ public class ManualProxyExample {
    - **JDK Dynamic Proxy** — для классов, реализующих интерфейсы. Создаёт прокси, реализующий те же интерфейсы через `java.lang.reflect.Proxy`.
    - **CGLIB Proxy** — для классов без интерфейсов. Создаёт подкласс целевого класса с переопределёнными методами.
    
-   JDK Proxy немного быстрее, но требует интерфейс. CGLIB гибче, но не работает с `final` классами/методами.
+   JDK Proxy требует интерфейс. CGLIB создаёт подкласс и не может перехватывать `final` методы. Выбор механизма не даёт универсальной гарантии скорости.
 
 2. **Почему @Transactional не работает при вызове метода внутри того же класса?**
 
@@ -801,10 +782,10 @@ public class ManualProxyExample {
 5. **В чём разница между proxy-target-class=true и false?**
 
    *Ответ:* 
-   - `proxy-target-class=false` (по умолчанию до Spring 4): Spring использует JDK Dynamic Proxy, если класс реализует интерфейс, иначе CGLIB.
+   - `proxy-target-class=false`: Spring использует JDK Dynamic Proxy, если класс реализует интерфейс, иначе CGLIB.
    - `proxy-target-class=true`: Spring всегда использует CGLIB, даже если есть интерфейсы.
    
-   В Spring Boot по умолчанию `true` с версии 2.0.
+   В автоконфигурации AOP Spring Boot 3.5 по умолчанию используется `true`; настройка Boot и defaults чистого Spring Framework — разные уровни конфигурации.
 
 6. **Как определить, является ли объект прокси?**
 
@@ -833,7 +814,7 @@ public class ManualProxyExample {
 
 8. **Влияет ли проксирование на производительность?**
 
-   *Ответ:* Да, но незначительно. Создание прокси добавляет 1-5 мс на старте приложения. Вызов через прокси медленнее в ~10-30 раз (10-30 наносекунд vs 1 наносекунда), но для большинства приложений это незаметно, так как бизнес-логика (БД, сеть, вычисления) занимает гораздо больше времени. Критичным может быть для высоконагруженных систем с микросервисными вызовами — тогда стоит рассмотреть compile-time weaving.
+   *Ответ:* Есть стоимость создания proxy и перехвата вызовов; её значимость зависит от цепочки advice и полезной работы. Не выбирайте механизм по универсальным коэффициентам: измерьте одинаковые сценарии через JMH с прогревом и отдельно проверьте профиль приложения. Сетевые вызовы и БД могут определять задержку гораздо сильнее proxy dispatch.
 
 9. **Что такое @Lazy прокси и как он работает?**
 

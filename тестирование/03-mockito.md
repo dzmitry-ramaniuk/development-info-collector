@@ -67,10 +67,11 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Дата проверки:** 2026-10-15 (точечная проверка указанной ниже области; остальная редакция — 2026-08-04)
+- **Целевая версия или диапазон:** Java 17+; Mockito 5.17.0; JUnit Jupiter 5.12.2
 - **Статус примеров:** `current`
-- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+- **Первичные источники:** [Mockito 5.17.0](https://github.com/mockito/mockito/releases/tag/v5.17.0); [JUnit 5.12.2](https://docs.junit.org/5.12.2/user-guide/)
+- **Область проверки:** зависимости и запускаемый пример `RegistrationTest` проверены на JDK 21; остальные фрагменты иллюстрируют API в своём контексте.
 
 Mockito — это фреймворк для создания тестовых двойников (mock objects), который позволяет изолировать тестируемый код от его зависимостей. Благодаря простоте API и интеграции с JUnit 5, он стал стандартом де-факто для юнит-тестирования в Java.
 
@@ -123,11 +124,15 @@ Mockito — это фреймворк для создания тестовых �
 
 ### Зависимость (Maven)
 
+Полный пример с JUnit extension — [RegistrationTest](../examples/testing/src/test/java/RegistrationTest.java). Запуск из корня: `mvn -f examples/testing/pom.xml test`. Проверяются успешная регистрация, отказ при дубликате и отсутствие письма при ошибке сохранения; конструктор тестируемого объекта вызывается явно.
+
+Для inline mock maker на JDK 21+ запускаемый [POM](../examples/testing/pom.xml) подключает Mockito как `-javaagent` при старте тестовой JVM. Путь к JAR вычисляет `maven-dependency-plugin:properties`, поэтому он не зависит от расположения локального Maven-кэша. Это устраняет зависимость от динамического self-attach, который может быть ограничен средой. Конфигурация соответствует [инструкции Mockito 5.17.0, раздел 0.3](https://github.com/mockito/mockito/blob/v5.17.0/mockito-core/src/main/java/org/mockito/Mockito.java).
+
 ```xml
 <dependency>
     <groupId>org.mockito</groupId>
     <artifactId>mockito-core</artifactId>
-    <version>5.7.0</version>
+    <version>5.17.0</version>
     <scope>test</scope>
 </dependency>
 
@@ -135,7 +140,7 @@ Mockito — это фреймворк для создания тестовых �
 <dependency>
     <groupId>org.mockito</groupId>
     <artifactId>mockito-junit-jupiter</artifactId>
-    <version>5.7.0</version>
+    <version>5.17.0</version>
     <scope>test</scope>
 </dependency>
 ```

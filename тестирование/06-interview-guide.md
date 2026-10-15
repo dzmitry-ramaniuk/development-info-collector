@@ -539,13 +539,20 @@ class Service {
 
 ## Практические задачи
 
+Здесь показаны фрагменты доменной модели: `User`, repository и исключения должны быть определены в проекте. Для ответа 404 нужен явный mapping `UserNotFoundException`, например `@ResponseStatus(HttpStatus.NOT_FOUND)` на классе исключения или `@ExceptionHandler`; одно имя исключения не задаёт HTTP-статус. Самостоятельный [RegistrationTest](../examples/testing/src/test/java/RegistrationTest.java) запускается через `mvn -f examples/testing/pom.xml test` и показывает полный вариант без пропущенного конструктора.
+
 ### Задача 1: Написать тест для UserService
 
 ```java
 class UserService {
     private final UserRepository repository;
     private final EmailSender emailSender;
-    
+
+    UserService(UserRepository repository, EmailSender emailSender) {
+        this.repository = repository;
+        this.emailSender = emailSender;
+    }
+
     public User register(String email, String name) {
         if (repository.existsByEmail(email)) {
             throw new UserAlreadyExistsException();
@@ -602,7 +609,9 @@ class UserServiceTest {
 @RequestMapping("/api/users")
 class UserController {
     private final UserService service;
-    
+
+    UserController(UserService service) { this.service = service; }
+
     @GetMapping("/{id}")
     public User getUser(@PathVariable Long id) {
         return service.getUser(id);
