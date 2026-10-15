@@ -25,17 +25,39 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Дата проверки:** 2026-10-15 — точечная сверка видов переменных и передачи аргументов; старые фрагменты главы об исключениях целиком не пересобирались.
+- **Целевая версия или диапазон:** Java SE 17–21.
+- **Статус примеров:** `current`; сценарий передачи аргументов проверен в CoreExamples с --release 17 на JDK 21.0.12.1.
+- **Первичные источники:** [JLS 4.12.3](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.12.3).
 
 ## Типы данных и литералы
-Java строго типизирована: каждый идентификатор имеет известный тип на этапе компиляции. Примитивы (`byte`, `short`, `int`,
-`long`, `float`, `double`, `boolean`, `char`) хранятся в стеке и передаются по значению. Ссылочные типы (классы, интерфейсы,
-массивы, перечисления) живут в куче и оперируют ссылками. Для работы с примитивами существуют обёртки (`Integer`, `Double`),
-которые помогают интегрироваться с коллекциями и generics. Литералы поддерживают разделители `_`, суффиксы (`L`, `f`), числовые
-системы (`0b`, `0x`), текстовые блоки (`"""`) и символы Unicode.
+Java статически типизирована: тип переменной известен при компиляции. Примитивные типы (`byte`, `short`, `int`,
+`long`, `float`, `double`, `boolean`, `char`) хранят сами значения; ссылочные переменные хранят ссылки на объекты или `null`.
+Примитивы могут быть локальными переменными, полями объектов и элементами массивов, поэтому правило «примитивы всегда в стеке» неверно.
+В runtime-модели объекты и массивы размещаются в heap; JIT может оптимизировать физическое представление.
+
+Все аргументы Java передаются **по значению**, включая копию ссылки на объект. Метод может изменить доступный по этой ссылке
+объект, но присваивание параметру не меняет переменную вызывающего кода.
+См. [JLS 4.12.3: kinds of variables](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html#jls-4.12.3).
+
+```java
+static void change(List<String> names, int count) {
+    names.add("added");
+    names = new ArrayList<>(); // Только локальная копия ссылки.
+    count++;
+}
+
+// Внутри main; нужны java.util.List и java.util.ArrayList:
+List<String> names = new ArrayList<>(List.of("initial"));
+int count = 1;
+change(names, count);
+System.out.println(names); // [initial, added]
+System.out.println(count); // 1
+```
+
+Полный запуск есть в [CoreExamples.java](../../examples/java-core/CoreExamples.java).
+Обёртки (`Integer`, `Double`) позволяют использовать значения с generics; при unboxing `null` возникает `NullPointerException`.
+Литералы поддерживают разделители `_`, суффиксы (`L`, `f`), числовые системы (`0b`, `0x`), текстовые блоки и символы Unicode.
 
 ## Управляющие конструкции
 - **Условия**: `if`, `switch` (включая `switch`-выражения с Java 14+). Новые `switch`-выражения позволяют возвращать значение и
@@ -44,14 +66,14 @@ Java строго типизирована: каждый идентификат�
 
 ## Исключения в Java
 
-Исключения — это механизм обработки ошибок и исключительных ситуаций в Java. Правильная обработка исключений критична 
+Исключения — это механизм обработки ошибок и исключительных ситуаций в Java. Правильная обработка исключений критична
 для создания надёжных и maintainable приложений.
 
 ### Иерархия исключений
 
 Все исключения в Java наследуются от класса `Throwable`. Иерархия построена следующим образом:
 
-```
+```text
 Throwable
 ├── Error
 │   ├── OutOfMemoryError
@@ -311,7 +333,7 @@ try (FileInputStream fis = new FileInputStream("input.txt");
      FileOutputStream fos = new FileOutputStream("output.txt");
      BufferedInputStream bis = new BufferedInputStream(fis);
      BufferedOutputStream bos = new BufferedOutputStream(fos)) {
-    
+
     int data;
     while ((data = bis.read()) != -1) {
         bos.write(data);
@@ -334,27 +356,20 @@ try (reader) {  // Можно использовать final или effectively 
 ```java
 public class DatabaseConnection implements AutoCloseable {
     private Connection connection;
-    
+
     public DatabaseConnection(String url) throws SQLException {
         this.connection = DriverManager.getConnection(url);
     }
-    
+
     public void executeQuery(String sql) throws SQLException {
         try (Statement stmt = connection.createStatement()) {
             stmt.executeQuery(sql);
         }
     }
-    
+
     @Override
-    public void close() {
-        if (connection != null) {
-            try {
-                connection.close();
-                System.out.println("Connection closed");
-            } catch (SQLException e) {
-                System.err.println("Error closing connection: " + e.getMessage());
-            }
-        }
+    public void close() throws SQLException {
+        connection.close(); // Не скрываем ошибку освобождения ресурса.
     }
 }
 
@@ -373,7 +388,7 @@ public class DataValidationException extends Exception {
     public DataValidationException(String message) {
         super(message);
     }
-    
+
     public DataValidationException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -384,7 +399,7 @@ public class InvalidConfigurationException extends RuntimeException {
     public InvalidConfigurationException(String message) {
         super(message);
     }
-    
+
     public InvalidConfigurationException(String message, Throwable cause) {
         super(message, cause);
     }
@@ -396,31 +411,31 @@ public class InvalidConfigurationException extends RuntimeException {
 public class OrderProcessingException extends Exception {
     private final String orderId;
     private final OrderStatus status;
-    
+
     public OrderProcessingException(String message, String orderId, OrderStatus status) {
         super(message);
         this.orderId = orderId;
         this.status = status;
     }
-    
-    public OrderProcessingException(String message, Throwable cause, 
+
+    public OrderProcessingException(String message, Throwable cause,
                                     String orderId, OrderStatus status) {
         super(message, cause);
         this.orderId = orderId;
         this.status = status;
     }
-    
+
     public String getOrderId() {
         return orderId;
     }
-    
+
     public OrderStatus getStatus() {
         return status;
     }
-    
+
     @Override
     public String toString() {
-        return String.format("%s [orderId=%s, status=%s]", 
+        return String.format("%s [orderId=%s, status=%s]",
             super.toString(), orderId, status);
     }
 }
@@ -507,7 +522,7 @@ public void readFile(String path) throws IOException {
         int data = fis.read();
         throw new IOException("Error reading data");  // Основное исключение
     } finally {
-        fis.close();  // Если close() тоже бросит исключение, 
+        fis.close();  // Если close() тоже бросит исключение,
                       // исключение из try будет потеряно!
     }
 }
@@ -528,7 +543,7 @@ try {
     readFile("data.txt");
 } catch (IOException e) {
     System.err.println("Main exception: " + e.getMessage());
-    
+
     Throwable[] suppressed = e.getSuppressed();
     for (Throwable t : suppressed) {
         System.err.println("Suppressed exception: " + t.getMessage());
@@ -540,7 +555,7 @@ try {
 ```java
 public void processMultipleFiles(List<String> paths) throws IOException {
     IOException mainException = null;
-    
+
     for (String path : paths) {
         try {
             processFile(path);
@@ -552,7 +567,7 @@ public void processMultipleFiles(List<String> paths) throws IOException {
             }
         }
     }
-    
+
     if (mainException != null) {
         throw mainException;
     }
@@ -638,8 +653,8 @@ try {
 }
 
 // Хорошо
-int value = (index >= 0 && index < array.length) 
-    ? array[index] 
+int value = (index >= 0 && index < array.length)
+    ? array[index]
     : defaultValue;
 ```
 
@@ -699,7 +714,7 @@ try {
  * @throws UserNotFoundException if user with given ID doesn't exist
  * @throws DatabaseException if database connection fails
  */
-public User readUser(long userId) 
+public User readUser(long userId)
         throws UserNotFoundException, DatabaseException {
     // ...
 }
@@ -755,8 +770,7 @@ throw new NullPointerException("Name cannot be null");
 
 ## Вопросы на собеседовании
 1. **Чем отличаются примитивные и ссылочные типы?**
-   *Ответ:* Примитивы хранят значение напрямую и не допускают `null`. Ссылочные типы содержат адрес объекта, могут быть `null` и
-   обрабатываются сборщиком мусора. Примитивы быстрее и занимают меньше памяти, но не работают с generics без автоупаковки.
+   *Ответ:* Примитивная переменная содержит значение, ссылочная — ссылку или `null`. Оба вида могут быть локальными переменными, полями и элементами массивов. GC управляет достижимостью объектов, а не «ссылочным типом» как таким. Аргументы обоих видов передаются по значению; примитивы нельзя непосредственно использовать как type arguments.
 2. **Когда использовать `switch`-выражение вместо классического `switch`?**
    *Ответ:* Когда нужно вернуть значение или сократить шаблонный код `break`. `switch`-выражения обрабатывают `enum`, `String`,
    поддерживают множественные метки и гарантируют исчерпывающий анализ при работе с `enum`.

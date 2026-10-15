@@ -63,15 +63,16 @@
    - [Best practices](#best-practices)
    - [Миграция схемы БД](#миграция-схемы-бд)
 15. [Практические упражнения](#практические-упражнения)
+   - [Практикум: merge, flush/rollback и N+1](#практикум-merge-flushrollback-и-n1)
 16. [Вопросы на собеседовании](#вопросы-на-собеседовании)
 17. [Дополнительные материалы](#дополнительные-материалы)
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, Jakarta Persistence 3.2, Hibernate ORM 6.6–7.1
-- **Статус примеров:** `current`
-- **Первичные источники:** [Jakarta Persistence Specification](https://jakarta.ee/specifications/persistence/); [Hibernate ORM documentation](https://hibernate.org/orm/documentation/)
+- **Дата проверки:** 2026-10-15 — точечная сверка entity-конструктора, UUID, merge/flush, query-cache layout и API-примеров; не полная перепроверка всех маппингов и диалектов.
+- **Целевая версия или диапазон:** Java 17/21, Jakarta Persistence 3.1 и Hibernate ORM 6.6. Практикум закрепляет Hibernate 6.6.15.Final; требования к переносимому entity дополнительно сверены со спецификацией Jakarta Persistence 3.2. Совместимость Hibernate 6.6 — с Persistence 3.1, а не 3.2.
+- **Статус примеров:** `current` для указанной базы. Три теста ORM-практикума прошли на OpenJDK 21.0.12.1 с компиляцией --release 17 и H2 2.3.232; остальные сокращённые фрагменты целиком не собирались. Hibernate 7.x здесь не объявлен проверенным.
+- **Первичные источники:** [Hibernate 6.6 compatibility](https://hibernate.org/orm/releases/6.6/#compatibility); [Jakarta Persistence 3.2, §2.1](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html#the-entity-class); [EntityManager.merge/flush](https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/EntityManager.html); [CacheLayout 6.6](https://docs.hibernate.org/orm/6.6/javadocs/org/hibernate/annotations/CacheLayout.html); [Hibernate 6.6 User Guide](https://docs.hibernate.org/orm/6.6/userguide/html_single/).
 
 ## Введение
 
@@ -135,7 +136,7 @@ Hibernate остаётся наиболее популярным выбором 
 **Требования к entity-классу:**
 - Помечен аннотацией `@Entity`
 - Имеет первичный ключ (поле с `@Id`)
-- Имеет конструктор без параметров (может быть protected или package-private)
+- Имеет public или protected конструктор без параметров для переносимого JPA-кода; менее строгие возможности Hibernate не являются гарантией спецификации
 - Не является final классом
 - Не содержит final полей (для персистентных атрибутов)
 
@@ -146,25 +147,25 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "username", nullable = false, unique = true, length = 50)
     private String username;
-    
+
     @Column(name = "email", nullable = false)
     private String email;
-    
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-    
+
     // Конструктор по умолчанию обязателен
     protected User() {}
-    
+
     public User(String username, String email) {
         this.username = username;
         this.email = email;
         this.createdAt = LocalDateTime.now();
     }
-    
+
     // Getters и Setters
     public Long getId() { return id; }
     public String getUsername() { return username; }
@@ -214,10 +215,9 @@ private Long id;
 @GeneratedValue(strategy = GenerationType.TABLE)
 private Long id;
 
-// 5. UUID (Hibernate-специфично)
+// 5. UUID — стандартная стратегия Jakarta Persistence 3.1+
 @Id
-@GeneratedValue(generator = "UUID")
-@GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+@GeneratedValue(strategy = GenerationType.UUID)
 private UUID id;
 ```
 
@@ -238,7 +238,7 @@ Hibernate автоматически маппит стандартные Java-т
 public class Product {
     @Id
     private Long id;
-    
+
     private String name;           // VARCHAR
     private int quantity;          // INTEGER
     private BigDecimal price;      // DECIMAL/NUMERIC
@@ -284,12 +284,12 @@ public enum Status {
 public class Order {
     @Id
     private Long id;
-    
+
     // Сохраняет имя enum как строку (рекомендуется)
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private Status status;
-    
+
     // Сохраняет порядковый номер enum (не рекомендуется - хрупко при изменении порядка)
     @Enumerated(EnumType.ORDINAL)
     private Status oldStatus;
@@ -307,12 +307,12 @@ public class Order {
 public class Document {
     @Id
     private Long id;
-    
+
     // Текстовый LOB
     @Lob
     @Column(columnDefinition = "TEXT")
     private String content;
-    
+
     // Бинарный LOB
     @Lob
     @Column(columnDefinition = "BLOB")
@@ -324,7 +324,7 @@ public class Document {
 
 ### @OneToOne
 
-Связь один-к-одному, когда одной записи в таблице A соответствует ровно одна запись в таблице B:
+Связь один-к-одному: одной записи в таблице A соответствует не более одной записи в B. Обязательность связи задаётся отдельно (`optional`, nullable FK и ограничениями схемы):
 
 ```java
 @Entity
@@ -332,9 +332,9 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String username;
-    
+
     // Владеющая сторона связи (имеет внешний ключ)
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "profile_id", referencedColumnName = "id")
@@ -346,10 +346,10 @@ public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String bio;
     private String avatarUrl;
-    
+
     // Обратная сторона связи (mappedBy указывает на поле в User)
     @OneToOne(mappedBy = "profile")
     private User user;
@@ -368,19 +368,19 @@ public class Department {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String name;
-    
+
     // Один департамент имеет много сотрудников
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Employee> employees = new ArrayList<>();
-    
+
     // Вспомогательный метод для управления двунаправленной связью
     public void addEmployee(Employee employee) {
         employees.add(employee);
         employee.setDepartment(this);
     }
-    
+
     public void removeEmployee(Employee employee) {
         employees.remove(employee);
         employee.setDepartment(null);
@@ -392,9 +392,9 @@ public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String name;
-    
+
     // Много сотрудников принадлежат одному департаменту
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
@@ -414,9 +414,9 @@ public class Student {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String name;
-    
+
     @ManyToMany
     @JoinTable(
         name = "student_course",
@@ -431,9 +431,9 @@ public class Course {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String title;
-    
+
     @ManyToMany(mappedBy = "courses")
     private Set<Student> students = new HashSet<>();
 }
@@ -447,15 +447,15 @@ public class Enrollment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @ManyToOne
     @JoinColumn(name = "student_id")
     private Student student;
-    
+
     @ManyToOne
     @JoinColumn(name = "course_id")
     private Course course;
-    
+
     private LocalDateTime enrolledAt;
     private String grade;
 }
@@ -508,12 +508,11 @@ private Department department;
 
 Сущность в Hibernate может находиться в одном из четырёх состояний:
 
-```
-  New (Transient)
-       ↓ persist()
-  Managed (Persistent) ←→ merge()
-       ↓ remove()           ↓ detach()
-   Removed         Detached
+```text
+New --persist()--> Managed --detach()/close()--> Detached
+Managed --remove()--> Removed
+Detached --merge()--> состояние копируется в Managed-экземпляр
+                      исходный Detached остаётся Detached
 ```
 
 1. **Transient (New)** — новый объект, не связанный с persistence context и БД:
@@ -559,8 +558,11 @@ User found = entityManager.find(User.class, 1L);
 User reference = entityManager.getReference(User.class, 1L);
 
 // Обновление detached сущности
-User detached = // получен из другой сессии
-User merged = entityManager.merge(detached);  // Detached → Persistent
+User detached = loadFromClosedContext(); // Условный метод: объект из уже закрытого контекста
+User merged = entityManager.merge(detached); // Managed-копия, исходный объект остаётся detached
+assert !entityManager.contains(detached);
+assert entityManager.contains(merged);
+assert detached != merged;
 
 // Удаление
 entityManager.remove(user);  // Persistent → Removed
@@ -594,7 +596,7 @@ entityManager.flush();  // SQL UPDATE будет выполнен немедле
 
 **FlushMode:**
 - `FlushModeType.AUTO` (по умолчанию) — flush перед запросами и при commit
-- `FlushModeType.COMMIT` — flush только при commit
+- `FlushModeType.COMMIT` — flush перед commit; провайдер может выполнять его и в другие моменты. Видимость несброшенных изменений для запросов в этом режиме не следует предполагать.
 
 ## Кеширование
 
@@ -644,7 +646,7 @@ public class Product {
     @Id
     private Long id;
     private String name;
-    
+
     // Кешировать также коллекцию
     @OneToMany(mappedBy = "product")
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
@@ -655,8 +657,8 @@ public class Product {
 **Стратегии согласованности (CacheConcurrencyStrategy):**
 - `READ_ONLY` — для immutable данных (максимальная производительность)
 - `NONSTRICT_READ_WRITE` — мягкая согласованность, допускаются stale данные
-- `READ_WRITE` — строгая согласованность через блокировки (по умолчанию)
-- `TRANSACTIONAL` — полная ACID согласованность (требует JTA)
+- `READ_WRITE` — стратегия с soft locks для согласования cache updates; это не универсальная гарантия сериализуемости БД и не фиксированный default всех провайдеров
+- `TRANSACTIONAL` — транзакционная стратегия при поддержке cache-провайдера и соответствующей интеграции с транзакциями
 
 ### Query Cache
 
@@ -674,7 +676,11 @@ List<Product> products = entityManager
     .getResultList();
 ```
 
-**Важно:** Query cache хранит только ID сущностей, сами сущности берутся из L2 cache. Поэтому L2 cache должен быть включён.
+**Важно:** состав query cache зависит от версии и layout. В Hibernate 6.6 доступны `SHALLOW` (идентификаторы),
+`FULL` (состояние) и `AUTO`. `AUTO` выбирает shallow для cacheable сущностей/коллекций и full для остальных.
+Для shallow-варианта промах L2 может привести к дополнительным запросам. Утверждение «query cache всегда содержит только ID»
+неверно для этой линии. См. [CacheLayout 6.6](https://docs.hibernate.org/orm/6.6/javadocs/org/hibernate/annotations/CacheLayout.html)
+и [query cache layout](https://docs.hibernate.org/orm/6.6/userguide/html_single/#caching-query-layout).
 
 ## Запросы к данным
 
@@ -734,7 +740,7 @@ List<User> page = entityManager
 
 ### Criteria API
 
-Type-safe построение запросов программно:
+Программное построение запросов. Строковые имена атрибутов (`get("username")`) не проверяются компилятором; для проверки имён и типов используйте генерируемый static metamodel (`User_.username`).
 
 ```java
 CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -765,7 +771,7 @@ List<User> richCustomers = entityManager.createQuery(query).getResultList();
 ```
 
 **Преимущества Criteria API:**
-- Проверка типов на этапе компиляции
+- Проверка типов и рефакторинг атрибутов при использовании static metamodel; строковые пути могут ошибаться в runtime
 - Удобно для динамических запросов
 - Рефакторинг через IDE
 
@@ -847,12 +853,12 @@ EntityTransaction tx = em.getTransaction();
 
 try {
     tx.begin();
-    
+
     User user = new User("john", "john@example.com");
     em.persist(user);
-    
+
     // Выполнить операции...
-    
+
     tx.commit();
 } catch (Exception e) {
     if (tx.isActive()) {
@@ -868,9 +874,9 @@ try {
 ```java
 @Service
 public class UserService {
-    @Autowired
+    @PersistenceContext // jakarta.persistence.PersistenceContext
     private EntityManager entityManager;
-    
+
     @Transactional
     public void createUser(String username, String email) {
         User user = new User(username, email);
@@ -889,9 +895,9 @@ public class UserService {
 public class Product {
     @Id
     private Long id;
-    
+
     private String name;
-    
+
     @Version
     private Long version;  // Hibernate автоматически управляет версией
 }
@@ -922,7 +928,7 @@ Product product = em.find(Product.class, 1L, LockModeType.PESSIMISTIC_WRITE);
 Product product = em.find(Product.class, 1L, LockModeType.PESSIMISTIC_READ);
 
 // С таймаутом
-em.find(Product.class, 1L, LockModeType.PESSIMISTIC_WRITE, 
+em.find(Product.class, 1L, LockModeType.PESSIMISTIC_WRITE,
     Collections.singletonMap("jakarta.persistence.lock.timeout", 5000));
 ```
 
@@ -950,7 +956,7 @@ for (User user : users) {
 
 // GOOD: один запрос с JOIN FETCH
 List<User> users = em.createQuery(
-    "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.orders", 
+    "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.orders",
     User.class
 ).getResultList();
 ```
@@ -964,7 +970,7 @@ List<User> users = em.createQuery(
 public class User {
     @Id
     private Long id;
-    
+
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @BatchSize(size = 10)  // Загружать orders для 10 users одним запросом
     private List<Order> orders;
@@ -1041,7 +1047,7 @@ public abstract class Payment {
     @Id
     @GeneratedValue
     private Long id;
-    
+
     private BigDecimal amount;
 }
 
@@ -1072,7 +1078,7 @@ public abstract class Payment {
     @Id
     @GeneratedValue
     private Long id;
-    
+
     private BigDecimal amount;
 }
 
@@ -1103,7 +1109,7 @@ public abstract class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.TABLE)
     private Long id;
-    
+
     private BigDecimal amount;
 }
 
@@ -1130,7 +1136,7 @@ public class Address {
     private String city;
     private String zipCode;
     private String country;
-    
+
     // Конструкторы, getters, setters
 }
 
@@ -1138,16 +1144,18 @@ public class Address {
 public class User {
     @Id
     private Long id;
-    
+
     private String name;
-    
+
     @Embedded
     private Address address;
-    
+
     @Embedded
     @AttributeOverrides({
         @AttributeOverride(name = "street", column = @Column(name = "billing_street")),
-        @AttributeOverride(name = "city", column = @Column(name = "billing_city"))
+        @AttributeOverride(name = "city", column = @Column(name = "billing_city")),
+        @AttributeOverride(name = "zipCode", column = @Column(name = "billing_zip_code")),
+        @AttributeOverride(name = "country", column = @Column(name = "billing_country"))
     })
     private Address billingAddress;
 }
@@ -1163,7 +1171,7 @@ public class User {
 public class OrderItemId implements Serializable {
     private Long orderId;
     private Long productId;
-    
+
     // equals, hashCode обязательны
 }
 
@@ -1171,7 +1179,7 @@ public class OrderItemId implements Serializable {
 public class OrderItem {
     @EmbeddedId
     private OrderItemId id;
-    
+
     private Integer quantity;
 }
 
@@ -1181,10 +1189,10 @@ public class OrderItem {
 public class OrderItem {
     @Id
     private Long orderId;
-    
+
     @Id
     private Long productId;
-    
+
     private Integer quantity;
 }
 ```
@@ -1198,21 +1206,21 @@ public class OrderItem {
 public class User {
     @Id
     private Long id;
-    
+
     private String username;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
-    
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
+
     @PostLoad
     protected void onLoad() {
         // Выполнится после загрузки из БД
@@ -1241,7 +1249,7 @@ public class AuditListener {
             ((Auditable) entity).setCreatedAt(LocalDateTime.now());
         }
     }
-    
+
     @PreUpdate
     public void setUpdatedDate(Object entity) {
         if (entity instanceof Auditable) {
@@ -1264,7 +1272,7 @@ public class User implements Auditable {
 **1. LazyInitializationException:**
 ```java
 // BAD: попытка доступа к lazy коллекции вне сессии
-User user = userRepository.findById(1L);
+User user = userRepository.findById(1L).orElseThrow();
 // Сессия закрыта
 user.getOrders().size();  // LazyInitializationException!
 
@@ -1280,13 +1288,13 @@ User user = em.createQuery(
 // BAD: возврат entities с циклическими ссылками
 @GetMapping("/users/{id}")
 public User getUser(@PathVariable Long id) {
-    return userRepository.findById(id);  // Может вызвать бесконечную сериализацию!
+    return userRepository.findById(id).orElseThrow();  // Может вызвать бесконечную сериализацию!
 }
 
 // GOOD: использовать DTO
 @GetMapping("/users/{id}")
 public UserDTO getUser(@PathVariable Long id) {
-    User user = userRepository.findById(id);
+    User user = userRepository.findById(id).orElseThrow();
     return UserDTO.fromEntity(user);
 }
 ```
@@ -1307,7 +1315,7 @@ map.get(user);  // может не найти! hashCode изменился
    @Service
    public class UserService {
        private final UserRepository repository;
-       
+
        public UserService(UserRepository repository) {
            this.repository = repository;
        }
@@ -1336,7 +1344,7 @@ map.get(user);  // может не найти! hashCode изменился
    public class UserDTO {
        private Long id;
        private String username;
-       
+
        public static UserDTO fromEntity(User user) {
            UserDTO dto = new UserDTO();
            dto.setId(user.getId());
@@ -1357,7 +1365,7 @@ map.get(user);  // может не найти! hashCode изменился
    # Development
    spring.jpa.show-sql=true
    spring.jpa.properties.hibernate.format_sql=true
-   
+
    # Production
    spring.jpa.show-sql=false
    ```
@@ -1404,76 +1412,97 @@ spring.flyway.enabled=true
 
 4. **Реализуйте soft delete:**
    - Добавьте поле deleted
-   - Используйте @Where для фильтрации
+   - Сравните явный предикат `deleted=false` и Hibernate-specific soft-delete mapping для выбранной версии; не смешивайте API разных версий
    - Создайте custom repository методы
+
+### Практикум: merge, flush/rollback и N+1
+
+**Исходные данные:** три клиента, у каждого по два заказа. L2/query cache и batch fetching выключены, контексты между
+сценариями закрываются. Для воспроизводимости пример использует Hibernate 6.6.15.Final и H2 2.3.232.
+
+1. Загрузите клиента и закройте контекст. Измените имя detached-объекта и вызовите `merge` в новой транзакции.
+2. Проверьте `contains(original)==false`, `contains(merged)==true` и `original != merged`. Изменение original после merge
+   не должно менять merged. Выполните `flush`, затем `rollback`; в следующем контексте имя в БД должно остаться прежним.
+3. Загрузите всех клиентов обычным JPQL и обратитесь к их lazy-коллекциям внутри транзакции. На заданной конфигурации
+   получите четыре SELECT: один по клиентам и три по коллекциям.
+4. Повторите через `left join fetch` в новом контексте. Сумма заказов остаётся шесть, число SELECT становится одним.
+
+**Разбор:** merge переносит состояние, flush отправляет SQL, а commit делает изменения зафиксированными.
+Для N+1 важно измерить фактический fetch plan: EAGER сам по себе не гарантирует JOIN, а batch fetching изменит счётчик запросов.
+Если нужна пагинация клиентов с коллекциями, не применяйте её механически к collection fetch join: сначала получите страницу
+ID, затем загрузите связи для этих ID и восстановите порядок. Смотрите SQL и предупреждения провайдера.
+
+**Критерий готовности:** проверки идентичности, rollback, шести заказов и количества SQL выполняются на указанном наборе
+зависимостей. Готовый [Maven-практикум](../examples/java-core/README.html#orm-практикум) содержит эти сценарии и стандартную UUID-генерацию.
+Эта in-memory проверка не подтверждает поведение блокировок конкретной production-БД.
 
 ## Вопросы на собеседовании
 
 1. **В чём разница между JPA и Hibernate?**
-   
+
    *Ответ:* JPA — это спецификация (набор интерфейсов и аннотаций), определяющая стандарт работы с ORM в Java. Hibernate — конкретная реализация JPA, которая также предоставляет дополнительные возможности, не входящие в спецификацию (HQL расширения, специфичные аннотации, расширенное кеширование и др.). Другие реализации JPA: EclipseLink, OpenJPA.
 
 2. **Какие состояния может иметь entity в Hibernate?**
-   
+
    *Ответ:* Transient (new) — новый объект, не связан с БД; Persistent (managed) — управляется EntityManager, изменения синхронизируются; Detached — был persistent, но потерял связь с контекстом; Removed — помечен для удаления.
 
 3. **Что такое проблема N+1 и как её решить?**
-   
-   *Ответ:* N+1 возникает, когда загружается N сущностей одним запросом, а затем для каждой выполняется дополнительный запрос для загрузки связанных данных (итого 1+N запросов). Решения: JOIN FETCH в HQL/JPQL, @BatchSize, entity graphs, или eager fetching (с осторожностью).
+
+   *Ответ:* N+1 возникает, когда загружается N сущностей одним запросом, а затем для каждой выполняется дополнительный запрос для загрузки связанных данных (итого 1+N запросов). Решения: определить fetch plan запроса, применить JOIN FETCH, batch fetching или entity graph. Простая смена LAZY на EAGER не гарантирует устранение N+1.
 
 4. **В чём разница между FetchType.LAZY и FetchType.EAGER?**
-   
-   *Ответ:* LAZY — связанные данные загружаются только при первом обращении к ним (ленивая загрузка). EAGER — связанные данные загружаются немедленно вместе с основной сущностью. По умолчанию @OneToMany и @ManyToMany — LAZY, @OneToOne и @ManyToOne — EAGER. Рекомендуется использовать LAZY везде, где возможно.
+
+   *Ответ:* LAZY — связанные данные загружаются только при первом обращении к ним (ленивая загрузка). EAGER требует загруженности связи, но не обещает один SQL JOIN; провайдер может выполнить дополнительные SELECT. По умолчанию @OneToMany и @ManyToMany — LAZY, @OneToOne и @ManyToOne — EAGER. Рекомендуется использовать LAZY везде, где возможно.
 
 5. **Объясните разницу между persist() и merge().**
-   
+
    *Ответ:* persist() — делает transient объект persistent, объект начинает отслеживаться EntityManager. merge() — копирует состояние detached объекта в persistent объект (или создаёт новый persistent), возвращает managed копию. persist() используется для новых объектов, merge() — для обновления detached.
 
 6. **Что такое Persistence Context и зачем он нужен?**
-   
+
    *Ответ:* Persistence Context — это кеш первого уровня, содержащий managed сущности. Он гарантирует уникальность объектов (одна строка БД = один объект в памяти), отслеживает изменения для автоматической синхронизации с БД, откладывает SQL до момента flush/commit для оптимизации.
 
 7. **Какие стратегии наследования поддерживает JPA?**
-   
+
    *Ответ:* SINGLE_TABLE (все классы в одной таблице с discriminator колонкой), JOINED (каждый класс в своей таблице, связанной через JOIN), TABLE_PER_CLASS (каждый конкретный класс в отдельной таблице). Выбор зависит от требований: SINGLE_TABLE — быстрее, JOINED — нормализованнее.
 
 8. **Как работает оптимистичная блокировка?**
-   
+
    *Ответ:* Используется поле с @Version (обычно Long или Timestamp). При каждом обновлении версия инкрементируется. Перед UPDATE Hibernate проверяет, что версия в БД совпадает с версией в объекте. Если не совпадает — значит данные были изменены другой транзакцией, выбрасывается OptimisticLockException.
 
 9. **В чём разница между save() и persist() в Hibernate?**
-   
+
    *Ответ:* persist() — JPA-стандартный метод, не возвращает значение, гарантирует, что объект будет persistent внутри транзакции. save() — Hibernate-специфичный, возвращает сгенерированный ID, может вызывать INSERT немедленно. В современном коде предпочтительнее persist().
 
 10. **Что такое LazyInitializationException и как её избежать?**
-    
+
     *Ответ:* Возникает при попытке доступа к lazy-коллекции или proxy после закрытия Session. Решения: загрузить данные внутри транзакции (JOIN FETCH), использовать Open Session In View (антипаттерн для production), использовать DTO вместо entities, настроить eager fetching (с осторожностью).
 
 11. **Объясните работу кеша второго уровня.**
-    
+
     *Ответ:* L2 cache — опциональный кеш на уровне SessionFactory, разделяемый между сессиями. Хранит сущности по ID. Требует внешний провайдер (Ehcache, Infinispan). Поддерживает разные стратегии согласованности: READ_ONLY, READ_WRITE, NONSTRICT_READ_WRITE, TRANSACTIONAL. Требует careful configuration для избежания stale data.
 
 12. **Когда использовать HQL/JPQL, а когда Criteria API?**
-    
-    *Ответ:* HQL/JPQL — для статических запросов, более читаемы, проще поддерживать. Criteria API — для динамических запросов с условиями, определяемыми в runtime, type-safe, удобен для сложной фильтрации. Также Criteria API помогает избежать SQL injection.
+
+    *Ответ:* HQL/JPQL — для статических запросов, более читаемы, проще поддерживать. Criteria API — для динамических условий; полная проверка имён атрибутов достигается static metamodel, а не строковыми `get`. Также Criteria API помогает избежать SQL injection.
 
 13. **Что такое cascade и orphanRemoval?**
-    
+
     *Ответ:* cascade определяет, какие операции (PERSIST, MERGE, REMOVE и т.д.) автоматически применяются к связанным сущностям. orphanRemoval=true автоматически удаляет дочерние сущности, которые больше не связаны с родителем. Например, при удалении элемента из коллекции с orphanRemoval=true, элемент будет удалён из БД.
 
 14. **Как настроить Hibernate для показа сгенерированного SQL?**
-    
-    *Ответ:* 
+
+    *Ответ:*
     ```properties
     spring.jpa.show-sql=true
     spring.jpa.properties.hibernate.format_sql=true
     spring.jpa.properties.hibernate.use_sql_comments=true
     logging.level.org.hibernate.SQL=DEBUG
-    logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+    logging.level.org.hibernate.orm.jdbc.bind=TRACE
     ```
 
 15. **В чём разница между @JoinColumn и mappedBy?**
-    
+
     *Ответ:* @JoinColumn определяет владеющую сторону связи и указывает имя внешнего ключа в БД. mappedBy используется на обратной (non-owning) стороне и указывает на поле владеющей стороны. Только владеющая сторона может изменять связь в БД. mappedBy избегает дублирования внешних ключей.
 
 ## Дополнительные материалы

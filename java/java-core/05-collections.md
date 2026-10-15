@@ -46,14 +46,6 @@
    - [Правильная реализация](#правильная-реализация)
    - [Распространённые ошибки](#распространённые-ошибки)
 9. [Generics и типобезопасность](#generics-и-типобезопасность)
-   - [Основы Generics](#основы-generics)
-   - [Type Erasure (Стирание типов)](#type-erasure-стирание-типов)
-   - [Bounded Type Parameters (Ограниченные параметры типа)](#bounded-type-parameters-ограниченные-параметры-типа)
-   - [Wildcards (Подстановочные символы)](#wildcards-подстановочные-символы)
-   - [PECS (Producer Extends, Consumer Super)](#pecs-producer-extends-consumer-super)
-   - [Generic Methods (Обобщённые методы)](#generic-methods-обобщённые-методы)
-   - [Ограничения Generics](#ограничения-generics)
-   - [Best Practices для Generics](#best-practices-для-generics)
 10. [Специализированные коллекции](#специализированные-коллекции)
 11. [Best practices](#best-practices)
 12. [Практические упражнения](#практические-упражнения)
@@ -61,10 +53,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Дата проверки:** 2026-10-15 — точечная сверка fail-fast, условных операций Map, EnumMap, ссылок на Generics и согласованности ответов; все старые фрагменты не пересобирались.
+- **Целевая версия или диапазон:** Java SE 17–21; детали внутренней реализации отнесены к OpenJDK 21.
+- **Статус примеров:** `current`; этот документ содержит поясняющие фрагменты и сокращённые модели, не отдельный сборочный модуль.
+- **Первичные источники:** [HashMap](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/HashMap.html); [Map](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Map.html); [EnumMap](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/EnumMap.html); [ConcurrentHashMap OpenJDK 21](https://github.com/openjdk/jdk21u/blob/master/src/java.base/share/classes/java/util/concurrent/ConcurrentHashMap.java).
 
 ## Каркас коллекций Java
 
@@ -78,7 +70,7 @@
 - **`ArrayList`**. Хранит данные в динамическом массиве. При переполнении ёмкость увеличивается примерно на 50 %, копируя
   элементы в новый массив. Вставка и удаление из середины требуют сдвига элементов, но чтение по индексу выполняется за O(1).
   В многопоточном коде не потокобезопасен: требуется внешняя синхронизация (`Collections.synchronizedList`) или использование
-  неизменяемой копии. Итератор fail-fast — при структурных изменениях в другом потоке он бросает `ConcurrentModificationException`.
+  неизменяемой копии. Fail-fast итератор пытается обнаружить некорректные структурные изменения; best-effort исключение не заменяет синхронизацию.
 - **`LinkedList`**. Построен на двусвязных узлах `Node` с полями `item`, `prev`, `next`. Добавление и удаление с концов
   выполняются за O(1), поиск по индексу — за O(n). В многопоточном окружении также требует синхронизации; кроме того,
   итерация небезопасна без внешних блокировок.
@@ -112,7 +104,7 @@
   или внешние блокировки.
 - **`ConcurrentLinkedQueue`**. Неблокирующая очередь FIFO на связном списке с атомарными операциями (CAS). Поддерживает высокую
   конкуренцию без блокировок, но не подходит для структур, требующих ограниченной ёмкости. Итерации слабосогласованные — могут
-  пропускать или повторять элементы, если очередь изменяется во время обхода.
+  видеть часть конкурентных изменений. Для `ConcurrentLinkedQueue` элементы, присутствующие с момента создания итератора на всём протяжении обхода, возвращаются ровно один раз.
 - **`BlockingQueue`** (например, `ArrayBlockingQueue`, `LinkedBlockingQueue`). Предоставляют операции, ожидающие появления
   свободного места или элемента. Используют внутренние блокировки (`ReentrantLock`) и условные переменные. Потокобезопасны, но
   возможна конкуренция между производителями/потребителями; важно выбирать правильную ёмкость и стратегию обработки прерываний.
@@ -130,14 +122,14 @@
 - **`ConcurrentHashMap`**. В Java 8 использует массив бакетов с узлами и синхронизацию на уровне цепочек с помощью CAS и
   `synchronized` на отдельных бакетах при рехешировании. Обеспечивает неблокирующие чтения и ограниченную блокировку при записях.
   Итераторы слабосогласованные: отражают состояние на момент запуска и могут видеть некоторые последующие изменения. Поддерживает
-  атомарные операции (`compute`, `merge`, `forEach`) с учётом многопоточности.
+  атомарные операции обновления (`compute`, `merge`) с гарантиями конкретной реализации; `forEach` не создаёт атомарный снимок всей map.
 - **`WeakHashMap`**. Хранит ключи через `WeakReference`. Когда на ключ больше нет сильных ссылок, запись удаляется GC. Использует
   `ReferenceQueue` для очистки. Потокобезопасности нет; для многопоточности применяют внешнюю синхронизацию или `ConcurrentHashMap`
   с обёртками на слабых ссылках из сторонних библиотек.
 
 ## Детали реализации коллекций
 
-Понимание внутреннего устройства коллекций критично для выбора правильной структуры данных и оптимизации производительности. 
+Понимание внутреннего устройства коллекций критично для выбора правильной структуры данных и оптимизации производительности.
 Рассмотрим детали реализации наиболее популярных коллекций.
 
 ### Внутреннее устройство ArrayList
@@ -203,7 +195,7 @@ public class LinkedList<E> {
         Node<E> next;
         Node<E> prev;
     }
-    
+
     transient Node<E> first;  // Ссылка на первый узел
     transient Node<E> last;   // Ссылка на последний узел
     transient int size = 0;
@@ -250,7 +242,7 @@ public class HashMap<K,V> {
     transient int size;           // Количество пар ключ-значение
     int threshold;                // Порог для рехеширования (capacity * loadFactor)
     final float loadFactor;       // Коэффициент загрузки (по умолчанию 0.75)
-    
+
     static class Node<K,V> {
         final int hash;
         final K key;
@@ -275,7 +267,7 @@ int bucket = (hash ^ (hash >>> 16)) & (table.length - 1);
 3. **Оптимизация в Java 8+:**
 - Если цепочка в бакете превышает TREEIFY_THRESHOLD (8 элементов), она превращается в красно-чёрное дерево
 - Требуется минимальная ёмкость MIN_TREEIFY_CAPACITY (64)
-- Уменьшает worst-case с O(n) до O(log n)
+- Упорядоченные tree bins помогают избежать линейного поиска при коллизиях; поведение зависит и от сравнимости ключей, поэтому это не универсальная гарантия API.
 
 **Рехеширование (resize):**
 ```java
@@ -295,7 +287,7 @@ map.put("D", 4);  // size=4, triggers resize to capacity=8, threshold=6
 ```
 
 **Временная сложность:**
-- `put()`, `get()`, `remove()`: средняя O(1), worst-case O(log n) после Java 8
+- `get()` и обычные `put()`/`remove()`: ожидаемая O(1) при хорошем распределении хешей; resize делает отдельный `put()` дорогим. Деревья уменьшают деградацию длинных бакетов, но API не обещает универсальную worst-case O(log n) для любых ключей.
 - `containsKey()`: средняя O(1)
 
 **Настройка производительности:**
@@ -319,7 +311,7 @@ public class TreeMap<K,V> {
     private transient Entry<K,V> root;
     private int size = 0;
     private final Comparator<? super K> comparator;
-    
+
     static final class Entry<K,V> {
         K key;
         V value;
@@ -340,12 +332,12 @@ public class TreeMap<K,V> {
 
 **Балансировка:**
 - При вставке/удалении выполняются вращения (rotations) для сохранения свойств
-- Гарантирует worst-case O(log n) для всех операций
+- Гарантирует O(log n) для базовых операций поиска по ключу, добавления и удаления; это не оценка всех методов, например обхода всей map.
 
 **Временная сложность:**
 - `put()`, `get()`, `remove()`: O(log n)
 - `firstKey()`, `lastKey()`: O(log n) — поиск крайних элементов
-- `subMap()`, `headMap()`, `tailMap()`: O(log n) — создание view
+- `subMap()`, `headMap()`, `tailMap()`: создают ограниченное view без копирования всех записей; сложность последующей работы зависит от выполняемой операции.
 
 **Сравнение элементов:**
 ```java
@@ -390,12 +382,12 @@ map.get("A");  // A перемещается в конец
 ```java
 public class LRUCache<K, V> extends LinkedHashMap<K, V> {
     private final int maxEntries;
-    
+
     public LRUCache(int maxEntries) {
         super(16, 0.75f, true);  // access-order = true
         this.maxEntries = maxEntries;
     }
-    
+
     @Override
     protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
         return size() > maxEntries;  // Автоматическое удаление старейшего элемента
@@ -422,7 +414,7 @@ cache.put("4", "four");  // "2" удаляется как самый стары�
 public class ThreadSafeLRUCache<K, V> {
     private final int maxEntries;
     private final Map<K, V> cache;
-    
+
     public ThreadSafeLRUCache(int maxEntries) {
         this.maxEntries = maxEntries;
         this.cache = Collections.synchronizedMap(
@@ -434,13 +426,13 @@ public class ThreadSafeLRUCache<K, V> {
             }
         );
     }
-    
+
     public V get(K key) {
         synchronized (cache) {
             return cache.get(key);
         }
     }
-    
+
     public void put(K key, V value) {
         synchronized (cache) {
             cache.put(key, value);
@@ -478,7 +470,7 @@ Iterator<String> iterator = list.iterator();
 while (iterator.hasNext()) {
     String element = iterator.next();
     System.out.println(element);
-    
+
     // Безопасное удаление во время итерации
     if (element.equals("B")) {
         iterator.remove();  // Удаляет "B"
@@ -540,25 +532,25 @@ while (it.hasNext()) {
 
 ### Fail-Fast vs Fail-Safe итераторы
 
-Коллекции в Java используют два разных подхода к обработке конкурентных модификаций.
+При обсуждении итераторов различайте fail-fast диагностику, snapshot-обход и weakly consistent обход. Термин «fail-safe» не является отдельной категорией спецификации Java Collections.
 
 #### Fail-Fast итераторы
 
-**Определение:** Fail-fast итераторы немедленно бросают `ConcurrentModificationException` при обнаружении структурной модификации коллекции после создания итератора.
+**Определение:** Fail-fast итераторы пытаются обнаружить недопустимые структурные изменения после создания итератора и бросают `ConcurrentModificationException`. Проверка выполняется на best-effort основе: полагаться на исключение для корректности конкурентного кода нельзя.
 
 **Механизм работы:**
 ```java
 public class ArrayList<E> {
     transient int modCount = 0;  // Счётчик модификаций
-    
+
     public boolean add(E e) {
         modCount++;  // Увеличивается при каждом изменении структуры
         // ...
     }
-    
+
     private class Itr implements Iterator<E> {
         int expectedModCount = modCount;  // Запоминается при создании итератора
-        
+
         public E next() {
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
@@ -611,7 +603,7 @@ list.removeIf(item -> someCondition(item));
 ```java
 public class CopyOnWriteArrayList<E> {
     private volatile Object[] array;
-    
+
     public boolean add(E e) {
         synchronized (lock) {
             Object[] newArray = Arrays.copyOf(array, array.length + 1);
@@ -620,7 +612,7 @@ public class CopyOnWriteArrayList<E> {
         }
         return true;
     }
-    
+
     public Iterator<E> iterator() {
         return new COWIterator<>(array, 0);  // Работает с snapshot
     }
@@ -660,9 +652,9 @@ for (Map.Entry<String, Integer> entry : map.entrySet()) {
 
 | Характеристика | Fail-Fast | Fail-Safe |
 |----------------|-----------|-----------|
-| Исключение | Бросает ConcurrentModificationException | Не бросает исключений |
+| ConcurrentModificationException | Обнаружение best-effort | Не бросает из-за конкурентного изменения; другие исключения возможны |
 | Производительность | Высокая для чтения | Может быть медленнее (копирование) |
-| Гарантии | Обнаруживает модификации | Weakly consistent |
+| Гарантии | Не заменяет синхронизацию | Snapshot (COW) либо weakly consistent — зависит от класса |
 | Память | Экономна | Дополнительные копии (COW) |
 | Использование | Однопоточные приложения | Многопоточные приложения |
 | Примеры | ArrayList, HashMap | CopyOnWriteArrayList, ConcurrentHashMap |
@@ -727,12 +719,12 @@ int sum = numbers.parallelStream()
 public class RangeSpliterator implements Spliterator<Integer> {
     private int current;
     private final int end;
-    
+
     public RangeSpliterator(int start, int end) {
         this.current = start;
         this.end = end;
     }
-    
+
     @Override
     public boolean tryAdvance(Consumer<? super Integer> action) {
         if (current < end) {
@@ -741,22 +733,22 @@ public class RangeSpliterator implements Spliterator<Integer> {
         }
         return false;
     }
-    
+
     @Override
     public Spliterator<Integer> trySplit() {
         int mid = (current + end) / 2;
         if (mid - current < 10) return null;  // Не делим маленькие диапазоны
-        
+
         Spliterator<Integer> split = new RangeSpliterator(current, mid);
         current = mid;
         return split;
     }
-    
+
     @Override
     public long estimateSize() {
         return end - current;
     }
-    
+
     @Override
     public int characteristics() {
         return ORDERED | SIZED | SUBSIZED | NONNULL | IMMUTABLE;
@@ -853,14 +845,14 @@ while (!taskQueue.isEmpty()) {
 ```java
 public List<Integer> topK(int[] nums, int k) {
     PriorityQueue<Integer> minHeap = new PriorityQueue<>(k);
-    
+
     for (int num : nums) {
         minHeap.offer(num);
         if (minHeap.size() > k) {
             minHeap.poll();  // Удаляем минимум
         }
     }
-    
+
     return new ArrayList<>(minHeap);
 }
 ```
@@ -885,7 +877,7 @@ public class ArrayDeque<E> {
 ```
 
 **Механизм кольцевого буфера:**
-```
+```text
 Начальное состояние: [_, _, _, _]  head=0, tail=0
 
 addLast(A):  [A, _, _, _]  head=0, tail=1
@@ -1049,18 +1041,18 @@ BlockingQueue<Task> queue = new PriorityBlockingQueue<>(10,
 class DelayedTask implements Delayed {
     private final String name;
     private final long startTime;
-    
+
     public DelayedTask(String name, long delayMs) {
         this.name = name;
         this.startTime = System.currentTimeMillis() + delayMs;
     }
-    
+
     @Override
     public long getDelay(TimeUnit unit) {
         long diff = startTime - System.currentTimeMillis();
         return unit.convert(diff, TimeUnit.MILLISECONDS);
     }
-    
+
     @Override
     public int compareTo(Delayed o) {
         return Long.compare(this.getDelay(TimeUnit.MILLISECONDS),
@@ -1157,7 +1149,7 @@ public interface Comparable<T> {
 public class Person implements Comparable<Person> {
     private String name;
     private int age;
-    
+
     @Override
     public int compareTo(Person other) {
         // Natural ordering по возрасту
@@ -1433,7 +1425,7 @@ List<Integer> sorted = largeList.parallelStream()
 
 ## Методы для работы с коллекциями
 
-Java предоставляет богатый набор методов для работы с коллекциями как в самих интерфейсах коллекций, так и в утилитном классе 
+Java предоставляет богатый набор методов для работы с коллекциями как в самих интерфейсах коллекций, так и в утилитном классе
 `Collections`. Знание этих методов критично для эффективной работы с данными и является частым предметом вопросов на собеседованиях.
 
 ### Утилитные методы класса Collections
@@ -1529,7 +1521,7 @@ Map<K,V> syncMap = Collections.synchronizedMap(map);
 List<String> checkedList = Collections.checkedList(list, String.class);
 ```
 
-> **Важно**: Неизменяемые обёртки не создают копию коллекции, а лишь запрещают модификацию через wrapper. 
+> **Важно**: Неизменяемые обёртки не создают копию коллекции, а лишь запрещают модификацию через wrapper.
 > Если исходная коллекция изменяется, изменения видны через неизменяемую обёртку.
 
 **Пример потокобезопасности:**
@@ -1797,7 +1789,7 @@ while (iter.hasPrevious()) {
 
 ### Методы интерфейса Set
 
-Интерфейс `Set<E>` наследует методы `Collection<E>`, но не добавляет специфических методов на уровне базового интерфейса. 
+Интерфейс `Set<E>` наследует методы `Collection<E>`, но не добавляет специфических методов на уровне базового интерфейса.
 Однако подинтерфейсы `SortedSet` и `NavigableSet` предоставляют дополнительные возможности.
 
 #### Методы SortedSet
@@ -1898,7 +1890,7 @@ boolean isEmpty();
 void clear();
 ```
 
-#### Методы для получения представлений (Java 8+)
+#### Методы для получения представлений
 
 ```java
 // Множество ключей (view)
@@ -1928,7 +1920,11 @@ for (Map.Entry<String, Integer> entry : map.entrySet()) {
 }
 ```
 
-#### Атомарные операции (Java 8+)
+#### Условные операции (Java 8+)
+
+В интерфейсе `Map` сами эти имена не гарантируют потокобезопасность: `HashMap` требует внешней синхронизации.
+Атомарные условные обновления описывает контракт `ConcurrentMap`; гарантии вычисляющих методов уточняет реализация.
+Например, `ConcurrentHashMap.computeIfAbsent` атомарен для ключа, но последующий `add()` в возвращённый `ArrayList` — отдельная операция.
 
 ```java
 // Добавить, если ключа нет (возвращает текущее значение)
@@ -2148,14 +2144,14 @@ Map<String, Integer> newWay = Map.of("A", 1, "B", 2);
 
 ## Контракты equals и hashCode
 
-Методы `equals()` и `hashCode()` являются фундаментальными для работы с коллекциями на основе хеширования (`HashSet`, `HashMap`, 
-`Hashtable`, `LinkedHashSet`, `LinkedHashMap`) и определяют, как объекты сравниваются и размещаются в этих структурах данных. 
-Неправильная реализация этих методов приводит к непредсказуемому поведению коллекций: дубликаты в `Set`, невозможность найти 
+Методы `equals()` и `hashCode()` являются фундаментальными для работы с коллекциями на основе хеширования (`HashSet`, `HashMap`,
+`Hashtable`, `LinkedHashSet`, `LinkedHashMap`) и определяют, как объекты сравниваются и размещаются в этих структурах данных.
+Неправильная реализация этих методов приводит к непредсказуемому поведению коллекций: дубликаты в `Set`, невозможность найти
 объект в `Map`, утечки памяти и нарушение бизнес-логики.
 
 ### Контракт equals
 
-Метод `equals(Object obj)` определён в классе `Object` и по умолчанию сравнивает ссылки (аналогично `==`). При переопределении 
+Метод `equals(Object obj)` определён в классе `Object` и по умолчанию сравнивает ссылки (аналогично `==`). При переопределении
 необходимо соблюдать **пять обязательных свойств**, описанных в спецификации Java:
 
 #### 1. Рефлексивность (Reflexive)
@@ -2170,7 +2166,7 @@ x.equals(x) == true  // для любого ненулевого x
 x.equals(y) == y.equals(x)  // для любых ненулевых x и y
 ```
 
-> **Важно**: Нарушение симметричности часто возникает при сравнении объектов разных классов или при некорректной работе с 
+> **Важно**: Нарушение симметричности часто возникает при сравнении объектов разных классов или при некорректной работе с
 > наследованием.
 
 #### 3. Транзитивность (Transitive)
@@ -2197,7 +2193,7 @@ x.equals(null) == false  // для любого ненулевого x
 
 ### Контракт hashCode
 
-Метод `hashCode()` возвращает целочисленное значение, используемое для размещения объектов в хеш-таблицах. Контракт `hashCode()` 
+Метод `hashCode()` возвращает целочисленное значение, используемое для размещения объектов в хеш-таблицах. Контракт `hashCode()`
 жёстко связан с `equals()` и определяет три обязательных правила:
 
 #### 1. Согласованность
@@ -2216,7 +2212,7 @@ if (x.equals(y)) {
 }
 ```
 
-> **Важно**: Нарушение этого правила приводит к тому, что равные объекты попадают в разные бакеты хеш-таблицы, и коллекция 
+> **Важно**: Нарушение этого правила приводит к тому, что равные объекты попадают в разные бакеты хеш-таблицы, и коллекция
 > не может их найти.
 
 #### 3. Разные объекты могут иметь одинаковый hash-код (но желательно разный)
@@ -2227,7 +2223,7 @@ if (x.hashCode() == y.hashCode()) {
 }
 ```
 
-Однако для эффективности желательно минимизировать **коллизии** (ситуации, когда разные объекты имеют одинаковый hash-код). 
+Однако для эффективности желательно минимизировать **коллизии** (ситуации, когда разные объекты имеют одинаковый hash-код).
 Большое количество коллизий деградирует производительность `HashMap`/`HashSet` до O(n).
 
 ### Связь equals и hashCode в коллекциях
@@ -2252,18 +2248,18 @@ int bucket = (hash & (table.length - 1));
 ```java
 class BadKey {
     private int value;
-    
+
     public BadKey(int value) {
         this.value = value;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (!(obj instanceof BadKey)) return false;
         return this.value == ((BadKey) obj).value;
     }
-    
+
     // hashCode() НЕ переопределён! Используется дефолтная реализация из Object
 }
 
@@ -2272,12 +2268,12 @@ map.put(new BadKey(1), "one");
 String result = map.get(new BadKey(1));  // result == null!
 ```
 
-Даже если два объекта `BadKey` с `value=1` равны по `equals()`, они имеют разные hash-коды и попадают в разные бакеты. 
+Даже если два объекта `BadKey` с `value=1` равны по `equals()`, они имеют разные hash-коды и попадают в разные бакеты.
 Метод `get()` не найдёт значение.
 
 #### TreeSet и TreeMap
 
-`TreeSet` и `TreeMap` не используют `hashCode()`, полагаясь на `Comparator` или `Comparable`. Однако важно, чтобы реализация 
+`TreeSet` и `TreeMap` не используют `hashCode()`, полагаясь на `Comparator` или `Comparable`. Однако важно, чтобы реализация
 `compareTo()` была **согласована с `equals()`**:
 ```java
 // Правильно: если compareTo возвращает 0, то equals возвращает true
@@ -2295,22 +2291,22 @@ public class Person {
     private final String name;
     private final int age;
     private final String email;
-    
+
     @Override
     public boolean equals(Object obj) {
         // 1. Проверка на идентичность (оптимизация)
         if (this == obj) {
             return true;
         }
-        
+
         // 2. Проверка на null и тип
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        
+
         // 3. Приведение типа
         Person other = (Person) obj;
-        
+
         // 4. Сравнение значимых полей
         return age == other.age &&
                Objects.equals(name, other.name) &&
@@ -2343,12 +2339,12 @@ public int hashCode() {
 }
 ```
 
-> **Почему 31?** Это простое число, достаточно большое для минимизации коллизий, но достаточно маленькое, чтобы избежать 
+> **Почему 31?** Это простое число, достаточно большое для минимизации коллизий, но достаточно маленькое, чтобы избежать
 > переполнения. Кроме того, умножение на 31 оптимизируется JVM как `(i << 5) - i`.
 
 #### Использование IDE или утилит
 
-Современные IDE (IntelliJ IDEA, Eclipse) и библиотеки (Lombok, Apache Commons) могут автоматически генерировать `equals()` 
+Современные IDE (IntelliJ IDEA, Eclipse) и библиотеки (Lombok, Apache Commons) могут автоматически генерировать `equals()`
 и `hashCode()`:
 
 ```java
@@ -2370,12 +2366,12 @@ public record Person(String name, int age) {}
 ```java
 class WrongPerson {
     private String name;
-    
+
     @Override
     public boolean equals(Object obj) {
         // ... корректная реализация
     }
-    
+
     // hashCode() НЕ переопределён!
 }
 
@@ -2390,16 +2386,16 @@ System.out.println(set.size());  // 2 вместо ожидаемого 1
 ```java
 class MutableKey {
     private String value;  // изменяемое поле!
-    
+
     public void setValue(String value) {
         this.value = value;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         return value.equals(((MutableKey) obj).value);
     }
-    
+
     @Override
     public int hashCode() {
         return value.hashCode();
@@ -2415,7 +2411,7 @@ key.setValue("modified");  // Изменение ключа!
 String result = map.get(key);  // null! Ключ попал в другой бакет
 ```
 
-> **Совет**: Используйте только **неизменяемые поля** в реализации `equals()` и `hashCode()`. Для ключей `Map` и элементов 
+> **Совет**: Используйте только **неизменяемые поля** в реализации `equals()` и `hashCode()`. Для ключей `Map` и элементов
 > `Set` делайте объекты полностью иммутабельными (final поля, отсутствие setter-ов).
 
 #### 3. Несимметричность при работе с наследованием
@@ -2423,7 +2419,7 @@ String result = map.get(key);  // null! Ключ попал в другой ба
 ```java
 class Point {
     private int x, y;
-    
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Point)) return false;
@@ -2434,7 +2430,7 @@ class Point {
 
 class ColorPoint extends Point {
     private String color;
-    
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ColorPoint)) return false;
@@ -2451,7 +2447,7 @@ cp.equals(p);   // false (ColorPoint требует color)
 // Нарушение симметричности!
 ```
 
-**Решение**: Используйте композицию вместо наследования для изменяемой логики `equals()`, или сравнивайте `getClass()` 
+**Решение**: Используйте композицию вместо наследования для изменяемой логики `equals()`, или сравнивайте `getClass()`
 вместо `instanceof`:
 
 ```java
@@ -2467,7 +2463,7 @@ public boolean equals(Object obj) {
 ```java
 class BadEquals {
     private String name;
-    
+
     @Override
     public boolean equals(Object obj) {
         BadEquals other = (BadEquals) obj;
@@ -2494,469 +2490,20 @@ class WrongHash {
 
 ## Generics и типобезопасность
 
-Generics (обобщения) добавлены в Java 5 для обеспечения типобезопасности на этапе компиляции и устранения необходимости 
-явного приведения типов.
-
-### Основы Generics
-
-**До Generics (Java 1.4 и ранее):**
-```java
-List list = new ArrayList();
-list.add("String");
-list.add(42);  // Можно добавить любой тип!
-
-String s = (String) list.get(0);  // Явное приведение
-Integer i = (Integer) list.get(1);  // Runtime ошибка если тип не совпадает
-```
-
-**С Generics (Java 5+):**
-```java
-List<String> list = new ArrayList<>();
-list.add("String");
-list.add(42);  // Ошибка компиляции!
-
-String s = list.get(0);  // Приведение не требуется
-```
-
-**Преимущества Generics:**
-1. **Типобезопасность**: Ошибки типов обнаруживаются на этапе компиляции
-2. **Устранение приведений**: Не нужны явные casts
-3. **Переиспользование кода**: Один класс/метод работает с разными типами
-4. **Документация**: Типовые параметры делают код самодокументируемым
-
-### Type Erasure (Стирание типов)
-
-Generics в Java реализованы через **type erasure** — механизм, при котором информация о типе-параметре стирается во время компиляции.
-
-**Процесс type erasure:**
-
-1. **Замена параметров типа:**
-```java
-// Исходный код
-public class Box<T> {
-    private T value;
-    public T getValue() { return value; }
-}
-
-// После компиляции (type erasure)
-public class Box {
-    private Object value;
-    public Object getValue() { return value; }
-}
-```
-
-2. **С ограниченными параметрами:**
-```java
-// Исходный код
-public class Box<T extends Number> {
-    private T value;
-    public T getValue() { return value; }
-}
-
-// После компиляции
-public class Box {
-    private Number value;
-    public Number getValue() { return value; }
-}
-```
-
-3. **Вставка приведений типов:**
-```java
-// Исходный код
-Box<Integer> box = new Box<>();
-Integer value = box.getValue();
-
-// После компиляции
-Box box = new Box();
-Integer value = (Integer) box.getValue();  // Автоматическая вставка cast
-```
-
-**Последствия type erasure:**
-
-1. **Невозможно создать массив обобщённого типа:**
-```java
-// Ошибка компиляции
-T[] array = new T[10];
-List<String>[] lists = new ArrayList<String>[10];
-
-// Обходной путь
-@SuppressWarnings("unchecked")
-T[] array = (T[]) new Object[10];
-
-// Или используйте коллекции
-List<T> list = new ArrayList<>();
-```
-
-2. **Невозможно использовать instanceof с параметризованными типами:**
-```java
-// Ошибка компиляции
-if (obj instanceof List<String>) { }
-
-// Правильно
-if (obj instanceof List) { }
-```
-
-3. **Невозможно создать экземпляр параметра типа:**
-```java
-// Ошибка компиляции
-T instance = new T();
-
-// Обходной путь через Class
-public class Factory<T> {
-    private final Class<T> type;
-    
-    public Factory(Class<T> type) {
-        this.type = type;
-    }
-    
-    public T create() throws Exception {
-        return type.getDeclaredConstructor().newInstance();
-    }
-}
-
-Factory<String> factory = new Factory<>(String.class);
-String s = factory.create();
-```
-
-4. **Статические члены не могут использовать параметры типа класса:**
-```java
-public class Box<T> {
-    // Ошибка компиляции
-    private static T value;
-    
-    // Ошибка компиляции
-    public static T getValue() { }
-}
-```
-
-**Причина type erasure:**
-- Обратная совместимость с кодом до Java 5
-- Отсутствие необходимости изменять JVM
-- Сохранение совместимости байт-кода
-
-### Bounded Type Parameters (Ограниченные параметры типа)
-
-Параметры типа можно ограничивать для доступа к методам суперкласса.
-
-**Upper bound (? extends):**
-```java
-// T должен быть подтипом Number
-public class NumberBox<T extends Number> {
-    private T value;
-    
-    public double doubleValue() {
-        return value.doubleValue();  // Можем вызывать методы Number
-    }
-}
-
-NumberBox<Integer> intBox = new NumberBox<>();  // OK
-NumberBox<Double> doubleBox = new NumberBox<>();  // OK
-NumberBox<String> stringBox = new NumberBox<>();  // Ошибка компиляции
-```
-
-**Множественные границы:**
-```java
-// T должен реализовывать Comparable и Serializable
-public class SortableBox<T extends Comparable<T> & Serializable> {
-    private T value;
-    
-    public int compareTo(T other) {
-        return value.compareTo(other);
-    }
-}
-```
-
-> **Важно**: Первым в списке должен быть класс (если есть), затем интерфейсы.
-
-```java
-// Правильно
-<T extends Number & Comparable<T>>
-
-// Неправильно
-<T extends Comparable<T> & Number>  // Ошибка если Number не интерфейс
-```
-
-### Wildcards (Подстановочные символы)
-
-Wildcards позволяют работать с неизвестными типами и обеспечивают гибкость при работе с обобщёнными типами.
-
-#### Unbounded Wildcard (?)
-
-```java
-// Принимает список любого типа
-public void printList(List<?> list) {
-    for (Object elem : list) {
-        System.out.println(elem);
-    }
-}
-
-printList(new ArrayList<Integer>());
-printList(new ArrayList<String>());
-```
-
-**Ограничения unbounded wildcard:**
-```java
-List<?> list = new ArrayList<String>();
-Object obj = list.get(0);  // OK: читаем как Object
-list.add("String");  // Ошибка компиляции! Не можем добавлять
-list.add(null);  // OK: null можно добавить в любой тип
-```
-
-#### Upper Bounded Wildcard (? extends T)
-
-**Producer Extends**: Коллекция предоставляет (produces) элементы определённого типа или его подтипов.
-
-```java
-// Принимает List<Number> или List<Integer> или List<Double> и т.д.
-public double sumOfList(List<? extends Number> list) {
-    double sum = 0.0;
-    for (Number num : list) {
-        sum += num.doubleValue();  // Читаем как Number
-    }
-    return sum;
-}
-
-List<Integer> integers = Arrays.asList(1, 2, 3);
-List<Double> doubles = Arrays.asList(1.0, 2.0, 3.0);
-
-sumOfList(integers);  // OK
-sumOfList(doubles);   // OK
-```
-
-**Ковариантность для чтения:**
-```java
-List<? extends Number> list = new ArrayList<Integer>();
-Number num = list.get(0);  // OK: читаем как Number
-list.add(42);  // Ошибка компиляции! Не можем добавлять
-list.add(new Integer(42));  // Ошибка компиляции!
-list.add(null);  // OK
-```
-
-**Почему нельзя добавлять?**
-```java
-List<? extends Number> list = new ArrayList<Integer>();
-list.add(new Double(3.14));  // Если бы было можно, Integer список содержал бы Double!
-```
-
-#### Lower Bounded Wildcard (? super T)
-
-**Consumer Super**: Коллекция принимает (consumes) элементы определённого типа или его супертипов.
-
-```java
-// Принимает List<Integer> или List<Number> или List<Object>
-public void addIntegers(List<? super Integer> list) {
-    list.add(42);        // OK: добавляем Integer
-    list.add(100);       // OK
-    Object obj = list.get(0);  // Читаем только как Object
-}
-
-List<Integer> integers = new ArrayList<>();
-List<Number> numbers = new ArrayList<>();
-List<Object> objects = new ArrayList<>();
-
-addIntegers(integers);  // OK
-addIntegers(numbers);   // OK
-addIntegers(objects);   // OK
-```
-
-**Контравариантность для записи:**
-```java
-List<? super Integer> list = new ArrayList<Number>();
-list.add(42);  // OK: добавляем Integer
-list.add(new Integer(100));  // OK
-Integer i = list.get(0);  // Ошибка компиляции!
-Object obj = list.get(0);  // OK: читаем только как Object
-```
-
-### PECS (Producer Extends, Consumer Super)
-
-**Правило PECS** — мнемоника для выбора между `extends` и `super`:
-
-- **Producer Extends**: Если метод читает (produces) элементы из коллекции → используйте `? extends T`
-- **Consumer Super**: Если метод записывает (consumes) элементы в коллекцию → используйте `? super T`
-
-**Примеры из стандартной библиотеки:**
-
-```java
-// Collections.copy - источник produces, назначение consumes
-public static <T> void copy(
-    List<? super T> dest,      // Consumer: принимает элементы
-    List<? extends T> src      // Producer: предоставляет элементы
-) { ... }
-
-// Collections.max - коллекция produces элементы для сравнения
-public static <T extends Object & Comparable<? super T>> T max(
-    Collection<? extends T> coll  // Producer: предоставляет элементы
-) { ... }
-```
-
-**Практический пример:**
-```java
-public class Collections {
-    // Копирование из source в destination
-    public static <T> void copy(List<? super T> dest, List<? extends T> src) {
-        for (int i = 0; i < src.size(); i++) {
-            dest.set(i, src.get(i));
-        }
-    }
-}
-
-List<Integer> integers = Arrays.asList(1, 2, 3);
-List<Number> numbers = new ArrayList<>();
-
-// integers является producer (? extends Number)
-// numbers является consumer (? super Integer)
-Collections.copy(numbers, integers);
-```
-
-**Таблица применения PECS:**
-
-| Сценарий | Wildcard | Пример |
-|----------|----------|--------|
-| Только чтение из коллекции | `? extends T` | `List<? extends Number>` |
-| Только запись в коллекцию | `? super T` | `List<? super Integer>` |
-| Чтение и запись | Точный тип `T` | `List<Integer>` |
-| Неизвестный тип | `?` | `List<?>` |
-
-### Generic Methods (Обобщённые методы)
-
-Методы могут иметь собственные параметры типа, независимые от параметров класса.
-
-**Синтаксис:**
-```java
-public class Utils {
-    // Обобщённый метод
-    public static <T> T getMiddle(T... args) {
-        return args[args.length / 2];
-    }
-}
-
-// Использование
-String middle = Utils.<String>getMiddle("A", "B", "C");  // Явное указание типа
-String middle2 = Utils.getMiddle("A", "B", "C");  // Type inference (вывод типа)
-```
-
-**С ограничениями:**
-```java
-public static <T extends Comparable<T>> T max(T a, T b) {
-    return a.compareTo(b) > 0 ? a : b;
-}
-
-Integer maxInt = max(10, 20);  // 20
-String maxStr = max("Alice", "Bob");  // "Bob"
-```
-
-**Несколько параметров типа:**
-```java
-public static <K, V> Map<K, V> newHashMap() {
-    return new HashMap<>();
-}
-
-public static <T, U> Pair<T, U> makePair(T first, U second) {
-    return new Pair<>(first, second);
-}
-
-Pair<String, Integer> pair = makePair("Age", 30);
-```
-
-### Ограничения Generics
-
-1. **Примитивные типы нельзя использовать:**
-```java
-List<int> list;  // Ошибка компиляции
-List<Integer> list;  // Правильно (используйте wrapper)
-```
-
-2. **Невозможно создавать массивы параметризованных типов:**
-```java
-List<String>[] arrays = new ArrayList<String>[10];  // Ошибка компиляции
-
-// Обходной путь
-@SuppressWarnings("unchecked")
-List<String>[] arrays = (List<String>[]) new ArrayList[10];
-```
-
-3. **Невозможно использовать static контекст с параметрами типа класса:**
-```java
-public class Box<T> {
-    private static T instance;  // Ошибка компиляции
-}
-```
-
-4. **Невозможно использовать instanceof с конкретным параметром:**
-```java
-if (obj instanceof List<String>) { }  // Ошибка компиляции
-if (obj instanceof List<?>) { }  // OK
-```
-
-5. **Перегрузка может быть ограничена из-за type erasure:**
-```java
-public class Overload {
-    public void method(List<String> list) { }
-    public void method(List<Integer> list) { }  // Ошибка! После erasure оба метода идентичны
-}
-```
-
-### Best Practices для Generics
-
-1. **Используйте generics везде, где возможно:**
-```java
-// Плохо
-List list = new ArrayList();
-
-// Хорошо
-List<String> list = new ArrayList<>();
-```
-
-2. **Применяйте PECS:**
-```java
-// Метод читает из коллекции
-public void processNumbers(List<? extends Number> numbers) { }
-
-// Метод пишет в коллекцию
-public void addNumbers(List<? super Integer> list) { }
-```
-
-3. **Предпочитайте List<T> вместо T[]:**
-```java
-// Избегайте
-public <T> T[] toArray(Collection<T> collection) { }
-
-// Предпочитайте
-public <T> List<T> toList(Collection<T> collection) { }
-```
-
-4. **Ограничивайте параметры типа, если нужен доступ к методам:**
-```java
-public <T extends Comparable<T>> T max(T a, T b) {
-    return a.compareTo(b) > 0 ? a : b;
-}
-```
-
-5. **Используйте @SuppressWarnings("unchecked") с осторожностью:**
-```java
-@SuppressWarnings("unchecked")
-public <T> T[] toArray(Class<T> type, List<T> list) {
-    T[] array = (T[]) Array.newInstance(type, list.size());
-    return list.toArray(array);
-}
-```
-
-6. **Документируйте параметры типа:**
-```java
-/**
- * @param <K> тип ключа
- * @param <V> тип значения
- */
-public class Cache<K, V> {
-    // ...
-}
-```
+Обобщения задают типы элементов коллекций на этапе компиляции. Например, `List<String>` не позволяет добавить `Integer`.
+Полное объяснение и примеры находятся в [главе Generics](11-generics.html):
+
+- [Стирание типов и bridge methods](11-generics.html#type-erasure-стирание-типов).
+- [Wildcards и границы типов](11-generics.html#wildcards-подстановочные-символы).
+- [Правило PECS](11-generics.html#pecs-producer-extends-consumer-super).
+- [Обобщённые методы](11-generics.html#generic-methods-обобщённые-методы).
+
+При выборе сигнатуры коллекции отдельно решайте, кто читает элементы, кто записывает и кому принадлежит изменяемое состояние.
 
 ## Специализированные коллекции
 - **Immutable Collections**: `List.of`, `Set.of`, `Map.of` — неизменяемые структуры. В многопоточном окружении безопасны для
-  совместного чтения, но не допускают изменений.
-- **EnumSet/EnumMap**: оптимизированы для перечислений, используют битовые наборы. Для потокобезопасности — внешняя
+  совместного чтения после корректной публикации, но не допускают изменений структуры. Изменяемые элементы/значения от этого не становятся immutable.
+- **EnumSet/EnumMap**: оптимизированы для перечислений: `EnumSet` использует битовый набор, `EnumMap` — массив значений по ordinal ключа. Для потокобезопасности — внешняя
   синхронизация либо создание неизменяемых копий.
 - **Concurrent Collections**: `ConcurrentSkipListMap`, `ConcurrentLinkedDeque`, `CopyOnWriteArraySet`. Предоставляют готовые
   механизмы синхронизации или неблокирующие алгоритмы, снижая количество ручных блокировок.
@@ -2981,7 +2528,7 @@ public class Cache<K, V> {
 
 1. Реализуйте собственный `LRUCache` на основе `LinkedHashMap` и протестируйте его потокобезопасность.
 2. Сравните время выполнения операций `get`/`put` для `HashMap`, `ConcurrentHashMap`, `TreeMap` при разных объёмах данных.
-3. Создайте класс `Employee` с полями `id`, `name`, `department`. Реализуйте корректные `equals()` и `hashCode()`, затем 
+3. Создайте класс `Employee` с полями `id`, `name`, `department`. Реализуйте корректные `equals()` и `hashCode()`, затем
    продемонстрируйте проблему, возникающую при изменении поля после добавления объекта в `HashSet`.
 4. Напишите программу, которая демонстрирует разницу в производительности между `ArrayList` и `LinkedList` при вставке элементов в начало, середину и конец.
 5. Реализуйте метод, который находит дубликаты в списке с использованием `HashSet` за O(n).
@@ -2990,76 +2537,75 @@ public class Cache<K, V> {
 
 1. **Как `HashMap` справляется с коллизиями?**
    *Ответ:* Коллизии сначала формируют связный список. Если цепочка превышает порог (по умолчанию 8) и размер массива >= 64,
-   структура превращается в красно-чёрное дерево, что уменьшает сложность операций до O(log n).
+   структура может превратиться в tree bin. Это улучшение реализации, но не безусловная гарантия worst-case O(log n) для произвольных ключей.
 
 2. **Чем отличаются `HashMap` и `ConcurrentHashMap`?**
-   *Ответ:* `ConcurrentHashMap` поддерживает одновременные операции без глобальной блокировки, деля таблицу на сегменты и
-   используя CAS. Он запрещает `null` ключи/значения и предоставляет дополнительные атомарные операции (`computeIfAbsent`).
+   *Ответ:* `ConcurrentHashMap` поддерживает одновременные операции без глобальной блокировки, используя CAS и локальную синхронизацию бакетов при изменениях в реализации OpenJDK 21. Он запрещает `null` ключи/значения и предоставляет дополнительные атомарные операции (`computeIfAbsent`).
 
 3. **Когда стоит предпочесть неизменяемые коллекции?**
    *Ответ:* Когда нужно обеспечить потокобезопасность и защиту от случайной модификации. Иммутабельные коллекции сокращают
    количество защитных копий и упрощают reasoning.
 
 4. **Какие свойства должен соблюдать контракт equals?**
-   *Ответ:* Пять обязательных свойств: рефлексивность (x.equals(x) == true), симметричность (x.equals(y) == y.equals(x)), 
-   транзитивность (если x.equals(y) и y.equals(z), то x.equals(z)), согласованность (повторные вызовы возвращают тот же результат) 
+   *Ответ:* Пять обязательных свойств: рефлексивность (x.equals(x) == true), симметричность (x.equals(y) == y.equals(x)),
+   транзитивность (если x.equals(y) и y.equals(z), то x.equals(z)), согласованность (повторные вызовы возвращают тот же результат)
    и x.equals(null) == false для любого ненулевого x.
 
 5. **Что произойдёт, если переопределить equals, но не переопределить hashCode?**
-   *Ответ:* Нарушится контракт: равные по equals объекты могут иметь разные hash-коды, что приведёт к некорректной работе 
+   *Ответ:* Нарушится контракт: равные по equals объекты могут иметь разные hash-коды, что приведёт к некорректной работе
    HashMap/HashSet. Например, элемент не будет найден методом get(), даже если он есть в коллекции, или Set будет содержать дубликаты.
 
 6. **Почему в реализации hashCode часто используется число 31?**
-   *Ответ:* 31 — простое число, достаточно большое для минимизации коллизий, но при этом умножение на 31 эффективно оптимизируется 
+   *Ответ:* 31 — простое число, достаточно большое для минимизации коллизий, но при этом умножение на 31 эффективно оптимизируется
    JVM как побитовый сдвиг: `31 * i == (i << 5) - i`. Это обеспечивает баланс между производительностью и качеством распределения.
 
 7. **Можно ли использовать изменяемые поля в equals и hashCode?**
-   *Ответ:* Технически можно, но это плохая практика. Если объект используется как ключ в Map или элемент в Set, изменение его 
-   состояния после добавления нарушит инварианты коллекции: элемент попадёт в неправильный бакет и станет недоступен для поиска. 
+   *Ответ:* Технически можно, но это плохая практика. Если объект используется как ключ в Map или элемент в Set, изменение его
+   состояния после добавления нарушит инварианты коллекции: элемент попадёт в неправильный бакет и станет недоступен для поиска.
    Рекомендуется использовать только неизменяемые (final) поля или делать такие объекты полностью иммутабельными.
 
 8. **Как правильно реализовать equals при наследовании?**
-   *Ответ:* Наследование создаёт проблему с симметричностью equals. Рекомендации: 1) Использовать композицию вместо наследования 
-   для классов с разной логикой сравнения; 2) Сравнивать через getClass() вместо instanceof, чтобы объекты разных классов не 
-   считались равными; 3) Или делать базовый класс абстрактным и запрещать сравнение между подклассами. Идеальное решение — 
+   *Ответ:* Наследование создаёт проблему с симметричностью equals. Рекомендации: 1) Использовать композицию вместо наследования
+   для классов с разной логикой сравнения; 2) Сравнивать через getClass() вместо instanceof, чтобы объекты разных классов не
+   считались равными; 3) Или делать базовый класс абстрактным и запрещать сравнение между подклассами. Идеальное решение —
    использовать record (Java 16+) или иммутабельные классы, где наследование не требуется.
 
 9. **В чём разница между Collections.unmodifiableList() и List.of()?**
-   *Ответ:* `Collections.unmodifiableList()` создаёт read-only view поверх исходной коллекции — если исходная коллекция изменяется, 
-   изменения видны через wrapper. `List.of()` (Java 9+) создаёт истинно неизменяемую коллекцию, не допускает `null` элементы и 
-   бросает `NullPointerException` при попытке их добавления. `List.of()` также более компактен в использовании и эффективен по памяти.
+   *Ответ:* `Collections.unmodifiableList()` создаёт read-only view поверх исходной коллекции — если исходная коллекция изменяется,
+   изменения видны через wrapper. `List.of()` (Java 9+) создаёт немодифицируемый список, не допускает `null` элементы и
+   бросает `NullPointerException` при передаче `null` в фабрику; методы изменения бросают `UnsupportedOperationException`. `List.of()` также более компактен в использовании и эффективен по памяти.
 
 10. **Что возвращает метод subList() и какие у него особенности?**
-    *Ответ:* `subList()` возвращает view на часть исходного списка, а не копию. Изменения в subList отражаются в исходном списке 
-    и наоборот. Если исходный список структурно модифицируется вне subList, subList становится невалидным и бросает 
+    *Ответ:* `subList()` возвращает view на часть исходного списка, а не копию. Изменения в subList отражаются в исходном списке
+    и наоборот. Если исходный список структурно модифицируется вне subList, subList становится невалидным и бросает
     `ConcurrentModificationException`. Это эффективно по памяти, но требует осторожности при использовании.
 
 11. **Чем отличается ArrayList от LinkedList?**
-    *Ответ:* `ArrayList` использует динамический массив — быстрый доступ по индексу O(1), но вставка/удаление в середине O(n). 
-    `LinkedList` — двусвязный список — медленный доступ O(n), но быстрая вставка/удаление с концов O(1). `ArrayList` эффективнее 
+    *Ответ:* `ArrayList` использует динамический массив — быстрый доступ по индексу O(1), но вставка/удаление в середине O(n).
+    `LinkedList` — двусвязный список — медленный доступ O(n), но быстрая вставка/удаление с концов O(1). `ArrayList` эффективнее
     по памяти и предпочтительнее в большинстве случаев. `LinkedList` подходит для реализации queue/deque.
 
 12. **Что такое load factor в HashMap и как он влияет на производительность?**
-    *Ответ:* Load factor (по умолчанию 0.75) определяет порог заполнения, при котором HashMap удваивает размер массива (rehashing). 
-    Более низкий load factor уменьшает коллизии, но увеличивает память. Более высокий экономит память, но увеличивает коллизии. 
+    *Ответ:* Load factor (по умолчанию 0.75) определяет порог заполнения, при котором HashMap удваивает размер массива (rehashing).
+    Более низкий load factor уменьшает коллизии, но увеличивает память. Более высокий экономит память, но увеличивает коллизии.
     0.75 — оптимальный баланс между производительностью и памятью.
 
 13. **Почему нельзя использовать null в ConcurrentHashMap?**
-    *Ответ:* Неоднозначность в многопоточном окружении: `map.get(key)` возвращает `null` — это может означать, что ключа нет или 
-    значение равно `null`. Для проверки существования в обычной HashMap можно использовать `containsKey()`, но в многопоточном 
+    *Ответ:* Неоднозначность в многопоточном окружении: `map.get(key)` возвращает `null` — это может означать, что ключа нет или
+    значение равно `null`. Для проверки существования в обычной HashMap можно использовать `containsKey()`, но в многопоточном
     окружении между вызовами состояние может измениться. Запрет `null` устраняет эту неопределённость.
 
 14. **В чём разница между Iterator и Spliterator?**
-    *Ответ:* `Iterator` — последовательный обход коллекции. `Spliterator` (Java 8+) — поддерживает параллельную обработку, 
-    разделяя данные на части (`trySplit()`). `Spliterator` используется в Stream API для параллельных стримов и предоставляет 
+    *Ответ:* `Iterator` — последовательный обход коллекции. `Spliterator` (Java 8+) — поддерживает параллельную обработку,
+    разделяя данные на части (`trySplit()`). `Spliterator` используется в Stream API для параллельных стримов и предоставляет
     характеристики коллекции (размер, упорядоченность, уникальность элементов).
 
 15. **Когда использовать TreeMap вместо HashMap?**
-    *Ответ:* Когда нужен отсортированный порядок ключей или операции навигации (`firstKey`, `lastKey`, `subMap`, `ceilingKey`). 
+    *Ответ:* Когда нужен отсортированный порядок ключей или операции навигации (`firstKey`, `lastKey`, `subMap`, `ceilingKey`).
     `TreeMap` медленнее HashMap (O(log n) vs O(1)), но предоставляет упорядоченность по natural ordering или Comparator.
 
 16. **В каких случаях следует использовать NavigableSet/NavigableMap вместо обычных Set/Map?**
-    *Ответ:* `NavigableSet` (TreeSet) и `NavigableMap` (TreeMap) следует использовать, когда нужны отсортированные данные и операции 
-    навигации: поиск ближайших элементов (ceiling, floor, higher, lower), получение подмножеств (subSet, headSet, tailSet), 
-    обратная итерация (descendingSet). Они медленнее HashMap/HashSet (O(log n) vs O(1)), но предоставляют упорядоченность и богатый 
+    *Ответ:* `NavigableSet` (TreeSet) и `NavigableMap` (TreeMap) следует использовать, когда нужны отсортированные данные и операции
+    навигации: поиск ближайших элементов (ceiling, floor, higher, lower), получение подмножеств (subSet, headSet, tailSet),
+    обратная итерация (descendingSet). Они медленнее HashMap/HashSet (O(log n) vs O(1)), но предоставляют упорядоченность и богатый
     API для диапазонных запросов.
