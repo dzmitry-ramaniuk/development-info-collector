@@ -195,7 +195,20 @@ permalink: /
    - [Kafka Streams: окна, late events и Avro compatibility](очереди/кафка/examples/streams/README.html)
    - [ActiveMQ Classic: rollback, redelivery и DLQ](очереди/activemq/examples/acknowledgement/README.html)
 
-Материалы организованы в десять основных разделов:
+## Проверка примеров
+
+Из корня репозитория выполните:
+
+```bash
+python3 scripts/check-markdown.py
+python3 scripts/check-java-examples.py
+mvn -f examples/testing/pom.xml test
+mvn -f examples/spring-security/pom.xml test
+```
+
+Для Java-проверок нужен полный JDK 17+; репозиторный workflow использует JDK 21. Первая команда проверяет внутренние ссылки, оглавления и HTML-адреса. Вторая собирает и запускает полные Java-блоки с маркером `runnable` прямо из учебных страниц. Maven-проекты проверяют Mockito/Avro и реальный Bearer authentication pipeline. Проверки контейнеров выполняются отдельно: `mvn -f examples/testing/pom.xml -Pcontainers verify` требует доступного Docker daemon и registry. Условия запуска других примеров указаны в их инструкциях выше.
+
+Материалы организованы в тематические разделы:
 
 ## Обзор разделов
 
