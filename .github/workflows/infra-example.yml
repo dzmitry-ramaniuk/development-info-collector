@@ -1,0 +1,48 @@
+name: Infra artifact example
+# Учебный workflow запускается вручную; не публикует image и не развёртывает сервис.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Test and package once
+        run: bash examples/infra/01-ci-package/01-package.sh
+      - name: Preserve test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: infra-test-reports
+          path: examples/infra/01-ci-package/target/surefire-reports/
+      - name: Pass verified JAR and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: infra-package-${{ github.sha }}
+          path: examples/infra/01-ci-package/target/release/
+          if-no-files-found: error
+  image:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: infra-package-${{ github.sha }}
+          path: examples/infra/01-ci-package/target/release/
+      - name: Build runtime-only image and enforce integrity gate
+        run: bash examples/infra/01-ci-package/02-image-gate.sh "infra-order-total:${GITHUB_SHA}"
+      - name: Preserve evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: infra-image-evidence-${{ github.sha }}
+          path: examples/infra/01-ci-package/target/release/image-evidence.json
+          if-no-files-found: error

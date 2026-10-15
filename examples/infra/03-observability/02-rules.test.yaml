@@ -1,0 +1,114 @@
+rule_files:
+- 01-rules.yaml
+evaluation_interval: 1m
+tests:
+- name: one-percent-low
+  interval: 1m
+  input_series:
+  - series: http_requests_total{namespace="lab",service="orders",status="200"}
+    values: 0+99x20
+  - series: http_requests_total{namespace="lab",service="orders",status="500"}
+    values: 0+1x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighErrorRate
+    exp_alerts: []
+- name: one-percent-high
+  interval: 1m
+  input_series:
+  - series: http_requests_total{namespace="lab",service="orders",status="200"}
+    values: 0+9900x20
+  - series: http_requests_total{namespace="lab",service="orders",status="500"}
+    values: 0+100x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighErrorRate
+    exp_alerts: []
+- name: ten-percent-low
+  interval: 1m
+  input_series:
+  - series: http_requests_total{namespace="lab",service="orders",status="200"}
+    values: 0+90x20
+  - series: http_requests_total{namespace="lab",service="orders",status="500"}
+    values: 0+10x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighErrorRate
+    exp_alerts:
+    - exp_labels:
+        namespace: lab
+        service: orders
+        severity: critical
+      exp_annotations:
+        summary: High error rate detected
+        description: Доля 5xx 0.100 у lab/orders
+- name: ten-percent-high
+  interval: 1m
+  input_series:
+  - series: http_requests_total{namespace="lab",service="orders",status="200"}
+    values: 0+9000x20
+  - series: http_requests_total{namespace="lab",service="orders",status="500"}
+    values: 0+1000x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighErrorRate
+    exp_alerts:
+    - exp_labels:
+        namespace: lab
+        service: orders
+        severity: critical
+      exp_annotations:
+        summary: High error rate detected
+        description: Доля 5xx 0.100 у lab/orders
+- name: below-minimum-traffic
+  interval: 1m
+  input_series:
+  - series: http_requests_total{namespace="lab",service="orders",status="200"}
+    values: 0+9x20
+  - series: http_requests_total{namespace="lab",service="orders",status="500"}
+    values: 0+1x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighErrorRate
+    exp_alerts: []
+- name: no-traffic
+  interval: 1m
+  input_series:
+  - series: http_requests_total{namespace="lab",service="orders",status="200"}
+    values: 0+0x20
+  - series: http_requests_total{namespace="lab",service="orders",status="500"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighErrorRate
+    exp_alerts: []
+- name: memory-95-percent
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{namespace="lab",pod="api",container="app",image="demo"}
+    values: 95+0x20
+  - series: container_spec_memory_limit_bytes{namespace="lab",pod="api",container="app",image="demo"}
+    values: 100+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighMemoryUsage
+    exp_alerts:
+    - exp_labels:
+        namespace: lab
+        pod: api
+        container: app
+        severity: warning
+      exp_annotations:
+        summary: High memory usage
+        description: Container app using 95.0% memory
+- name: memory-zero-limit
+  interval: 1m
+  input_series:
+  - series: container_memory_working_set_bytes{namespace="lab",pod="api",container="app",image="demo"}
+    values: 95+0x20
+  - series: container_spec_memory_limit_bytes{namespace="lab",pod="api",container="app",image="demo"}
+    values: 0+0x20
+  alert_rule_test:
+  - eval_time: 15m
+    alertname: HighMemoryUsage
+    exp_alerts: []

@@ -17,10 +17,10 @@
 
 ## Актуальность материала
 
-- **Проверено:** 4 августа 2026 года.
-- **Целевые версии примера:** Java 21 LTS, Maven 3.9.x, GitHub-hosted `ubuntu-24.04`; GitHub Actions `checkout@v4`, `setup-java@v4`, `upload-artifact@v4`, Docker `build-push-action@v6`.
-- **Статус примеров:** `current`; версии action перепроверьте перед копированием и фиксируйте production-зависимости по полному commit SHA.
-- **Первичные источники:** [GitHub: build and test Java with Maven](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-java-with-maven), [GitHub artifact attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations), [Maven lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html), [Docker build-push action](https://github.com/docker/build-push-action), [SLSA specification](https://slsa.dev/spec/).
+- **Дата проверки исправлений:** 2026-10-15: передача JAR, checksum, Docker runtime build и Scout exit-code; остальная редакция — 2026-08-04.
+- **Целевые версии примера:** Java 21 LTS, Maven 3.9.x, Docker Engine 28.x/BuildKit, GitHub-hosted `ubuntu-24.04`; action refs и plugin versions закреплены в workflow/POM. Docker Scout устанавливается отдельно для публикации.
+- **Статус примера:** `current` для учебного package/runtime integrity; публикация и CVE gate требуют отдельного запуска и не объявляются выполненными.
+- **Первичные источники:** [GitHub: build and test Java with Maven](https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-java-with-maven), [GitHub artifact attestations](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations), [Maven lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html), [Docker build-push action](https://github.com/docker/build-push-action), [SLSA specification](https://slsa.dev/spec/), [GitHub artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data), [Scout CVE gate](https://docs.docker.com/reference/cli/docker/scout/cves/).
 
 ## Переносимая модель
 
@@ -68,86 +68,30 @@ Security checks включают secret scanning до merge, SAST и dependency 
 
 ## Пример для Java на GitHub Actions
 
-Ниже учебный skeleton. `./mvnw` и pinned Maven Wrapper предпочтительнее зависимости от Maven runner; placeholder-команды анализа и scanner надо заменить выбранными командой инструментами.
+В репозитории есть [законченный пример](../examples/infra/01-ci-package/README.html) и [ручной GitHub Actions workflow](../.github/workflows/infra-example.yml). Он проверяет конкретный контракт: **JAR из verify-job попадает в runtime image без повторной компиляции**. Workflow не публикует image и не выполняет deployment.
 
-```yaml
-name: java-ci
-
-on:
-  pull_request:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-
-jobs:
-  verify:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4 # В production фиксируйте полный commit SHA
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-      - name: Compile
-        run: ./mvnw --batch-mode clean compile
-      - name: Static analysis
-        run: ./mvnw --batch-mode checkstyle:check spotbugs:check
-      - name: Unit and integration tests, packaging
-        run: ./mvnw --batch-mode verify
-      - name: Upload test reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports-${{ github.sha }}
-          path: '**/target/*-reports/**'
-          retention-days: 14
-      - name: Upload JAR for image job
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-${{ github.sha }}
-          path: target/*.jar
-          if-no-files-found: error
-
-  image:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
-      id-token: write # Только если нужна OIDC/provenance
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: app-${{ github.sha }}
-          path: target
-      - name: Login to registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          load: true
-          push: false
-          tags: ghcr.io/acme/orders:${{ github.sha }}
-      - name: Security gate
-        run: ./ci/scan-image.sh "ghcr.io/acme/orders:${GITHUB_SHA}"
-      - name: Publish image
-        run: docker push "ghcr.io/acme/orders:${GITHUB_SHA}"
+```text
+verify job: Maven verify → app.jar + SHA-256 → upload-artifact
+image job: download-artifact → checksum → runtime-only Dockerfile
+           → извлечь JAR из image и сравнить SHA → positive/negative smoke
+           → non-root/read-only runtime gate → image-evidence.json
 ```
 
-Пример сначала делает build/load и scan локального image, а push — только после gate. Для больших образов альтернативой служит публикация в quarantine repository с последующим promotion digest. Если scanner скачивает уже опубликованный образ, publication ещё не означает допуск к deployment.
+Локальный эквивалент из корня репозитория:
 
-Команды Maven следует настроить так, чтобы unit tests исполнял Surefire, integration tests — Failsafe (`integration-test`/`verify`), а package не пропускал тесты. Для интеграций используйте изолированные services или [Testcontainers](../тестирование/02-testcontainers.html).
+```bash
+bash examples/infra/01-ci-package/01-package.sh
+bash examples/infra/01-ci-package/02-image-gate.sh infra-order-total:local
+cat examples/infra/01-ci-package/target/release/image-evidence.json
+```
+
+В build context передаются только проверенный `app.jar` и checksum. Dockerfile содержит `FROM`, `COPY`, `USER`, `ENTRYPOINT`, но не Maven/Gradle и не source. Image gate разрешает base tag в digest, извлекает JAR обратно, сравнивает bytes и выполняет как успешный расчёт заказа, так и отказ для неверного количества. Изменённый package, неверный UID, ошибочный exit code или несовпадение checksum останавливают pipeline. Между jobs архив GitHub Artifact не заменяет явно проверяемый checksum приложения.
+
+`image-evidence.json` сохраняет source commit, JAR SHA-256, base digest и `localImageId`. До push `registryDigest` равен `null`: локальный image/config ID нельзя выдавать за digest опубликованного manifest. Учебный workflow проверяет package/runtime integrity, но **не объявляет image прошедшим vulnerability policy** (`vulnerabilityGate: not-run`).
+
+Для явной публикации предусмотрен отдельный `03-publish.sh`: он проверяет, что tag всё ещё указывает на проверенный image ID, выполняет конкретный `docker scout cves --exit-code --only-severity critical,high`, останавливается при находках или сбое scanner и лишь затем делает push и сохраняет registry digest. Предусловия — Docker Scout, его credentials, `docker login` и разрешённый repository. Этот шаг вручную запускают только в доверенном ref/context после обязательных gates. Ни публикация, ни её успех самим наличием workflow не подразумеваются.
+
+Это небольшой исполнимый пример передачи артефакта; static analysis, integration tests, SBOM/signatures/provenance и approval policy из таблицы выше добавляют как отдельные обязательные стадии реального production pipeline. Для Maven integration tests связывайте Failsafe с `integration-test`/`verify`; fixtures — изолированные services или [Testcontainers](../тестирование/02-testcontainers.html).
 
 ## Производительность и безопасность
 
