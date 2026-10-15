@@ -18,10 +18,10 @@
 **Официальные источники:** [service documentation](https://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html) · [quotas](https://docs.aws.amazon.com/cognito/latest/developerguide/quotas.html) · [pricing](https://aws.amazon.com/cognito/pricing/)
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки исправлений:** 2026-10-15; назначение и проверка токенов. Остальная редакция — 2026-08-04, её повторная сверка не заявляется.
 - **Целевая версия или диапазон:** публичные API и документация AWS, проверенные 2026-08-04; версии управляемых сервисов уточняются в тексте
 - **Статус примеров:** `current`
-- **Первичные источники:** [AWS Documentation](https://docs.aws.amazon.com/); [AWS Architecture Center](https://aws.amazon.com/architecture/)
+- **Первичные источники исправлений:** [Verifying JWTs](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html); [Refresh tokens](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-the-refresh-token.html).
 
 ## Что решает Cognito
 
@@ -30,8 +30,25 @@
 ## User Pool и токены
 
 - User Pool хранит пользователей и политики аутентификации.
-- После входа выдаются JWT-токены (ID/Access/Refresh).
-- Токены используются в API Gateway/ALB/приложениях для авторизации.
+- ID token и access token — подписанные JWT с разным назначением. Refresh token — непрозрачный credential для обновления сессии: приложение не должно декодировать его как JWT или передавать своему API как access token.
+
+| Токен | Назначение | Проверка/использование |
+|---|---|---|
+| ID token | Сведения о вошедшем пользователе для клиента | `token_use=id`, `aud` клиента; не использовать вместо access token в показанном API |
+| Access token | Разрешения на вызов API | Подпись, `iss`, `exp`, `token_use=access`, `client_id` и требуемые scopes |
+| Refresh token | Получение новых ID/access tokens | Передавать только token endpoint/поддерживаемому Cognito refresh API; хранить как секрет |
+
+Для API задайте доверенные user pool/issuer и app client в конфигурации сервера. JWT-библиотека должна проверить разрешённый алгоритм, подпись по JWKS этого pool (с кэшем и обновлением ключей), срок действия, `token_use=access`, `client_id` и scope, например `orders/read`. Непроверенный payload не является доказательством доступа. Для resource-bound access token дополнительно проверяют предназначенный API `aud`; ID token проверяет `aud` клиента по другим правилам.
+
+Минимальный контракт интеграционного теста для защищённого `GET /orders`:
+
+| Вход | Ожидаемый результат |
+|---|---|
+| Подписанный access token нужного pool/client со scope `orders/read` | 200 |
+| ID token, refresh token, истёкший JWT, чужой issuer/client или неверная подпись | 401 |
+| Валидный access token без `orders/read` | 403 |
+
+Не подменяйте JWT verification вызовом `GetUser`. Настройки API Gateway/ALB отличаются от собственного verifier: отдельно проверяйте, какие claims и scopes проверяет конкретная интеграция. См. [проверку Cognito JWT](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html) и [refresh API](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-the-refresh-token.html).
 
 ## Identity Pool и доступ к AWS ресурсам
 

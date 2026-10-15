@@ -31,6 +31,8 @@ CI отвечает на вопрос «можно ли доверять это�
 - **Platform/DevOps-инженеру:** страницы 02 → 03 → 04.
 - **Для проектирования процесса:** определите branch policy, quality gates, формат release evidence и только затем выбирайте CI/CD-платформу.
 
+[Исполняемый пример JAR → runtime image](../examples/infra/01-ci-package/README.html) — package checksum, проверка bytes внутри image, runtime gate и evidence; публикация выполняется только отдельным явным шагом.
+
 ## Связанные разделы
 
 - [Тестирование](../тестирование/README.html) — test pyramid, JUnit, Testcontainers и критерии качества.

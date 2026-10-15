@@ -1,0 +1,32 @@
+groups:
+- name: app
+  interval: 30s
+  rules:
+  - alert: HighErrorRate
+    expr: "(\n  sum by (namespace, service) (rate(http_requests_total{status=~\"5..\"}[5m]))\n  /\n  sum by (namespace,\
+      \ service) (rate(http_requests_total[5m]))\n) > 0.05\nand on (namespace, service)\nsum by (namespace, service)\
+      \ (rate(http_requests_total[5m])) >= 1\n"
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: High error rate detected
+      description: Доля 5xx {{ printf "%.3f" $value }} у {{ $labels.namespace }}/{{ $labels.service }}
+  - alert: PodCrashLooping
+    expr: increase(kube_pod_container_status_restarts_total[15m]) >= 3
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: Pod is crash looping
+      description: Pod {{ $labels.pod }} is restarting frequently
+  - alert: HighMemoryUsage
+    expr: "100 * max by (namespace, pod, container) (\n  container_memory_working_set_bytes{container!=\"\",container!=\"\
+      POD\",image!=\"\"}\n)\n/\n(max by (namespace, pod, container) (\n  container_spec_memory_limit_bytes{container!=\"\
+      \",container!=\"POD\"}\n) > 0) > 90\n"
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: High memory usage
+      description: Container {{ $labels.container }} using {{ printf "%.1f" $value }}% memory

@@ -125,6 +125,7 @@ permalink: /
    - [SNS: pub/sub, fan-out и гарантии доставки](aws/08-sns.html)
    - [EventBridge: маршрутизация событий, ретраи и DLQ](aws/09-eventbridge.html)
    - [Cognito: аутентификация, user pools и federation](aws/10-cognito.html)
+   - [Практика DynamoDB: conditional write, проверка и очистка](aws/11-практика-dynamodb.html)
 
 1. **[CI/CD](ci-cd/README.html)**
    - [Git workflow и code review](ci-cd/01-git-и-code-review.html)
@@ -187,6 +188,9 @@ permalink: /
    - [Java Core: контрпримеры и проверки](examples/java-core/README.html)
    - [Многопоточность: CAS, shutdown и cancellation](examples/java-concurrency/README.html)
    - [Spring Security: настоящие Bearer JWT и отрицательные сценарии](examples/spring-security/README.html)
+   - [Проверенный JAR → Docker image → digest](examples/infra/01-ci-package/README.html)
+   - [DynamoDB Local и условная запись](examples/infra/02-dynamodb/README.html)
+   - [Prometheus: правила и тестовые временные ряды](examples/infra/03-observability/README.html)
    - [PostgreSQL: ограничения партиций и стабильная маршрутизация](базы%20данных/postgresql/examples/README.html)
    - [Kafka Streams: окна, late events и Avro compatibility](очереди/кафка/examples/streams/README.html)
    - [ActiveMQ Classic: rollback, redelivery и DLQ](очереди/activemq/examples/acknowledgement/README.html)

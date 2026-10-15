@@ -25,6 +25,8 @@ Docker упаковывает приложение и его пользоват�
 3. Запустите Compose-стек, проверьте DNS, readiness и сохранность данных.
 4. Зафиксируйте зависимости и примените ограничения production-профиля.
 
+[Практический пример передачи проверенного JAR в image](../examples/infra/01-ci-package/README.html) связывает Dockerfile с CI и проверяет checksum, non-root и read-only runtime.
+
 ## Связанные разделы
 
 - [Kubernetes](../kubernetes/README.html) — оркестрация и probes после освоения контейнеров.
