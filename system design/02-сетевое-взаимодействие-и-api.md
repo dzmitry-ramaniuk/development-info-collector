@@ -21,10 +21,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
+- **Дата проверки:** 2026-10-15 — HTTP-семантика и retry/idempotency; остальные протоколы — обзор ревизии 2026-08-04.
 - **Целевая версия или диапазон:** концепции версионно-независимы; технические примеры и API проверены по состоянию на 2026-08-04
 - **Статус примеров:** `current`
-- **Первичные источники:** [AWS Architecture Center](https://aws.amazon.com/architecture/); [Google SRE Books](https://sre.google/books/)
+- **Первичные источники:** [RFC 9110: HTTP semantics](https://www.rfc-editor.org/rfc/rfc9110.html), [AWS Builders' Library: timeouts, retries and jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/).
 
 ## Как выбирать способ взаимодействия
 
@@ -53,7 +53,7 @@ HTTP/gRPC]
 
 | Подход | Когда подходит | Сильные стороны | Ограничения |
 |--------|----------------|-----------------|-------------|
-| HTTP/REST | публичные API, CRUD, простая интеграция | универсальность, понятность, кеширование, tooling | overfetching, текстовый формат, ограниченность real-time |
+| HTTP/REST | публичные API, CRUD, простая интеграция | универсальность, понятность, кеширование, tooling | дизайн ресурсов может приводить к overfetching; real-time требует отдельной модели; формат тела не ограничен JSON/текстом |
 | gRPC | внутренние сервисы, низкая latency, строгие контракты | protobuf, streaming, code generation | хуже подходит как публичный браузерный API |
 | WebSocket | чат, live updates, trading, presence | двусторонняя real-time связь | сложнее масштабировать и дебажить |
 | Async messaging | фоновые задачи, интеграция, high decoupling | буферизация, ретраи, независимость сервисов | eventual consistency, сложнее трассировать поток |
