@@ -23,16 +23,16 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Дата проверки:** 2026-10-15 — точечная сверка SAM-контракта, record и final-статуса pattern switch; существующая матрица Structured Concurrency повторно не сверялась.
+- **Целевая версия или диапазон:** Основные фрагменты Java 17–21; отдельные preview-обзоры требуют указанного в них JDK.
+- **Статус примеров:** `current` для основных фрагментов, `preview` для явно указанных обзоров; record-копия проверена в CoreExamples, preview-код не запускался.
+- **Первичные источники:** [JLS 9.8](https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html#jls-9.8); [Record](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Record.html); [Java 21 language changes](https://docs.oracle.com/en/java/javase/21/language/java-language-changes-summary.html).
 
 ## Lambda-выражения и функциональные интерфейсы
 
 ### Что такое функциональный интерфейс
 
-**Функциональный интерфейс** (Functional Interface) — это интерфейс, содержащий ровно один абстрактный метод. Такие интерфейсы могут быть реализованы через lambda-выражения или ссылки на методы, что делает код более компактным и выразительным.
+**Функциональный интерфейс** (Functional Interface) задаёт один функциональный метод. Совместимые унаследованные объявления могут образовывать один контракт; объявления, соответствующие публичным методам `Object` (например, `equals`), при подсчёте не учитываются. Такие интерфейсы могут быть реализованы через lambda-выражения или ссылки на методы, что делает код более компактным и выразительным.
 
 Функциональные интерфейсы являются основой функционального программирования в Java и широко используются в Stream API, асинхронной обработке, обработке событий и других случаях, где нужно передать поведение как параметр.
 
@@ -47,12 +47,12 @@
 @FunctionalInterface
 public interface MyFunction {
     int apply(int x);
-    
+
     // Можно иметь default методы
     default void log() {
         System.out.println("Function called");
     }
-    
+
     // Можно иметь static методы
     static MyFunction identity() {
         return x -> x;
@@ -74,7 +74,7 @@ Java предоставляет богатый набор готовых фун�
 @FunctionalInterface
 public interface Function<T, R> {
     R apply(T t);
-    
+
     // Композиция функций
     default <V> Function<V, R> compose(Function<? super V, ? extends T> before);
     default <V> Function<T, V> andThen(Function<? super R, ? extends V> after);
@@ -144,7 +144,7 @@ map.merge("key", 5, (oldVal, newVal) -> oldVal + newVal); // key -> 6
 @FunctionalInterface
 public interface Consumer<T> {
     void accept(T t);
-    
+
     default Consumer<T> andThen(Consumer<? super T> after);
 }
 ```
@@ -192,7 +192,7 @@ public interface BiConsumer<T, U> {
 
 ```java
 // Работа с Map
-BiConsumer<String, Integer> mapPrinter = (key, value) -> 
+BiConsumer<String, Integer> mapPrinter = (key, value) ->
     System.out.println(key + " = " + value);
 
 Map<String, Integer> map = Map.of("one", 1, "two", 2);
@@ -201,8 +201,8 @@ map.forEach(mapPrinter);
 // Использование в Stream API
 Map<String, List<Person>> groupedByCity = persons.stream()
     .collect(Collectors.groupingBy(Person::getCity));
-    
-groupedByCity.forEach((city, people) -> 
+
+groupedByCity.forEach((city, people) ->
     System.out.println(city + ": " + people.size() + " persons"));
 ```
 
@@ -252,7 +252,7 @@ List<UUID> uuids = uuidStream.limit(10).collect(Collectors.toList());
 @FunctionalInterface
 public interface Predicate<T> {
     boolean test(T t);
-    
+
     // Логические операции
     default Predicate<T> and(Predicate<? super T> other);
     default Predicate<T> or(Predicate<? super T> other);
@@ -399,7 +399,7 @@ Optional<String> max = Stream.of("apple", "banana", "cherry")
 // Слияние Map
 Map<String, Integer> map1 = new HashMap<>(Map.of("a", 1, "b", 2));
 Map<String, Integer> map2 = Map.of("b", 3, "c", 4);
-map2.forEach((key, value) -> 
+map2.forEach((key, value) ->
     map1.merge(key, value, Integer::sum)); // {a=1, b=5, c=4}
 ```
 
@@ -431,7 +431,7 @@ map2.forEach((key, value) ->
    interface StringProcessor {
        String process(String s);
    }
-   
+
    // Хорошо: использование стандартного Function
    Function<String, String> processor = String::toUpperCase;
    ```
@@ -440,7 +440,7 @@ map2.forEach((key, value) ->
    ```java
    // Можно
    list.forEach(s -> System.out.println(s));
-   
+
    // Лучше
    list.forEach(System.out::println);
    ```
@@ -449,7 +449,7 @@ map2.forEach((key, value) ->
    ```java
    // Менее эффективно: boxing/unboxing
    Function<Integer, Integer> square = x -> x * x;
-   
+
    // Более эффективно: без autoboxing
    IntUnaryOperator square = x -> x * x;
    ```
@@ -464,7 +464,7 @@ map2.forEach((key, value) ->
            return x * 2;
        })
        .collect(Collectors.toList());
-   
+
    // Хорошо: используйте peek для побочных эффектов или Consumer
    numbers.stream()
        .peek(externalList::add)
@@ -477,7 +477,7 @@ map2.forEach((key, value) ->
    Predicate<String> startsWithA = s -> s.startsWith("A");
    Predicate<String> longerThan5 = s -> s.length() > 5;
    Predicate<String> combined = startsWithA.and(longerThan5);
-   
+
    Function<String, String> trim = String::trim;
    Function<String, String> toLowerCase = String::toLowerCase;
    Function<String, String> normalize = trim.andThen(toLowerCase);
@@ -487,7 +487,7 @@ map2.forEach((key, value) ->
    ```java
    // Плохо: дорогостоящая операция выполняется всегда
    String result = optional.orElse(expensiveComputation());
-   
+
    // Хорошо: вычисляется только при необходимости
    String result = optional.orElseGet(() -> expensiveComputation());
    ```
@@ -501,9 +501,9 @@ map2.forEach((key, value) ->
 @FunctionalInterface
 public interface PriceCalculator {
     BigDecimal calculate(Product product, Customer customer);
-    
+
     default PriceCalculator andThen(PriceCalculator after) {
-        return (product, customer) -> 
+        return (product, customer) ->
             after.calculate(product, customer);
     }
 }
@@ -512,11 +512,11 @@ public interface PriceCalculator {
 PriceCalculator basePrice = (product, customer) -> product.getBasePrice();
 PriceCalculator withDiscount = (product, customer) -> {
     BigDecimal price = product.getBasePrice();
-    return customer.isPremium() 
+    return customer.isPremium()
         ? price.multiply(BigDecimal.valueOf(0.9))
         : price;
 };
-PriceCalculator withTax = (product, customer) -> 
+PriceCalculator withTax = (product, customer) ->
     product.getBasePrice().multiply(BigDecimal.valueOf(1.2));
 
 // Можно заменить на BiFunction<Product, Customer, BigDecimal>
@@ -535,7 +535,7 @@ Function<String, String> greeter = name -> prefix + name;
 // Ошибка компиляции: переменная не effectively final
 int counter = 0;
 Consumer<String> printer = s -> {
-    // counter++; // Ошибка компиляции!
+    // Если раскомментировать counter++, возникнет ошибка: counter не effectively final.
     System.out.println(s);
 };
 counter++; // Изменение делает переменную не effectively final
@@ -567,7 +567,7 @@ List<String> result = names.stream()
 ```
 
 > **Подробное описание Stream API вынесено в отдельный раздел:** [Stream API](09-stream-api.html)
-> 
+>
 > В нём вы найдёте:
 > - Детальное описание всех промежуточных и терминальных операций
 > - Работу с коллекторами (Collectors)
@@ -584,7 +584,7 @@ List<String> result = names.stream()
 ## Современные фичи языка
 - **var (Java 10)** — вывод типа локальных переменных.
 - **Records (Java 16)** — компактные классы с автоматической генерацией конструктора, `equals`, `hashCode`, `toString`.
-- **Pattern Matching**: `instanceof` с привязкой переменной (Java 16), `switch`-паттерны (preview в Java 19+).
+- **Pattern Matching**: `instanceof` с привязкой переменной — final в Java 16; patterns в `switch` — preview в Java 17–20, final в Java 21. См. [Java SE 21 language changes](https://docs.oracle.com/en/java/javase/21/language/java-language-changes-summary.html).
 - **Text Blocks (Java 15)** — многострочные литералы.
 - **Sealed классы (Java 17)** — ограничение наследования.
 - **Virtual Threads (Project Loom, Java 21)** — лёгкие потоки для масштабируемости.
@@ -610,7 +610,7 @@ List<String> result = names.stream()
 ## Вопросы на собеседовании
 
 1. **Что такое функциональный интерфейс? Обязательна ли аннотация @FunctionalInterface?**
-   *Ответ:* Функциональный интерфейс — это интерфейс с ровно одним абстрактным методом. Аннотация `@FunctionalInterface` не обязательна, но рекомендуется: она явно показывает намерение и заставляет компилятор проверить, что интерфейс соответствует требованиям. Интерфейс может содержать любое количество default и static методов.
+   *Ответ:* Функциональный интерфейс задаёт один функциональный метод, без учёта объявлений публичных методов Object; совместимые унаследованные объявления могут представлять один контракт. Аннотация `@FunctionalInterface` не обязательна, но рекомендуется: она явно показывает намерение и заставляет компилятор проверить, что интерфейс соответствует требованиям. Интерфейс может содержать любое количество default и static методов.
 
 2. **В чём разница между Function и UnaryOperator?**
    *Ответ:* `UnaryOperator<T>` — это специализация `Function<T, T>`, где входной и выходной типы совпадают. `UnaryOperator` семантически яснее для операций типа "преобразование значения того же типа" и имеет статический метод `identity()`.
@@ -637,8 +637,7 @@ List<String> result = names.stream()
    усложняет сериализацию и JPA/JSON-биндинг.
 
 9. **В чём преимущества `record` по сравнению с обычными классами?**
-   *Ответ:* `record` автоматически генерирует конструктор, `equals`, `hashCode`, `toString`, обеспечивает иммутабельность и чётко
-   описывает компоненты. Подходит для DTO и value-объектов.
+   *Ответ:* `record` автоматически генерирует канонический конструктор, accessors, `equals`, `hashCode`, `toString`. Поля компонентов final, однако это поверхностная неизменяемость: `record` со списком не запрещает менять сам список. Для value-объекта нужны неизменяемые компоненты или защитные копии; см. [упражнение с Playlist](04-oop-design.html#упражнение-1-неизменяемый-список-треков).
 
 10. **Зачем нужны виртуальные потоки (Project Loom)?**
     *Ответ:* Virtual threads позволяют запускать тысячи легковесных задач поверх небольшого пула carrier threads. Они упрощают

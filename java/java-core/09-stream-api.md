@@ -57,10 +57,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Дата проверки:** 2026-10-15 — точечная сверка типа результата findFirst, порядка sorted/limit и контрактов списков; все старые фрагменты главы не пересобирались.
+- **Целевая версия или диапазон:** Java SE 17–21.
+- **Статус примеров:** `current`; Optional, sorted/limit и новые проверки контейнеров выполняются в CoreExamples с --release 17 на JDK 21.0.12.1.
+- **Первичные источники:** [Stream](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html); [Collectors](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Collectors.html).
 
 ## Введение в Stream API
 
@@ -171,7 +171,7 @@ Stream<String> constants = Stream.generate(() -> "constant");
 
 // Stream.iterate - бесконечный stream с начальным значением и функцией
 Stream<Integer> evenNumbers = Stream.iterate(0, n -> n + 2); // 0, 2, 4, 6...
-Stream<Integer> fibonacci = Stream.iterate(new int[]{0, 1}, 
+Stream<Integer> fibonacci = Stream.iterate(new int[]{0, 1},
     arr -> new int[]{arr[1], arr[0] + arr[1]})
     .map(arr -> arr[0]); // 0, 1, 1, 2, 3, 5, 8...
 
@@ -398,7 +398,7 @@ List<Person> sorted = people.stream()
 
 // Сортировка с null-safe comparator
 List<Person> sortedNullSafe = people.stream()
-    .sorted(Comparator.comparing(Person::getName, 
+    .sorted(Comparator.comparing(Person::getName,
         Comparator.nullsLast(String::compareTo)))
     .collect(Collectors.toList());
 ```
@@ -495,7 +495,7 @@ Map<Integer, Person> peopleById = people.stream()
 // Map с обработкой дубликатов ключей
 Map<String, Person> peopleByName = people.stream()
     .collect(Collectors.toMap(
-        Person::getName, 
+        Person::getName,
         person -> person,
         (existing, replacement) -> existing // Оставить существующий
     ));
@@ -828,16 +828,16 @@ MinMax minMax = people.stream()
 
 ```java
 // Создание пользовательского коллектора
-Collector<Person, ?, Map<String, Integer>> customCollector = 
+Collector<Person, ?, Map<String, Integer>> customCollector =
     Collector.of(
         HashMap::new,                           // supplier
         (map, person) -> map.merge(             // accumulator
-            person.getCity(), 
-            1, 
+            person.getCity(),
+            1,
             Integer::sum
         ),
         (map1, map2) -> {                       // combiner
-            map2.forEach((city, count) -> 
+            map2.forEach((city, count) ->
                 map1.merge(city, count, Integer::sum));
             return map1;
         }
@@ -853,7 +853,11 @@ Collector<Person, ?, String> namesCollector = Collector.of(
         if (sb.length() > 0) sb.append(", ");
         sb.append(person.getName());
     },
-    (sb1, sb2) -> sb1.append(", ").append(sb2), // combiner
+    (sb1, sb2) -> {                            // combiner с нейтральным пустым состоянием
+        if (sb1.length() == 0) return sb2;
+        if (sb2.length() == 0) return sb1;
+        return sb1.append(", ").append(sb2);
+    },
     StringBuilder::toString                     // finisher
 );
 
@@ -1077,7 +1081,7 @@ long sum = numbers.parallelStream()
            result.add(person.getName().toUpperCase());
        }
    }
-   
+
    // Хорошо
    List<String> result = people.stream()
        .filter(person -> person.getAge() >= 18)
@@ -1090,7 +1094,7 @@ long sum = numbers.parallelStream()
    ```java
    // Можно
    list.stream().map(s -> s.toUpperCase())
-   
+
    // Лучше
    list.stream().map(String::toUpperCase)
    ```
@@ -1101,7 +1105,7 @@ long sum = numbers.parallelStream()
    List<String> results = new ArrayList<>();
    stream.filter(s -> s.length() > 3)
        .forEach(results::add);
-   
+
    // Хорошо: используйте collect
    List<String> results = stream
        .filter(s -> s.length() > 3)
@@ -1113,7 +1117,7 @@ long sum = numbers.parallelStream()
    // Менее эффективно
    int sum = numbers.stream()
        .reduce(0, Integer::sum);
-   
+
    // Более эффективно
    int sum = numbers.stream()
        .mapToInt(Integer::intValue)
@@ -1128,7 +1132,7 @@ long sum = numbers.parallelStream()
        .filter(w -> w.length() > 5)
        .limit(10)
        .collect(Collectors.toList());
-   
+
    // Оптимально: фильтрация перед сортировкой
    List<String> result = words.stream()
        .filter(w -> w.length() > 5)
@@ -1141,7 +1145,7 @@ long sum = numbers.parallelStream()
    ```java
    // Плохо: вычисляется всегда
    String result = optional.orElse(expensiveComputation());
-   
+
    // Хорошо: вычисляется только при необходимости
    String result = optional.orElseGet(() -> expensiveComputation());
    ```
@@ -1152,7 +1156,7 @@ long sum = numbers.parallelStream()
    Stream<String> stream = list.stream();
    long count = stream.count();
    stream.forEach(System.out::println); // IllegalStateException!
-   
+
    // Правильно: создать новый stream
    long count = list.stream().count();
    list.stream().forEach(System.out::println);
@@ -1164,7 +1168,7 @@ long sum = numbers.parallelStream()
    List<Integer> numbers = Stream.iterate(0, n -> n + 1)
        .limit(100)
        .collect(Collectors.toList());
-   
+
    // Ошибка: бесконечный цикл!
    // Stream.iterate(0, n -> n + 1).forEach(System.out::println);
    ```
@@ -1176,7 +1180,7 @@ long sum = numbers.parallelStream()
    // ОШИБКА: ConcurrentModificationException
    list.stream()
        .forEach(item -> list.remove(item));
-   
+
    // Правильно: создать новую коллекцию
    List<Item> toRemove = list.stream()
        .filter(predicate)
@@ -1190,7 +1194,7 @@ long sum = numbers.parallelStream()
    list.stream()
        .map(Person::getName)
        .collect(Collectors.toList());
-   
+
    // Правильно: фильтрация null
    list.stream()
        .filter(Objects::nonNull)
@@ -1198,21 +1202,22 @@ long sum = numbers.parallelStream()
        .collect(Collectors.toList());
    ```
 
-3. **Использование состоятельных операций в неправильном порядке**
+3. **Перестановка операций с изменением смысла**
    ```java
-   // Неэффективно
-   stream.sorted().limit(10)
-   
-   // Всё равно неэффективно (sorted требует все элементы)
-   stream.limit(10).sorted()
+   List<Integer> values = List.of(3, 1, 2);
+   values.stream().sorted().limit(2).toList(); // [1, 2]: два минимальных во всём источнике.
+   values.stream().limit(2).sorted().toList(); // [1, 3]: сортировка первых двух элементов.
    ```
+   Это разные результаты, а не две эквивалентные оптимизации. У бесконечного источника `sorted().limit(n)`
+   не завершится; `limit(n).sorted()` может завершиться, но решает другую задачу. Для global top-N по большому
+   конечному источнику рассмотрите ограниченную priority queue и сравните трудоёмкость с полной сортировкой.
 
 4. **Неправильное использование `flatMap`**
    ```java
    // ОШИБКА: возвращает Stream<Stream<String>>
    Stream<Stream<String>> wrong = lists.stream()
        .map(List::stream);
-   
+
    // Правильно: flatMap разворачивает вложенные стримы
    Stream<String> correct = lists.stream()
        .flatMap(List::stream);
@@ -1222,16 +1227,21 @@ long sum = numbers.parallelStream()
    ```java
    // Может выбросить NoSuchElementException
    String name = people.stream()
-       .filter(p -> p.getId() == id)
+       .filter(p -> Objects.equals(p.getId(), id))
+       .map(Person::getName)
        .findFirst()
        .get(); // Опасно!
-   
+
    // Правильно
    String name = people.stream()
-       .filter(p -> p.getId() == id)
+       .filter(p -> Objects.equals(p.getId(), id))
+       .map(Person::getName)
        .findFirst()
        .orElse("Unknown");
    ```
+   `map` переводит `Stream<Person>` в `Stream<String>`. Без него результат `findFirst()` имеет тип `Optional<Person>`,
+   поэтому присвоить его в `String` или подставить строковый fallback нельзя. Самостоятельный вариант с `record Person`
+   проверяется в [CoreExamples.java](../../examples/java-core/CoreExamples.java).
 
 ## Практические примеры
 
@@ -1246,7 +1256,7 @@ public class CsvProcessor {
             .filter(parts -> parts.length >= 3)
             .collect(Collectors.groupingBy(
                 parts -> parts[0], // Группировка по категории
-                Collectors.summarizingDouble(parts -> 
+                Collectors.summarizingDouble(parts ->
                     Double.parseDouble(parts[2])) // Статистика по сумме
             ));
     }
@@ -1311,13 +1321,13 @@ public String generateReport(List<Transaction> transactions) {
             Transaction::getCategory,
             Collectors.summingDouble(Transaction::getAmount)
         ));
-    
+
     return categoryTotals.entrySet().stream()
         .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-        .map(entry -> String.format("%s: $%.2f", 
+        .map(entry -> String.format("%s: $%.2f",
             entry.getKey(), entry.getValue()))
-        .collect(Collectors.joining("\n", 
-            "=== Transaction Report ===\n", 
+        .collect(Collectors.joining("\n",
+            "=== Transaction Report ===\n",
             "\n======================"));
 }
 ```
@@ -1325,66 +1335,66 @@ public String generateReport(List<Transaction> transactions) {
 ## Вопросы на собеседовании
 
 1. **В чём разница между промежуточными и терминальными операциями?**
-   
+
    *Ответ:* Промежуточные операции (intermediate) возвращают новый stream и выполняются лениво — только при вызове терминальной операции. Примеры: `map`, `filter`, `sorted`. Терминальные операции (terminal) запускают обработку stream и возвращают результат или выполняют побочный эффект. После терминальной операции stream закрывается. Примеры: `collect`, `forEach`, `reduce`.
 
 2. **Чем отличаются `map` и `flatMap`?**
-   
+
    *Ответ:* `map` преобразует каждый элемент в один новый элемент (`Stream<T>` → `Stream<R>`). `flatMap` преобразует каждый элемент в stream и затем "разворачивает" все получившиеся стримы в один плоский stream (`Stream<T>` → `Stream<Stream<R>>` → `Stream<R>`). Используется для работы с вложенными структурами.
 
 3. **Можно ли переиспользовать stream после терминальной операции?**
-   
+
    *Ответ:* Нет, stream можно использовать только один раз. После выполнения терминальной операции попытка использовать stream снова приведёт к `IllegalStateException`. Нужно создать новый stream.
 
 4. **Что такое ленивое вычисление в контексте Stream API?**
-   
+
    *Ответ:* Промежуточные операции не выполняются сразу при вызове, а формируют pipeline операций. Реальная обработка начинается только при вызове терминальной операции. Это позволяет оптимизировать выполнение (например, пропустить ненужные элементы при использовании `limit`).
 
 5. **Когда стоит использовать параллельные стримы?**
-   
+
    *Ответ:* Параллельные стримы эффективны для CPU-intensive операций на больших объёмах данных (обычно > 10000 элементов) с независимыми задачами. Источник данных должен хорошо разделяться (ArrayList, массивы). Не стоит использовать для I/O операций, малых объёмов данных или операций с общим состоянием.
 
 6. **В чём преимущество примитивных стримов (IntStream, LongStream, DoubleStream)?**
-   
+
    *Ответ:* Примитивные стримы избегают autoboxing/unboxing, что значительно улучшает производительность и снижает потребление памяти при работе с примитивами. Также предоставляют специализированные методы (`sum`, `average`, `summaryStatistics`).
 
 7. **Что делает метод `peek` и когда его использовать?**
-   
+
    *Ответ:* `peek` — промежуточная операция, выполняющая действие для каждого элемента без изменения stream. Используется в основном для отладки (логирование промежуточных результатов). Не следует полагаться на побочные эффекты в `peek` для бизнес-логики.
 
 8. **В чём разница между `findFirst` и `findAny`?**
-   
+
    *Ответ:* `findFirst` гарантированно возвращает первый элемент в порядке encounter order. `findAny` может вернуть любой элемент из stream и более эффективна в параллельных стримах, так как не требует соблюдения порядка.
 
 9. **Как работает метод `reduce`?**
-   
+
    *Ответ:* `reduce` сворачивает stream в одно значение, последовательно применяя ассоциативную функцию. Принимает начальное значение (identity), аккумулятор (объединяет текущий результат с новым элементом) и опционально combiner (для параллельных стримов).
 
 10. **Что такое Collector и зачем он нужен?**
-    
+
     *Ответ:* `Collector` — это объект, описывающий как собрать элементы stream в результирующую структуру. Класс `Collectors` предоставляет готовые реализации для типовых задач (`toList`, `groupingBy`, `joining`). Можно создавать собственные коллекторы через `Collector.of`.
 
 11. **В чём разница между `anyMatch`, `allMatch` и `noneMatch`?**
-    
-    *Ответ:* 
+
+    *Ответ:*
     - `anyMatch` — возвращает `true`, если хотя бы один элемент удовлетворяет условию
     - `allMatch` — возвращает `true`, если все элементы удовлетворяют условию
     - `noneMatch` — возвращает `true`, если ни один элемент не удовлетворяет условию
-    
+
     Все три — short-circuiting операции, могут завершиться досрочно.
 
 12. **Почему порядок операций в stream важен для производительности?**
-    
+
     *Ответ:* Разный порядок может значительно влиять на количество обрабатываемых элементов. Например, `filter` перед `map` обрабатывает меньше элементов, чем `map` перед `filter`. `limit` после `sorted` требует сортировки всех элементов, а фильтрация перед `sorted` уменьшает объём сортируемых данных.
 
 13. **Как обработать исключения в Stream API?**
-    
+
     *Ответ:* Stream API не предоставляет встроенных средств для обработки checked exceptions. Можно:
     - Обернуть в unchecked exception
     - Использовать try-catch внутри лямбды
     - Создать wrapper-метод, обрабатывающий исключения
     - Использовать библиотеки типа Vavr
-    
+
     ```java
     list.stream()
         .map(item -> {
@@ -1398,11 +1408,11 @@ public String generateReport(List<Transaction> transactions) {
     ```
 
 14. **Чем отличается `Collectors.toList()` от `Collectors.toUnmodifiableList()`?**
-    
-    *Ответ:* `toList()` создаёт изменяемый список (обычно ArrayList), к которому можно добавлять или удалять элементы. `toUnmodifiableList()` (Java 10+) создаёт неизменяемый список — попытка модификации вызовет `UnsupportedOperationException`. Неизменяемые коллекции более безопасны и могут быть оптимизированы JVM.
+
+    *Ответ:* `Collectors.toList()` не гарантирует конкретный тип и изменяемость результата. Если нужен изменяемый список, используйте `Collectors.toCollection(ArrayList::new)`. `Collectors.toUnmodifiableList()` (Java 10+) запрещает изменение списка и не принимает null. Отдельный метод `Stream.toList()` (Java 16+) тоже возвращает немодифицируемый список. Неизменяемость контейнера не делает mutable-элементы immutable. См. [Collectors](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Collectors.html#toList()).
 
 15. **Что такое ForkJoinPool и как он используется в параллельных стримах?**
-    
+
     *Ответ:* `ForkJoinPool` — это framework для параллельного выполнения задач, использующий алгоритм work-stealing. Параллельные стримы по умолчанию используют общий `ForkJoinPool.commonPool()`. Можно настроить размер пула через системное свойство `java.util.concurrent.ForkJoinPool.common.parallelism` или использовать собственный пул через `submit()`.
 
 ---

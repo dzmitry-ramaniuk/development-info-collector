@@ -13,1140 +13,298 @@
 6. [Phantom Reference (Фантомные ссылки)](#phantom-reference-фантомные-ссылки)
 7. [ReferenceQueue](#referencequeue)
 8. [Сравнение типов ссылок](#сравнение-типов-ссылок)
-   - [Таблица сравнения](#таблица-сравнения)
-   - [Иерархия силы ссылок](#иерархия-силы-ссылок)
-   - [Жизненный цикл с разными типами ссылок](#жизненный-цикл-с-разными-типами-ссылок)
 9. [Практические примеры](#практические-примеры)
    - [1. Canonicalizing String Pool](#1-canonicalizing-string-pool)
    - [2. Image Cache с SoftReference](#2-image-cache-с-softreference)
    - [3. Listener Registry с WeakReference](#3-listener-registry-с-weakreference)
    - [4. Resource Cleanup с PhantomReference](#4-resource-cleanup-с-phantomreference)
 10. [Best Practices](#best-practices)
-   - [1. Выбор правильного типа ссылки](#1-выбор-правильного-типа-ссылки)
-   - [2. Всегда очищайте ReferenceQueue](#2-всегда-очищайте-referencequeue)
-   - [3. Используйте try-with-resources вместо PhantomReference где возможно](#3-используйте-try-with-resources-вместо-phantomreference-где-возможно)
-   - [4. Мониторинг reference types](#4-мониторинг-reference-types)
-   - [5. Избегайте воскрешения объектов](#5-избегайте-воскрешения-объектов)
-   - [6. Thread-safety с WeakHashMap](#6-thread-safety-с-weakhashmap)
 11. [Вопросы на собеседовании](#вопросы-на-собеседовании)
-   - [1. В чём разница между Soft и Weak references?](#1-в-чём-разница-между-soft-и-weak-references)
-   - [2. Почему PhantomReference.get() всегда возвращает null?](#2-почему-phantomreferenceget-всегда-возвращает-null)
-   - [3. Как работает WeakHashMap?](#3-как-работает-weakhashmap)
-   - [4. Когда использовать каждый тип reference?](#4-когда-использовать-каждый-тип-reference)
-   - [5. Что такое ReferenceQueue и зачем она нужна?](#5-что-такое-referencequeue-и-зачем-она-нужна)
-   - [6. Почему finalize() считается плохой практикой?](#6-почему-finalize-считается-плохой-практикой)
-   - [7. Как настроить поведение SoftReference?](#7-как-настроить-поведение-softreference)
-   - [8. Может ли WeakReference предотвратить OutOfMemoryError?](#8-может-ли-weakreference-предотвратить-outofmemoryerror)
-   - [9. В чём разница между WeakHashMap и ConcurrentHashMap с WeakReference values?](#9-в-чём-разница-между-weakhashmap-и-concurrenthashmap-с-weakreference-values)
-   - [10. Какой тип reference использует String.intern()?](#10-какой-тип-reference-использует-stringintern)
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Дата проверки:** 2026-10-15; проверены контракты ссылок, очередей и очистки по адресным источникам ниже.
+- **Целевая версия или диапазон:** API Java SE 17–21; детали StringTable относятся к OpenJDK HotSpot 21.
+- **Статус примеров:** `current`; [CoreExamples.java](../../examples/java-core/CoreExamples.java) скомпилирован с `--release 17` и выполнен на OpenJDK 21.0.12.1. Проверки не требуют срабатывания GC; остальные фрагменты служат пояснениями.
+- **Первичные источники:** [пакет java.lang.ref](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/package-summary.html), [WeakReference](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/WeakReference.html), [SoftReference](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/SoftReference.html), [PhantomReference](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/PhantomReference.html), [Cleaner](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/Cleaner.html), [WeakHashMap](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/WeakHashMap.html).
 
 ## Введение в типы ссылок
 
-Java предоставляет четыре типа ссылок на объекты с различной силой связи между ссылкой и объектом. Это позволяет более 
-тонко управлять поведением сборщика мусора и реализовывать различные паттерны кэширования и управления ресурсами.
+**Достижимость (reachability)** описывает пути от живых GC roots к объекту. Важна вся цепочка ссылок:
+цикл из сильных ссылок, недостижимый от корней, сам по себе не удерживает объекты.
 
-**Иерархия ссылок:**
-```
-Object
-   └── java.lang.ref.Reference<T> (абстрактный)
-       ├── SoftReference<T>
-       ├── WeakReference<T>
-       └── PhantomReference<T>
-```
+- **Strongly reachable:** доступен из выполняющегося кода без прохождения через специальные reference-объекты.
+- **Softly reachable:** уже не strongly reachable, но доступен через soft reference.
+- **Weakly reachable:** не strongly/softly reachable, но доступен через weak reference.
+- **Phantom reachable:** достиг стадии, на которой phantom reference может уведомить об очистке; получить объект через неё нельзя.
 
-**Основные концепции:**
-- **Reachability (Достижимость)**: Объект достижим, если к нему существует цепочка ссылок от GC roots
-- **GC roots**: Корни сборки мусора (локальные переменные, статические поля, активные потоки, JNI ссылки)
-- **Eligibility for GC**: Право на сборку мусора зависит от типа самой сильной ссылки на объект
-
-**Типы достижимости:**
-1. **Strongly reachable**: Достижим через strong references
-2. **Softly reachable**: Достижим только через soft references (но не через strong)
-3. **Weakly reachable**: Достижим только через weak references
-4. **Phantom reachable**: Объект finalized, достижим только через phantom references
-5. **Unreachable**: Недостижим вообще
+`SoftReference`, `WeakReference` и `PhantomReference` наследуют `Reference<T>`. Обычная сильная ссылка не является отдельным
+подклассом `Reference`. Изменение достижимости, очистка reference и помещение её в очередь — разные события.
+Спецификация не задаёт фиксированное время их наступления.
 
 ## Strong Reference (Сильные ссылки)
 
-**Strong Reference** — обычная ссылка на объект в Java, используемая по умолчанию.
+Обычная переменная или поле может содержать сильную ссылку. Пока от живого корня есть сильный путь к объекту, GC его не собирает.
 
-**Характеристики:**
-- Объект не будет собран GC пока существует хотя бы одна strong reference
-- Используется по умолчанию при любом присваивании
-- Может привести к утечкам памяти при неправильном использовании
-
-**Примеры:**
 ```java
-// Все это strong references
-Object obj = new Object();
-String str = "Hello";
-List<Integer> list = new ArrayList<>();
-MyClass instance = new MyClass();
+List<byte[]> retained = new ArrayList<>();
+retained.add(new byte[1024]); // Пока retained достижим, массив удерживается списком.
 ```
 
-**Жизненный цикл:**
-```java
-public class StrongReferenceExample {
-    public static void main(String[] args) {
-        // Создание strong reference
-        Object strongRef = new Object();  // Объект создан
-        
-        // Объект НЕ будет собран GC пока существует strongRef
-        System.gc();  // Явный вызов GC
-        
-        // Объект всё ещё жив
-        System.out.println("Object is alive: " + strongRef);
-        
-        // Удаление strong reference
-        strongRef = null;  // Теперь объект eligible for GC
-        
-        System.gc();  // Теперь объект может быть собран
-    }
-}
-```
-
-**Проблема утечки памяти:**
-```java
-public class CacheLeakExample {
-    // Плохая практика: неограниченный кэш с strong references
-    private static Map<String, byte[]> cache = new HashMap<>();
-    
-    public void cacheData(String key, byte[] data) {
-        cache.put(key, data);  // Strong reference!
-        // Объект никогда не будет собран, даже если больше не используется
-    }
-}
-
-// Решение: использовать WeakHashMap или Soft/Weak references
-```
+Безграничный кэш удерживает объекты вполне корректно с точки зрения GC, но может быть утечкой с точки зрения приложения.
+Ищите удерживающий путь в heap dump, а не только место создания объекта.
 
 ## Weak Reference (Слабые ссылки)
 
-**Weak Reference** — ссылка, которая не препятствует сборке мусора объекта.
+`WeakReference` позволяет получить referent через `get()`, пока ссылка не очищена. Полученное ненулевое значение сохраните
+в локальную переменную: два независимых `get()` могут дать разные результаты.
 
-**Характеристики:**
-- Объект с только weak references будет собран при следующем GC
-- Используется через `java.lang.ref.WeakReference<T>`
-- Полезен для ассоциативных структур данных (canonicalizing mappings)
-
-**Синтаксис:**
 ```java
-import java.lang.ref.WeakReference;
-
-Object referent = new Object();
-WeakReference<Object> weakRef = new WeakReference<>(referent);
-
-// Получение объекта
-Object obj = weakRef.get();  // Возвращает объект или null если собран
-```
-
-**Пример жизненного цикла:**
-```java
-public class WeakReferenceExample {
-    public static void main(String[] args) {
-        Object referent = new Object();
-        WeakReference<Object> weakRef = new WeakReference<>(referent);
-        
-        System.out.println("Before GC: " + weakRef.get());  // Объект доступен
-        
-        // Удаляем strong reference
-        referent = null;
-        
-        // Вызываем GC
-        System.gc();
-        
-        // Ждём завершения GC
-        try { Thread.sleep(100); } catch (InterruptedException e) {}
-        
-        System.out.println("After GC: " + weakRef.get());  // null - объект собран
-    }
+WeakReference<Object> reference = new WeakReference<>(new Object());
+Object value = reference.get();
+if (value != null) {
+    System.out.println(value); // Локальная сильная ссылка удерживает value во время использования.
 }
 ```
 
-**WeakHashMap:**
-```java
-// WeakHashMap использует weak references для ключей
-import java.util.WeakHashMap;
+Когда GC определит weak reachability, он очистит соответствующие weak references. Это не обещание очистки при «следующем GC»
+или через 100 мс. `System.gc()` — запрос к JVM; `sleep` не подтверждает его выполнение.
+См. [System.gc](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/System.html#gc()).
 
-public class WeakHashMapExample {
-    public static void main(String[] args) {
-        Map<Key, String> map = new WeakHashMap<>();
-        
-        Key key1 = new Key("key1");
-        Key key2 = new Key("key2");
-        
-        map.put(key1, "value1");
-        map.put(key2, "value2");
-        
-        System.out.println("Size before GC: " + map.size());  // 2
-        
-        // Удаляем strong reference на key1
-        key1 = null;
-        
-        System.gc();
-        try { Thread.sleep(100); } catch (InterruptedException e) {}
-        
-        System.out.println("Size after GC: " + map.size());  // 1
-        // key1 был собран, entry удалена из map
-    }
-    
-    static class Key {
-        String name;
-        Key(String name) { this.name = name; }
-    }
-}
-```
-
-**Канонизирующая Map (Canonicalizing Map):**
-```java
-// Паттерн для sharing объектов с одинаковыми значениями
-public class StringPool {
-    private final Map<String, WeakReference<String>> pool = new HashMap<>();
-    
-    public String intern(String str) {
-        // Проверяем, есть ли уже такая строка в пуле
-        WeakReference<String> ref = pool.get(str);
-        String pooled = (ref != null) ? ref.get() : null;
-        
-        if (pooled != null) {
-            return pooled;  // Возвращаем существующую строку
-        }
-        
-        // Добавляем новую строку в пул
-        pool.put(str, new WeakReference<>(str));
-        return str;
-    }
-}
-```
-
-**Когда использовать WeakReference:**
-- Canonicalizing mappings (пулы объектов)
-- Observers/listeners, которые не должны препятствовать GC
-- Metadata хранилища (ассоциативные данные с объектами)
-- Кэши, где важно освобождение памяти
+**WeakHashMap** использует слабые ключи, но сильные значения. Если значение прямо или косвенно ссылается на ключ,
+ключ остаётся достижимым. Например, `map.put(key, key)` не даёт ожидаемого weak-key поведения.
+Map не потокобезопасна; составные операции требуют общей синхронизации.
 
 ## Soft Reference (Мягкие ссылки)
 
-**Soft Reference** — ссылка, которая собирается GC только при необходимости освободить память перед `OutOfMemoryError`.
+`SoftReference` разрешает JVM освобождать softly reachable объекты в ответ на потребность в памяти. Это не TTL, не строгий LRU
+и не гарантия удержания объекта до почти полного исчерпания heap. JVM должна очистить soft references к softly reachable
+объектам перед соответствующим `OutOfMemoryError`, однако порядок и момент очистки в остальное время не фиксированы.
 
-**Характеристики:**
-- Объект с только soft references будет собран только когда JVM нужна память
-- Используется через `java.lang.ref.SoftReference<T>`
-- Идеален для memory-sensitive кэшей
-- GC собирает soft references по алгоритму LRU (least-recently-used)
-
-**Синтаксис:**
 ```java
-import java.lang.ref.SoftReference;
-
-Object referent = new Object();
-SoftReference<Object> softRef = new SoftReference<>(referent);
-
-// Получение объекта
-Object obj = softRef.get();  // Возвращает объект или null если собран
-```
-
-**Пример жизненного цикла:**
-```java
-public class SoftReferenceExample {
-    public static void main(String[] args) {
-        // Создаём большой объект
-        byte[] bigObject = new byte[10 * 1024 * 1024];  // 10 MB
-        SoftReference<byte[]> softRef = new SoftReference<>(bigObject);
-        
-        System.out.println("Before GC: " + (softRef.get() != null));  // true
-        
-        // Удаляем strong reference
-        bigObject = null;
-        
-        // Вызываем GC - объект НЕ будет собран (достаточно памяти)
-        System.gc();
-        System.out.println("After GC (enough memory): " + (softRef.get() != null));  // true
-        
-        // Создаём memory pressure
-        try {
-            List<byte[]> memoryFiller = new ArrayList<>();
-            while (true) {
-                memoryFiller.add(new byte[10 * 1024 * 1024]);  // Выделяем память
-            }
-        } catch (OutOfMemoryError e) {
-            // При нехватке памяти soft references будут собраны
-            System.out.println("After memory pressure: " + (softRef.get() != null));  // false
-        }
-    }
+SoftReference<byte[]> reference = new SoftReference<>(new byte[1024]);
+byte[] cached = reference.get();
+if (cached == null) {
+    cached = new byte[1024]; // Восстановление отсутствующего значения — обязанность приложения.
 }
 ```
 
-**Memory-sensitive кэш:**
-```java
-public class ImageCache {
-    private final Map<String, SoftReference<Image>> cache = new HashMap<>();
-    
-    public Image getImage(String path) {
-        // Проверяем кэш
-        SoftReference<Image> ref = cache.get(path);
-        Image image = (ref != null) ? ref.get() : null;
-        
-        if (image != null) {
-            System.out.println("Cache hit: " + path);
-            return image;
-        }
-        
-        // Загружаем из диска
-        System.out.println("Cache miss: " + path);
-        image = loadImageFromDisk(path);
-        
-        // Сохраняем в кэш через SoftReference
-        cache.put(path, new SoftReference<>(image));
-        return image;
-    }
-    
-    private Image loadImageFromDisk(String path) {
-        // Имитация загрузки
-        return new Image(path);
-    }
-    
-    static class Image {
-        String path;
-        byte[] data = new byte[1024 * 1024];  // 1 MB image
-        
-        Image(String path) { this.path = path; }
-    }
-}
-```
+Для production-кэша обычно нужна явная граница размера, политика вытеснения и метрики hit/miss.
+Soft references могут освободить значения, но не удаляют сильные ключи и оболочки из вашей map автоматически.
 
-**Настройка поведения SoftReference:**
-```bash
-# Управление временем жизни soft references
-# Значение в миллисекундах на MB свободного heap
--XX:SoftRefLRUPolicyMSPerMB=1000
-
-# Default: 1000ms per MB
-# Пример: при 10 MB свободной памяти, soft reference живёт max 10 секунд
-# При меньшем значении - более агрессивная очистка
-# При большем значении - soft references живут дольше
-```
-
-**Когда использовать SoftReference:**
-- Image кэши
-- Parsed data кэши (XML, JSON)
-- Computed results кэши
-- Любой memory-sensitive кэш
+HotSpot-параметр `-XX:SoftRefLRUPolicyMSPerMB` влияет на эвристику удержания soft references. Он не задаёт верхнюю границу
+времени жизни: вычисление вроде «100 MB × 1000 = ровно 100 секунд» нельзя использовать как TTL.
+Параметр зависит от реализации и версии: см. [описание java для JDK 21](https://docs.oracle.com/en/java/javase/21/docs/specs/man/java.html#advanced-garbage-collection-options-for-java).
 
 ## Phantom Reference (Фантомные ссылки)
 
-**Phantom Reference** — самая слабая ссылка, используется для post-mortem cleanup.
+`PhantomReference.get()` всегда возвращает `null`, даже если referent ещё удерживается сильной ссылкой.
+Reference нужна для уведомления, а не доступа к объекту. Для получения уведомления передайте `ReferenceQueue`.
 
-**Характеристики:**
-- Объект с phantom reference уже недоступен (метод `get()` всегда возвращает `null`)
-- Используется только с `ReferenceQueue`
-- Позволяет выполнить cleanup ПОСЛЕ finalization но ДО освобождения памяти
-- Более предсказуем и безопасен чем `finalize()`
-
-**Синтаксис:**
 ```java
-import java.lang.ref.PhantomReference;
-import java.lang.ref.ReferenceQueue;
-
 ReferenceQueue<Object> queue = new ReferenceQueue<>();
-Object referent = new Object();
-PhantomReference<Object> phantomRef = new PhantomReference<>(referent, queue);
-
-// get() всегда возвращает null
-Object obj = phantomRef.get();  // ВСЕГДА null!
+Object owner = new Object();
+PhantomReference<Object> reference = new PhantomReference<>(owner, queue);
+System.out.println(reference.get()); // Всегда null.
+Reference.reachabilityFence(owner);
 ```
 
-**Жизненный цикл объекта с PhantomReference:**
-```
-1. Объект создан, есть strong reference
-2. Strong reference удалена -> объект finalized
-3. После finalization -> PhantomReference помещается в ReferenceQueue
-4. Приложение читает из ReferenceQueue и выполняет cleanup
-5. Приложение вызывает phantomRef.clear()
-6. Память объекта освобождается
-```
+В Java 17–21 GC сам очищает phantom references при определении phantom reachability и затем может поставить их в очередь.
+Нельзя обещать, что native cleanup произойдёт до освобождения heap-памяти referent или в установленный срок.
+Состояние для освобождения внешнего ресурса хранится отдельно и не должно удерживать referent.
 
-**Пример использования:**
-```java
-import java.lang.ref.PhantomReference;
-import java.lang.ref.ReferenceQueue;
-
-public class PhantomReferenceExample {
-    public static void main(String[] args) throws InterruptedException {
-        ReferenceQueue<Object> queue = new ReferenceQueue<>();
-        
-        Object referent = new Object() {
-            @Override
-            public String toString() {
-                return "Resource object";
-            }
-        };
-        
-        PhantomReference<Object> phantomRef = new PhantomReference<>(referent, queue);
-        
-        System.out.println("Referent: " + referent);
-        System.out.println("Phantom get(): " + phantomRef.get());  // null
-        
-        // Удаляем strong reference
-        referent = null;
-        
-        // Вызываем GC и finalization
-        System.gc();
-        System.runFinalization();
-        Thread.sleep(100);
-        
-        // Проверяем ReferenceQueue
-        if (queue.poll() != null) {
-            System.out.println("Phantom reference enqueued - object is phantom reachable");
-            
-            // Выполняем cleanup
-            performCleanup();
-            
-            // Очищаем phantom reference
-            phantomRef.clear();
-            
-            // Теперь память может быть освобождена
-        }
-    }
-    
-    private static void performCleanup() {
-        System.out.println("Performing cleanup...");
-        // Закрытие ресурсов, удаление файлов, и т.д.
-    }
-}
-```
-
-**Практический пример: Управление off-heap памятью**
-```java
-import java.lang.ref.PhantomReference;
-import java.lang.ref.ReferenceQueue;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentHashMap;
-
-public class DirectBufferCleaner {
-    // Отслеживание всех PhantomReferences
-    private static final Map<PhantomReference<ByteBuffer>, Long> references = 
-        new ConcurrentHashMap<>();
-    
-    private static final ReferenceQueue<ByteBuffer> queue = new ReferenceQueue<>();
-    
-    static {
-        // Поток для обработки phantom references
-        Thread cleanerThread = new Thread(() -> {
-            while (true) {
-                try {
-                    PhantomReference<?> ref = (PhantomReference<?>) queue.remove();
-                    Long address = references.remove(ref);
-                    
-                    if (address != null) {
-                        // Освобождаем native память
-                        freeNativeMemory(address);
-                        System.out.println("Freed native memory at: " + address);
-                    }
-                    
-                    ref.clear();
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        });
-        cleanerThread.setDaemon(true);
-        cleanerThread.start();
-    }
-    
-    public static ByteBuffer allocateDirectBuffer(int capacity) {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(capacity);
-        long address = getBufferAddress(buffer);
-        
-        // Регистрируем PhantomReference
-        PhantomReference<ByteBuffer> ref = new PhantomReference<>(buffer, queue);
-        references.put(ref, address);
-        
-        return buffer;
-    }
-    
-    private static long getBufferAddress(ByteBuffer buffer) {
-        // Упрощённо: получение native адреса через reflection
-        return 0xDEADBEEF;  // Placeholder
-    }
-    
-    private static void freeNativeMemory(long address) {
-        // Упрощённо: вызов native метода для освобождения памяти
-        // Unsafe.freeMemory(address);
-    }
-}
-```
-
-**Когда использовать PhantomReference:**
-- Управление off-heap памятью (DirectByteBuffer cleanup)
-- Cleanup native ресурсов (JNI, файловые дескрипторы)
-- Post-mortem logging/monitoring
-- Альтернатива `finalize()` (более предсказуемая)
-
-**PhantomReference vs finalize():**
-
-| Характеристика | PhantomReference | finalize() |
-|----------------|------------------|------------|
-| Предсказуемость | Высокая | Низкая |
-| Производительность | Хорошая | Плохая |
-| Доступ к объекту | Нет (get() = null) | Да (можно воскресить) |
-| Очерёдность | Контролируемая | Непредсказуемая |
-| Рекомендация | ✅ Используйте | ❌ Избегайте |
+Предпочитайте `AutoCloseable` и `try-with-resources` для своевременного освобождения. `Cleaner`, основанный на phantom
+references, может быть резервной мерой при пропущенном `close()`, но автоматический запуск не гарантирован к определённому
+моменту или при завершении JVM. Не освобождайте вручную память `ByteBuffer.allocateDirect` по адресу, добытому reflection:
+его жизненным циклом уже управляет реализация JDK.
 
 ## ReferenceQueue
 
-**ReferenceQueue** — очередь для отслеживания объектов, собранных GC.
+Очередь содержит reference-объекты, а не сами referents. Регистрации в очереди недостаточно для удержания оболочки до
+уведомления: пока ждёте его, храните `Reference` в своей структуре. `poll()` не блокирует, `remove()` ждёт уведомления;
+для управляемого завершения фонового обработчика нужен протокол отмены.
 
-**Назначение:**
-- Уведомление о сборке мусора referenced объектов
-- Возможность выполнить post-GC cleanup
-- Работает с WeakReference, SoftReference, PhantomReference
-
-**Процесс работы:**
-```
-1. Создаётся Reference с ReferenceQueue
-2. Объект становится eligible for GC
-3. GC собирает объект
-4. Reference помещается в ReferenceQueue
-5. Приложение читает из queue и выполняет cleanup
-```
-
-**Синтаксис:**
 ```java
-ReferenceQueue<MyClass> queue = new ReferenceQueue<>();
-
-MyClass obj = new MyClass();
-WeakReference<MyClass> ref = new WeakReference<>(obj, queue);  // С очередью
-
-obj = null;  // Убираем strong reference
-System.gc();
-
-// Проверка очереди
-Reference<? extends MyClass> polledRef = queue.poll();
-if (polledRef != null) {
-    System.out.println("Object was garbage collected");
-}
+ReferenceQueue<Object> queue = new ReferenceQueue<>();
+Object value = new Object();
+WeakReference<Object> reference = new WeakReference<>(value, queue);
+reference.enqueue(); // Явно очищает reference и ставит её в очередь; не имитирует гарантию запуска GC.
+System.out.println(reference.get());    // null
+System.out.println(queue.poll() == reference); // true
+Reference.reachabilityFence(value); // Referent может при этом оставаться живым.
 ```
 
-**Методы ReferenceQueue:**
-```java
-// Неблокирующая проверка
-Reference<? extends T> poll()  // Возвращает reference или null
-
-// Блокирующее ожидание
-Reference<? extends T> remove()  // Ждёт пока reference не появится
-Reference<? extends T> remove(long timeout)  // Ждёт с таймаутом
-```
-
-**Пример с cleanup:**
-```java
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.Map;
-
-public class ResourceTracker {
-    private static class Resource {
-        String name;
-        Resource(String name) { this.name = name; }
-        
-        void cleanup() {
-            System.out.println("Cleaning up resource: " + name);
-        }
-    }
-    
-    // Расширяем WeakReference чтобы хранить дополнительную информацию
-    private static class ResourceReference extends WeakReference<Resource> {
-        final String resourceName;
-        
-        ResourceReference(Resource referent, ReferenceQueue<Resource> queue) {
-            super(referent, queue);
-            this.resourceName = referent.name;
-        }
-    }
-    
-    private final Map<String, ResourceReference> resources = new HashMap<>();
-    private final ReferenceQueue<Resource> queue = new ReferenceQueue<>();
-    
-    public ResourceTracker() {
-        // Поток для обработки собранных ресурсов
-        Thread cleanupThread = new Thread(() -> {
-            while (true) {
-                try {
-                    ResourceReference ref = (ResourceReference) queue.remove();
-                    System.out.println("Resource collected: " + ref.resourceName);
-                    resources.remove(ref.resourceName);
-                    // Здесь можно выполнить cleanup
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        });
-        cleanupThread.setDaemon(true);
-        cleanupThread.start();
-    }
-    
-    public void track(Resource resource) {
-        ResourceReference ref = new ResourceReference(resource, queue);
-        resources.put(resource.name, ref);
-    }
-}
-```
-
-**Практический пример: Кэш с автоочисткой**
-```java
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Map;
-
-public class SelfCleaningCache<K, V> {
-    private static class ValueReference<K, V> extends SoftReference<V> {
-        final K key;
-        
-        ValueReference(K key, V value, ReferenceQueue<V> queue) {
-            super(value, queue);
-            this.key = key;
-        }
-    }
-    
-    private final Map<K, ValueReference<K, V>> cache = new HashMap<>();
-    private final ReferenceQueue<V> queue = new ReferenceQueue<>();
-    
-    public V get(K key) {
-        // Очистка собранных entries
-        cleanUp();
-        
-        ValueReference<K, V> ref = cache.get(key);
-        return (ref != null) ? ref.get() : null;
-    }
-    
-    public void put(K key, V value) {
-        // Очистка собранных entries
-        cleanUp();
-        
-        ValueReference<K, V> ref = new ValueReference<>(key, value, queue);
-        cache.put(key, ref);
-    }
-    
-    private void cleanUp() {
-        ValueReference<K, V> ref;
-        while ((ref = (ValueReference<K, V>) queue.poll()) != null) {
-            cache.remove(ref.key);
-            System.out.println("Removed from cache: " + ref.key);
-        }
-    }
-    
-    public int size() {
-        cleanUp();
-        return cache.size();
-    }
-}
-```
+Явный `clear()` очищает reference, но сам по себе не равнозначен `enqueue()`. Уведомление в очереди сообщает о reference,
+поэтому не следует трактовать каждое уведомление как доказательство, что объект уже физически освобождён.
 
 ## Сравнение типов ссылок
 
-### Таблица сравнения
+| Ссылка | Доступ к referent | Что разрешает GC | Типичное применение |
+|---|---|---|---|
+| Strong | Обычное обращение | Не собирать объект при сильной достижимости | Рабочие данные |
+| Soft | `get()` до очистки | Очистить по потребности в памяти | Восстанавливаемые данные с оговорками о политике кэша |
+| Weak | `get()` до очистки | Очистить при обнаружении weak reachability | Ассоциации и канонизация |
+| Phantom | `get()` всегда `null` | Уведомить о phantom reachability | Резервная очистка внешнего ресурса |
 
-| Характеристика | Strong | Soft | Weak | Phantom |
-|----------------|--------|------|------|---------|
-| **get() возвращает объект** | Да | Да (до GC) | Да (до GC) | Нет (всегда null) |
-| **Когда собирается** | Никогда | При нехватке памяти | При следующем GC | После finalization |
-| **ReferenceQueue** | Нет | Опционально | Опционально | Обязательно |
-| **Основное применение** | Обычные ссылки | Memory-sensitive кэши | Canonicalizing maps | Post-mortem cleanup |
-| **Производительность** | Лучшая | Хорошая | Хорошая | Средняя |
-| **GC overhead** | Нет | Небольшой | Небольшой | Средний |
-
-### Иерархия силы ссылок
-
-```
-Strong Reference (самая сильная)
-        ↓
-Soft Reference
-        ↓
-Weak Reference
-        ↓
-Phantom Reference (самая слабая)
-```
-
-### Жизненный цикл с разными типами ссылок
-
-```java
-public class ReferencesLifecycle {
-    public static void main(String[] args) throws InterruptedException {
-        ReferenceQueue<byte[]> queue = new ReferenceQueue<>();
-        
-        byte[] data = new byte[1024];
-        
-        SoftReference<byte[]> softRef = new SoftReference<>(data, queue);
-        WeakReference<byte[]> weakRef = new WeakReference<>(data, queue);
-        PhantomReference<byte[]> phantomRef = new PhantomReference<>(data, queue);
-        
-        System.out.println("Strong ref exists:");
-        System.out.println("  Soft.get(): " + (softRef.get() != null));    // true
-        System.out.println("  Weak.get(): " + (weakRef.get() != null));    // true
-        System.out.println("  Phantom.get(): " + (phantomRef.get() != null)); // false
-        
-        data = null;  // Удаляем strong reference
-        System.gc();
-        Thread.sleep(100);
-        
-        System.out.println("\nAfter GC (no memory pressure):");
-        System.out.println("  Soft.get(): " + (softRef.get() != null));    // true (не собран)
-        System.out.println("  Weak.get(): " + (weakRef.get() != null));    // false (собран)
-        System.out.println("  Weak in queue: " + (queue.poll() != null));  // true
-        
-        // Создание memory pressure для soft reference
-        try {
-            List<byte[]> list = new ArrayList<>();
-            for (int i = 0; i < 100000; i++) {
-                list.add(new byte[10000]);
-            }
-        } catch (OutOfMemoryError e) {
-            System.out.println("\nAfter memory pressure:");
-            System.out.println("  Soft.get(): " + (softRef.get() != null));  // false (собран)
-        }
-    }
-}
-```
+Если у одного объекта одновременно есть soft и weak references, soft-путь учитывается при определении достижимости.
+Нельзя ожидать обязательного `weak.get()==null`, пока тот же объект ещё softly reachable.
 
 ## Практические примеры
 
 ### 1. Canonicalizing String Pool
 
+**Задача:** равные строки разделяют экземпляр, пока клиент удерживает его, но пул не становится владельцем всех строк навсегда.
+
 ```java
-public class StringInterner {
-    private final Map<String, WeakReference<String>> pool = new ConcurrentHashMap<>();
-    
-    public String intern(String str) {
-        if (str == null) return null;
-        
-        // Проверяем существующую entry
-        WeakReference<String> ref = pool.get(str);
-        String interned = (ref != null) ? ref.get() : null;
-        
-        if (interned != null) {
-            return interned;
-        }
-        
-        // Добавляем новую entry
-        pool.put(str, new WeakReference<>(str));
-        
-        // Периодическая очистка мёртвых entries
-        if (pool.size() > 10000) {
-            cleanUp();
-        }
-        
-        return str;
-    }
-    
-    private void cleanUp() {
-        pool.entrySet().removeIf(entry -> entry.getValue().get() == null);
+import java.lang.ref.WeakReference;
+import java.util.Map;
+import java.util.Objects;
+import java.util.WeakHashMap;
+
+final class StringInterner {
+    private final Map<String, WeakReference<String>> pool = new WeakHashMap<>();
+
+    public synchronized String intern(String value) {
+        Objects.requireNonNull(value);
+        WeakReference<String> reference = pool.get(value);
+        String existing = reference == null ? null : reference.get();
+        if (existing != null) return existing;
+        pool.put(value, new WeakReference<>(value));
+        return value;
     }
 }
 ```
+
+Слабые и ключи, и значения; `synchronized` защищает весь поиск и вставку. Вариант
+`ConcurrentHashMap<String, WeakReference<String>>`, в котором ключ и referent — та же строка, удерживал бы её сильным ключом.
+Одна потокобезопасная map также не делает последовательность `get`/`put` атомарной канонизацией.
+
+**Проверка:** два вызова с разными `new String("same")` возвращают один объект, пока результат первого вызова удерживается.
+Сборка неиспользуемой строки допускается, но не проверяется ожиданием фиксированного числа миллисекунд.
 
 ### 2. Image Cache с SoftReference
 
+Путь к изображению может быть сильным ключом, поскольку referent — отдельный объект изображения. Для повторного заполнения
+нужна политика обработки промаха. Самая существенная гонка очистки:
+
+1. Значение по пути очищено, его старая reference попала в очередь.
+2. По тому же пути записано новое изображение.
+3. Обработчик очереди читает старую reference.
+
+Удаление только по пути уничтожило бы новую запись. Нужно удалить пару **ключ + конкретная reference**:
+
 ```java
-public class ImageCache {
-    private static class ImageReference extends SoftReference<BufferedImage> {
-        final String path;
-        final long size;
-        
-        ImageReference(String path, BufferedImage image, ReferenceQueue<BufferedImage> queue) {
-            super(image, queue);
-            this.path = path;
-            this.size = estimateSize(image);
-        }
-        
-        private long estimateSize(BufferedImage image) {
-            return (long) image.getWidth() * image.getHeight() * 4; // ARGB
-        }
-    }
-    
-    private final Map<String, ImageReference> cache = new ConcurrentHashMap<>();
-    private final ReferenceQueue<BufferedImage> queue = new ReferenceQueue<>();
-    private final AtomicLong cacheSize = new AtomicLong(0);
-    
-    public BufferedImage get(String path) {
-        cleanUp();
-        
-        ImageReference ref = cache.get(path);
-        BufferedImage image = (ref != null) ? ref.get() : null;
-        
-        if (image != null) {
-            return image;
-        }
-        
-        // Load from disk
-        image = loadImage(path);
-        if (image != null) {
-            put(path, image);
-        }
-        
-        return image;
-    }
-    
-    private void put(String path, BufferedImage image) {
-        ImageReference ref = new ImageReference(path, image, queue);
-        ImageReference old = cache.put(path, ref);
-        
-        if (old != null) {
-            cacheSize.addAndGet(-old.size);
-        }
-        cacheSize.addAndGet(ref.size);
-    }
-    
-    private void cleanUp() {
-        ImageReference ref;
-        while ((ref = (ImageReference) queue.poll()) != null) {
-            cache.remove(ref.path);
-            cacheSize.addAndGet(-ref.size);
-        }
-    }
-    
-    private BufferedImage loadImage(String path) {
-        try {
-            return ImageIO.read(new File(path));
-        } catch (IOException e) {
-            return null;
-        }
-    }
-    
-    public long getCacheSize() {
-        cleanUp();
-        return cacheSize.get();
-    }
+Reference<? extends V> reference;
+while ((reference = queue.poll()) != null) {
+    @SuppressWarnings("unchecked") // Приватная очередь содержит только Entry данного cache.
+    Entry<K, V> entry = (Entry<K, V>) reference;
+    entries.remove(entry.key, entry);
 }
 ```
+
+Здесь `Entry<K,V>` наследует `SoftReference<V>` и хранит ключ; `entries` — `ConcurrentHashMap<K, Entry<K,V>>`.
+Полная реализация `SoftValueCache` находится в [CoreExamples.java](../../examples/java-core/CoreExamples.java).
+Условное удаление опирается на [ConcurrentMap.remove(key, value)](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentMap.html#remove(java.lang.Object,java.lang.Object)).
+
+**Проверка:** сохраните старую reference, замените значение, явно вызовите у старой `enqueue()`, затем очистите очередь.
+Новое значение остаётся в map. Эта проверка детерминированна и не зависит от решения GC.
+Количество wrapper-entries не равно объёму живых изображений; точный учёт памяти требует отдельной модели.
 
 ### 3. Listener Registry с WeakReference
 
 ```java
-public class EventSource {
-    private final List<WeakReference<EventListener>> listeners = new CopyOnWriteArrayList<>();
-    
-    public void addListener(EventListener listener) {
-        listeners.add(new WeakReference<>(listener));
+private final List<WeakReference<Consumer<String>>> listeners = new CopyOnWriteArrayList<>();
+
+public void addListener(Consumer<String> listener) {
+    listeners.add(new WeakReference<>(Objects.requireNonNull(listener)));
+}
+
+public void removeListener(Consumer<String> listener) {
+    listeners.removeIf(reference -> {
+        Consumer<String> current = reference.get();
+        return current == null || current == listener;
+    });
+}
+
+public void fireEvent(String event) {
+    for (WeakReference<Consumer<String>> reference : listeners) {
+        Consumer<String> listener = reference.get();
+        if (listener != null) listener.accept(event);
     }
-    
-    public void removeListener(EventListener listener) {
-        listeners.removeIf(ref -> {
-            EventListener l = ref.get();
-            return l == null || l == listener;
-        });
-    }
-    
-    public void fireEvent(String event) {
-        // Очистка мёртвых listeners и уведомление живых
-        listeners.removeIf(ref -> {
-            EventListener listener = ref.get();
-            if (listener == null) {
-                return true;  // Remove dead reference
-            }
-            listener.onEvent(event);
-            return false;
-        });
-    }
-    
-    interface EventListener {
-        void onEvent(String event);
-    }
+    listeners.removeIf(reference -> reference.refersTo(null));
 }
 ```
+
+Это методы класса с импортами `java.lang.ref.WeakReference`, `java.util.List`, `java.util.Objects`,
+`java.util.concurrent.CopyOnWriteArrayList`, `java.util.function.Consumer`.
+Обработчики вызываются вне операции изменения списка. Клиент обязан хранить сильную ссылку на слушателя, пока хочет получать
+события. Политику обработки исключений и порядок вызовов нужно определить отдельно; этот пример распространяет исключение вызывающему коду.
 
 ### 4. Resource Cleanup с PhantomReference
 
+В прикладном коде удобнее `Cleaner`: он управляет reference-объектами и выполняет action не более одного раза.
+Explicit `close()` и резервная очистка должны использовать одну action, чтобы исключить повторное освобождение.
+
 ```java
-public class ManagedResource implements AutoCloseable {
-    private static final ReferenceQueue<ManagedResource> queue = new ReferenceQueue<>();
-    private static final Set<ResourcePhantomReference> references = ConcurrentHashMap.newKeySet();
-    
-    static {
-        Thread cleanupThread = new Thread(() -> {
-            while (true) {
-                try {
-                    ResourcePhantomReference ref = (ResourcePhantomReference) queue.remove();
-                    ref.cleanup();
-                    references.remove(ref);
-                    ref.clear();
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        });
-        cleanupThread.setDaemon(true);
-        cleanupThread.setName("Resource-Cleanup-Thread");
-        cleanupThread.start();
+import java.lang.ref.Cleaner;
+import java.util.concurrent.atomic.AtomicInteger;
+
+final class ManagedResource implements AutoCloseable {
+    private static final Cleaner CLEANER = Cleaner.create();
+
+    private static final class State implements Runnable {
+        private final AtomicInteger cleanups;
+        State(AtomicInteger cleanups) { this.cleanups = cleanups; }
+        public void run() { cleanups.incrementAndGet(); }
     }
-    
-    private static class ResourcePhantomReference extends PhantomReference<ManagedResource> {
-        private final Runnable cleanupAction;
-        
-        ResourcePhantomReference(ManagedResource referent, Runnable cleanupAction) {
-            super(referent, queue);
-            this.cleanupAction = cleanupAction;
-        }
-        
-        void cleanup() {
-            cleanupAction.run();
-        }
+
+    private final Cleaner.Cleanable cleanable;
+
+    ManagedResource(AtomicInteger cleanups) {
+        cleanable = CLEANER.register(this, new State(cleanups));
     }
-    
-    private final String name;
-    private boolean closed = false;
-    
-    public ManagedResource(String name) {
-        this.name = name;
-        
-        // Регистрируем cleanup через PhantomReference
-        Runnable cleanup = () -> {
-            System.out.println("Phantom cleanup for: " + name);
-            // Cleanup native resources, close connections, etc.
-        };
-        
-        references.add(new ResourcePhantomReference(this, cleanup));
-    }
-    
-    @Override
-    public void close() {
-        if (!closed) {
-            System.out.println("Explicit close for: " + name);
-            closed = true;
-            // Cleanup resources
-        }
-    }
+
+    public void close() { cleanable.clean(); }
 }
 ```
+
+Счётчик представляет освобождение отдельного внешнего ресурса; пример не выделяет native memory.
+`State` — статический вложенный класс и не содержит владельца. Лямбда, обращающаяся к полю владельца через `this`, могла бы
+удержать его и не допустить автоматическую очистку. Код реального освобождения должен быть коротким и не бросать исключения,
+на которые полагается вызывающая сторона. Два явных `close()` увеличивают счётчик один раз.
 
 ## Best Practices
 
-### 1. Выбор правильного типа ссылки
-
-**Strong Reference:**
-```java
-// Используйте для обычных объектов
-String name = "John";
-List<Integer> numbers = new ArrayList<>();
-```
-
-**Weak Reference:**
-```java
-// Используйте для:
-// - Canonicalizing maps (пулы объектов)
-// - Listeners/observers
-// - Metadata associations
-
-// Хорошо
-Map<Object, Metadata> metadata = new WeakHashMap<>();
-
-// Плохо (утечка памяти)
-Map<Object, Metadata> metadata = new HashMap<>();
-```
-
-**Soft Reference:**
-```java
-// Используйте для:
-// - Image caches
-// - Parsed data caches
-// - Computed results
-
-// Хорошо
-Map<String, SoftReference<Image>> imageCache = new HashMap<>();
-
-// Плохо для кэша (может вызвать OOM)
-Map<String, Image> imageCache = new HashMap<>();
-```
-
-**Phantom Reference:**
-```java
-// Используйте для:
-// - Post-mortem cleanup
-// - Native resource management
-// - Замена finalize()
-
-// Хорошо
-PhantomReference<Resource> ref = new PhantomReference<>(resource, queue);
-
-// Плохо (deprecated)
-@Override protected void finalize() { cleanup(); }
-```
-
-### 2. Всегда очищайте ReferenceQueue
-
-```java
-// Плохо: накопление мёртвых references
-Map<String, WeakReference<Object>> cache = new HashMap<>();
-
-// Хорошо: периодическая очистка
-public void cleanUp() {
-    Reference<?> ref;
-    while ((ref = queue.poll()) != null) {
-        cache.remove(((MyReference) ref).key);
-    }
-}
-```
-
-### 3. Используйте try-with-resources вместо PhantomReference где возможно
-
-```java
-// Предпочтительно
-try (FileInputStream fis = new FileInputStream("file.txt")) {
-    // Use resource
-}
-
-// Только если try-with-resources невозможен
-PhantomReference<FileInputStream> phantom = new PhantomReference<>(fis, queue);
-```
-
-### 4. Мониторинг reference types
-
-```java
-// Логирование для отладки
--XX:+PrintReferenceGC
-
-// Пример вывода:
-// [GC (Allocation Failure) [SoftReference, 0 refs, 0.0000123 secs]
-// [WeakReference, 42 refs, 0.0000456 secs]
-```
-
-### 5. Избегайте воскрешения объектов
-
-```java
-// Плохо: воскрешение через finalize()
-@Override
-protected void finalize() {
-    globalList.add(this);  // Воскрешение!
-}
-
-// Хорошо: используйте PhantomReference для cleanup
-```
-
-### 6. Thread-safety с WeakHashMap
-
-```java
-// Плохо: WeakHashMap не thread-safe
-Map<Key, Value> map = new WeakHashMap<>();
-
-// Хорошо: синхронизация
-Map<Key, Value> map = Collections.synchronizedMap(new WeakHashMap<>());
-
-// Или используйте ConcurrentHashMap с WeakReference values
-Map<Key, WeakReference<Value>> map = new ConcurrentHashMap<>();
-```
+1. Для нужного сейчас объекта используйте обычную сильную ссылку; не заменяйте владение ресурсом reference-механизмами.
+2. Задавайте границы кэша явно; `SoftReference` не заменяет TTL/maximum size.
+3. Обрабатывайте очередь и удаляйте только соответствующую reference. Фоновому обработчику задайте завершение и обработку ошибок.
+4. Различайте weak keys и weak values; проверяйте весь граф удержания, включая обратную ссылку из значения на ключ.
+5. Предпочитайте `try-with-resources`; Cleaner оставляйте резервной мерой. Не используйте `finalize()` в новом коде.
+6. Для WeakHashMap синхронизируйте также составные операции. Обёртка `synchronizedMap` не объединяет произвольные `get`/`put` в одну атомарную операцию.
+7. Для диагностики используйте heap dump, retained paths и GC-логи reference processing; сравнивайте одинаковые нагрузки.
 
 ## Вопросы на собеседовании
 
-### 1. В чём разница между Soft и Weak references?
+1. **В чём разница между Soft и Weak references?**
+   *Ответ:* JVM может очищать soft references по потребности в памяти; weak references очищаются при обнаружении weak reachability. Ни один механизм не даёт TTL.
+2. **Почему PhantomReference.get() всегда возвращает null?**
+   *Ответ:* Это механизм уведомления и cleanup, не способ вернуть referent в использование. Даже до потери сильных ссылок `get()` уже возвращает `null`.
+3. **Как работает WeakHashMap?**
+   *Ответ:* Ключи слабые, значения сильные; внутренний механизм очереди удаляет записи с очищенными ключами. Значение не должно удерживать ключ.
+4. **Когда использовать каждый тип reference?**
+   *Ответ:* Strong — владение рабочими данными; weak — ассоциации/канонизация; soft — восстанавливаемые данные с оговорками; phantom/Cleaner — резервная очистка внешнего ресурса.
+5. **Что такое ReferenceQueue и зачем она нужна?**
+   *Ответ:* Доставляет reference-объекты для очистки метаданных или внешнего состояния. Время уведомления не фиксировано, а оболочку нужно удерживать до обработки.
+6. **Почему finalize() считается плохой практикой?**
+   *Ответ:* Нет своевременности, есть проблемы с воскрешением и обработкой ошибок. Для явного освобождения используйте AutoCloseable; резервную очистку можно построить через Cleaner.
+7. **Как настроить поведение SoftReference?**
+   *Ответ:* В HotSpot есть `SoftRefLRUPolicyMSPerMB`, однако это эвристика конкретной JVM, не контракт TTL. Для TTL нужен прикладной кэш.
+8. **Может ли WeakReference предотвратить OutOfMemoryError?**
+   *Ответ:* Нет: достижимые объекты, ключи/оболочки, другие утечки и быстрые аллокации могут исчерпать память независимо от слабых значений.
+9. **В чём разница между WeakHashMap и ConcurrentHashMap с WeakReference values?**
+   *Ответ:* В первой слабые ключи и сильные значения; во второй — сильные ключи и слабые значения. Они управляют разным временем жизни и не взаимозаменяемы.
+10. **Какой тип reference использует String.intern()?**
+    *Ответ:* Java API задаёт канонизацию строк, а не вечное хранение interned-строки. В OpenJDK HotSpot 21 динамическая StringTable использует weak handles; литералы и другие сильные пути могут продолжать удерживать строку. Нельзя утверждать, что любая interned-строка живёт до конца приложения. См. [StringTable OpenJDK 21](https://github.com/openjdk/jdk21u/blob/master/src/hotspot/share/classfile/stringTable.cpp) и [String.intern](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/String.html#intern()).
 
-**Ответ:** 
-- **WeakReference**: Объект будет собран при следующем GC, независимо от количества доступной памяти
-- **SoftReference**: Объект будет собран только когда JVM нужна память (перед OutOfMemoryError)
-- **Использование**: WeakReference для metadata/listeners, SoftReference для кэшей
-
-### 2. Почему PhantomReference.get() всегда возвращает null?
-
-**Ответ:** 
-PhantomReference предназначен для post-mortem cleanup, когда объект уже finalized и недоступен. Если бы `get()` 
-возвращал объект, это позволило бы "воскресить" объект после finalization, что нарушает гарантии GC. PhantomReference 
-используется только для уведомления о том, что объект был собран, чтобы можно было выполнить cleanup.
-
-### 3. Как работает WeakHashMap?
-
-**Ответ:**
-WeakHashMap использует WeakReference для ключей. Когда ключ больше не имеет strong references, он становится eligible 
-for GC. После сборки ключа, WeakHashMap автоматически удаляет соответствующую entry. Это реализовано через ReferenceQueue: 
-при каждой операции (get/put) WeakHashMap проверяет queue и удаляет entries с собранными ключами.
-
-### 4. Когда использовать каждый тип reference?
-
-**Ответ:**
-- **Strong**: Обычные объекты, которые должны жить пока используются
-- **Weak**: Canonicalizing maps, listeners, metadata associations (не препятствуют GC)
-- **Soft**: Memory-sensitive кэши (изображения, parsed data)
-- **Phantom**: Post-mortem cleanup, native resource management, замена finalize()
-
-### 5. Что такое ReferenceQueue и зачем она нужна?
-
-**Ответ:**
-ReferenceQueue — это очередь для уведомлений о сборке объектов. Когда объект с Weak/Soft/Phantom reference собирается GC, 
-reference помещается в queue. Это позволяет приложению:
-- Узнать о сборке объекта
-- Выполнить cleanup действия
-- Удалить мёртвые entries из кэшей/maps
-- Освободить связанные ресурсы
-
-### 6. Почему finalize() считается плохой практикой?
-
-**Ответ:**
-Проблемы с finalize():
-- Непредсказуемое время вызова
-- Может не вызваться вообще
-- Замедляет GC (объекты с finalize() требуют двух GC циклов)
-- Возможность воскрешения объектов
-- Нет гарантий порядка выполнения
-
-**Альтернативы:** PhantomReference, try-with-resources, Cleaner API (Java 9+)
-
-### 7. Как настроить поведение SoftReference?
-
-**Ответ:**
-```bash
--XX:SoftRefLRUPolicyMSPerMB=1000  # Миллисекунды жизни на MB свободной памяти
-
-# Пример расчёта:
-# При 100 MB свободной памяти:
-# Lifetime = 100 * 1000 = 100,000 ms = 100 секунд
-
-# Более агрессивная очистка (меньше lifetime):
--XX:SoftRefLRUPolicyMSPerMB=100
-
-# Менее агрессивная (больше lifetime):
--XX:SoftRefLRUPolicyMSPerMB=5000
-```
-
-### 8. Может ли WeakReference предотвратить OutOfMemoryError?
-
-**Ответ:**
-Нет напрямую. WeakReference собирается при каждом GC, но:
-- Если объекты создаются быстрее, чем GC успевает работать
-- Если есть strong references на объекты
-- Если memory leak в другом месте
-
-Тогда OOM всё равно возможен. WeakReference только помогает GC освободить память от неиспользуемых объектов.
-
-### 9. В чём разница между WeakHashMap и ConcurrentHashMap с WeakReference values?
-
-**Ответ:**
-- **WeakHashMap**: 
-  - Weak references для ключей
-  - Не thread-safe
-  - Автоматическое удаление entries при сборке ключей
-  
-- **ConcurrentHashMap с WeakReference values**:
-  - Strong references для ключей, weak для values
-  - Thread-safe
-  - Требует ручную очистку мёртвых entries
-
-Выбор зависит от того, что должно контролировать lifetime: ключи или значения.
-
-### 10. Какой тип reference использует String.intern()?
-
-**Ответ:**
-До Java 7: Strong references в PermGen (могло привести к OutOfMemoryError: PermGen space)
-С Java 7+: Strong references в Heap, но можно создать аналог с WeakReference:
-
-```java
-// Аналог String.intern() с WeakReference
-Map<String, WeakReference<String>> pool = new WeakHashMap<>();
-```
-
-Стандартный String pool использует strong references, поэтому interned строки живут до конца приложения.
+Самостоятельные проверки канонизации, очистки устаревшей cache entry и повторного `close()`:
+[README примеров](../../examples/java-core/README.html).

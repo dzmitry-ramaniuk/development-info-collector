@@ -27,10 +27,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java SE 17–25; preview-возможности рассматриваются только там, где явно помечены
-- **Статус примеров:** `current`
-- **Первичные источники:** [OpenJDK documentation](https://openjdk.org/); [Oracle Java SE Specifications](https://docs.oracle.com/javase/specs/)
+- **Дата проверки:** 2026-10-15 — точечная сверка конструктора PriorityQueue из коллекции и подписи к примеру сортировки; все старые алгоритмы не пересобирались.
+- **Целевая версия или диапазон:** Java SE 17–21 для библиотечных примеров.
+- **Статус примеров:** `current`; пример преобразования int[] в очередь проверен в CoreExamples; нагрузочные сравнения не проводились.
+- **Первичные источники:** [PriorityQueue](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/PriorityQueue.html).
 
 ## Основы анализа сложности
 
@@ -95,7 +95,7 @@ stack.pop(); // O(1)
 - Является признаком эффективных алгоритмов "разделяй и властвуй"
 
 **Таблица роста**:
-```
+```text
 n          | log₂(n) | Прирост
 -----------|---------|--------
 10         | ~3.3    | -
@@ -116,10 +116,10 @@ n          | log₂(n) | Прирост
 public static int binarySearch(int[] array, int target) {
     int left = 0;
     int right = array.length - 1;
-    
+
     while (left <= right) {
         int mid = left + (right - left) / 2; // избегаем переполнения
-        
+
         if (array[mid] == target) {
             return mid; // найден
         } else if (array[mid] < target) {
@@ -128,7 +128,7 @@ public static int binarySearch(int[] array, int target) {
             right = mid - 1; // ищем в левой половине
         }
     }
-    
+
     return -1; // не найден
 }
 ```
@@ -166,9 +166,9 @@ pq.peek();         // O(1) — доступ к корню
 // Быстрое возведение в степень
 public static long power(long base, int exp) {
     if (exp == 0) return 1;
-    
+
     long half = power(base, exp / 2);
-    
+
     if (exp % 2 == 0) {
         return half * half; // чётная степень
     } else {
@@ -245,15 +245,15 @@ int sum = Arrays.stream(array).sum(); // O(n)
 
 **Примеры**:
 ```java
-// Сортировка слиянием (Merge Sort)
-Arrays.sort(array); // O(n log n) для примитивов (Dual-Pivot Quicksort)
+// Сортировка примитивного int[]: используемый алгоритм не следует называть Merge Sort.
+Arrays.sort(array); // Dual-Pivot Quicksort в реализации для int[]
 
 // Сортировка объектов (TimSort — гибрид Merge Sort и Insertion Sort)
 Collections.sort(list); // O(n log n)
 
 // Heap Sort
-PriorityQueue<Integer> pq = new PriorityQueue<>(array);
-// Построение кучи: O(n)
+PriorityQueue<Integer> pq = new PriorityQueue<>(Arrays.stream(array).boxed().toList());
+// Преобразование int[] в Collection<Integer> и построение кучи: O(n) времени/памяти
 // Извлечение всех элементов: n × O(log n) = O(n log n)
 ```
 
@@ -340,7 +340,7 @@ public static void printSubsets(int[] array, int index, List<Integer> current) {
 public static int fibonacciMemo(int n, Map<Integer, Integer> memo) {
     if (n <= 1) return n;
     if (memo.containsKey(n)) return memo.get(n);
-    
+
     int result = fibonacciMemo(n - 1, memo) + fibonacciMemo(n - 2, memo);
     memo.put(n, result);
     return result;
@@ -371,7 +371,7 @@ public static int[] copyArray(int[] array) {
 public static int binarySearchRecursive(int[] array, int target, int left, int right) {
     if (left > right) return -1;
     int mid = (left + right) / 2;
-    
+
     if (array[mid] == target) return mid;
     if (array[mid] < target) return binarySearchRecursive(array, target, mid + 1, right);
     return binarySearchRecursive(array, target, left, mid - 1);
@@ -459,7 +459,7 @@ public static List<Integer> intersect2(int[] nums1, int[] nums2) {
     for (int num : nums1) {
         set.add(num); // O(n)
     }
-    
+
     List<Integer> result = new ArrayList<>();
     for (int num : nums2) {
         if (set.contains(num)) { // O(1)
@@ -473,10 +473,10 @@ public static List<Integer> intersect2(int[] nums1, int[] nums2) {
 public static List<Integer> intersect3(int[] nums1, int[] nums2) {
     Arrays.sort(nums1); // O(n log n)
     Arrays.sort(nums2); // O(m log m)
-    
+
     List<Integer> result = new ArrayList<>();
     int i = 0, j = 0;
-    
+
     while (i < nums1.length && j < nums2.length) { // O(n + m)
         if (nums1[i] == nums2[j]) {
             result.add(nums1[i]);
@@ -488,7 +488,7 @@ public static List<Integer> intersect3(int[] nums1, int[] nums2) {
             j++;
         }
     }
-    
+
     return result;
 }
 ```
@@ -519,7 +519,7 @@ public static List<Integer> intersect3(int[] nums1, int[] nums2) {
    ```java
    /**
     * Находит элемент в отсортированном массиве.
-    * 
+    *
     * @param array отсортированный массив
     * @param target искомый элемент
     * @return индекс элемента или -1
@@ -539,54 +539,54 @@ public static List<Integer> intersect3(int[] nums1, int[] nums2) {
 ## Вопросы на собеседовании
 
 1. **Что такое O-нотация и почему мы используем именно её?**
-   
+
    O-нотация описывает верхнюю границу роста функции, отбрасывая константы и младшие термы. Используется для описания наихудшего случая — самого важного для гарантий производительности в production.
 
 2. **Почему бинарный поиск работает за O(log n)?**
-   
+
    На каждом шаге размер области поиска уменьшается вдвое. Для n элементов требуется максимум log₂(n) операций. Пример: в массиве из 1024 элементов максимум 10 итераций (2¹⁰ = 1024).
 
 3. **Какая сложность у операции добавления в ArrayList?**
-   
+
    O(1) амортизированная для добавления в конец. При переполнении массив копируется в новый размером примерно в 1.5 раза больше, что даёт O(n) в худшем случае, но это происходит редко.
 
 4. **Как найти пересечение двух больших массивов максимально эффективно?**
-   
+
    Зависит от контекста:
    - Если массивы неотсортированы и можно использовать дополнительную память: HashSet — O(n + m)
    - Если массивы уже отсортированы: два указателя — O(n + m)
    - Если нужна экономия памяти: сортировка + два указателя — O(n log n + m log m)
 
 5. **В чём разница между O(n) и O(2n)?**
-   
+
    С точки зрения асимптотической сложности разницы нет — обе записываются как O(n). Константные множители отбрасываются, так как при больших n они несущественны.
 
 6. **Почему HashMap.get() работает за O(1), а не за O(n)?**
-   
+
    Хеш-функция распределяет ключи по бакетам. Идеально — один элемент на бакет, поэтому O(1). В худшем случае (все элементы в одном бакете) — O(n), но это редкость при хорошей хеш-функции. Java 8+ превращает длинные цепочки в деревья, обеспечивая O(log n).
 
 7. **Как оценить сложность рекурсивного алгоритма?**
-   
+
    Составьте рекуррентное соотношение:
    - T(n) = T(n/2) + O(1) → O(log n) — бинарный поиск
    - T(n) = 2T(n/2) + O(n) → O(n log n) — merge sort
    - T(n) = T(n-1) + T(n-2) + O(1) → O(2ⁿ) — наивный Фибоначчи
-   
+
    Используйте Master Theorem или дерево рекурсии для анализа.
 
 8. **Какие операции в Java-коллекциях имеют O(log n)?**
-   
+
    - TreeSet: add, remove, contains
    - TreeMap: put, get, remove
    - PriorityQueue: offer, poll
    - Навигационные методы NavigableSet/NavigableMap: higher, lower, floor, ceiling
 
 9. **Что такое амортизированная сложность? Приведите пример.**
-   
+
    Средняя стоимость операции в последовательности операций. Пример: ArrayList.add() — большинство вставок O(1), редкие расширения массива O(n), в среднем O(1).
 
 10. **Как оптимизировать алгоритм с O(n²) до O(n log n)?**
-    
+
     Зависит от задачи:
     - Поиск дубликатов: HashSet вместо вложенных циклов
     - Сортировка: QuickSort/MergeSort вместо BubbleSort
