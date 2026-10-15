@@ -17,10 +17,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Pact specification 4.x; OpenAPI Specification 3.0–3.1; AsyncAPI 3.0
+- **Дата проверки:** 2026-10-15 (сверка reader/writer compatibility; остальной текст — редакция 2026-08-04)
+- **Целевая версия или диапазон:** Pact specification 4.x; OpenAPI Specification 3.0–3.1; AsyncAPI 3.0; исполняемый пример Avro 1.12.0
 - **Статус примеров:** `current`
-- **Первичные источники:** [Pact documentation](https://docs.pact.io/); [OpenAPI Specification](https://spec.openapis.org/oas/); [AsyncAPI Specification](https://www.asyncapi.com/docs/reference/specification/latest)
+- **Первичные источники:** [Pact documentation](https://docs.pact.io/); [OpenAPI Specification](https://spec.openapis.org/oas/); [AsyncAPI Specification](https://www.asyncapi.com/docs/reference/specification/latest); [Avro 1.12.0 schema resolution](https://avro.apache.org/docs/1.12.0/specification/#schema-resolution); [Schema Registry compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html)
 
 ## Зачем нужен контракт
 
@@ -51,7 +51,20 @@ sequenceDiagram
 
 ## Совместимость схем
 
-**Backward compatibility** означает, что новый producer/provider не ломает старых consumers; **forward compatibility** — что старый consumer способен принять данные новой схемы.
+Направление совместимости всегда задавайте через стороны и версии. Для **Schema Registry**: **BACKWARD** — новый reader читает данные старого writer; **FORWARD** — старый reader читает данные нового writer; **FULL** — оба направления. Это определения совместимости схем данных. Для HTTP API явно проверяйте пары версий client/server и ожидаемое поведение: фраза «обратно совместимый endpoint» без этой пары неоднозначна.
+
+Для Avro record с неизменным fullname и обычным reader/writer resolution:
+
+| Изменение новой схемы | BACKWARD: новый reader / старый writer | FORWARD: старый reader / новый writer |
+|---|---|---|
+| Добавить поле с reader default | Да: default заполняет отсутствующее в старых данных | Да: старый reader игнорирует новое поле |
+| Добавить поле без default | Нет: у нового reader нет значения для старых данных | Да: старый reader игнорирует новое поле |
+| Удалить поле, у которого в старой схеме не было default | Да: новый reader его не запрашивает | Нет: старый reader ожидает отсутствующее поле |
+| Изменить `int` на `long` | Да: разрешено расширение при чтении | Нет: обратное сужение не разрешено |
+
+Default нужен reader при чтении отсутствующего поля и не делает поле необязательным при записи Avro. Правила для JSON Schema и Protobuf проверяйте отдельно, с учётом validators, field numbers и настроек clients. Детали и порядок rollout — в [Schema Registry](../очереди/кафка/08-schema-registry.html).
+
+Запускаемый [AvroCompatibilityTest](../examples/testing/src/test/java/AvroCompatibilityTest.java) проверяет обе стороны таблицы и читает реальный binary payload новой reader-схемой: `mvn -f examples/testing/pom.xml test`. Ниже — общий список рисков API, а не универсальная матрица Avro:
 
 | Изменение | Обычный риск | Безопасная тактика |
 |---|---|---|

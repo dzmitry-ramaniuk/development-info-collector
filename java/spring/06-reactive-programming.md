@@ -38,10 +38,12 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
-- **Статус примеров:** `current`
+- **Дата проверки:** 2026-10-15 — точечно сверены `publishOn`/`subscribeOn` и создание источника для virtual time; остальные примеры не проходили повторную проверку.
+- **Целевая версия или диапазон:** Java 17–25, Reactor 3.7.x, Spring Framework 6.2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current` для исправленных фрагментов в указанной области проверки; остальные примеры не пересобирались.
 - **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
+- **Источники точечной проверки:** [Threading and Schedulers, Reactor 3.7.0](https://projectreactor.io/docs/core/3.7.0/reference/coreFeatures/schedulers.html); [Testing, исходный текст документации 3.7.0](https://github.com/reactor/reactor-core/blob/v3.7.0/docs/modules/ROOT/pages/testing.adoc).
+- **Воспроизводимая проверка:** [Maven-проект с тестами scheduler и virtual time](../../examples/spring-behavior/pom.xml); запуск из корня: `mvn -f examples/spring-behavior/pom.xml verify`.
 
 ## Введение в реактивное программирование
 
@@ -327,7 +329,7 @@ Flux<String> flux = Flux.just("A", "B", "C")
         return s + "!";
     });
 
-// subscribeOn - переключить выполнение всей цепочки
+// subscribeOn - задать scheduler подписки и выполнения синхронного источника
 Flux<String> flux2 = Flux.just("A", "B", "C")
     .subscribeOn(Schedulers.boundedElastic())
     .map(String::toLowerCase);
@@ -338,14 +340,14 @@ Mono<String> result = Mono.fromCallable(() -> {
         return fetchDataFromDatabase();
     })
     .subscribeOn(Schedulers.boundedElastic())
+    .publishOn(Schedulers.parallel())
     .map(data -> {
         // Выполнится в parallel
         return processData(data);
-    })
-    .publishOn(Schedulers.parallel());
+    });
 ```
 
-> **Важно**: `subscribeOn` влияет на весь поток с момента подписки, `publishOn` влияет только на операторы после него.
+> **Важно**: `subscribeOn` планирует подписку; он не отменяет явные scheduler других операторов. `publishOn` переключает обработку сигналов для последующих операторов. Если поставить его после `map`, этот `map` останется в предыдущем контексте. Само переключение scheduler не делает блокирующий вызов неблокирующим.
 
 ## RxJava
 
@@ -1128,16 +1130,19 @@ public void testError() {
 
 @Test
 public void testWithVirtualTime() {
-    Flux<Long> flux = Flux.interval(Duration.ofHours(1))
-        .take(3);
-    
-    StepVerifier.withVirtualTime(() -> flux)
+    StepVerifier.withVirtualTime(() ->
+            Flux.interval(Duration.ofHours(1)).take(3))
         .expectSubscription()
         .thenAwait(Duration.ofHours(3))
         .expectNext(0L, 1L, 2L)
-        .verifyComplete();
+        .expectComplete()
+        .verify(Duration.ofSeconds(2));
 }
 ```
+
+Источник с временными операторами создаётся **внутри supplier**, после установки virtual scheduler. Если вернуть заранее созданный `Flux.interval`, он может использовать реальный scheduler; перевод виртуальных часов тогда его не ускорит. Финальный timeout ограничивает реальное время зависшего теста.
+
+Практическая самопроверка: выведите `Thread.currentThread().getName()` до и после `publishOn`, затем перенесите его ниже `map`. Объясните, почему меняется поток именно этого `map`. Отдельно проверьте, что сценарий трёх часов завершается без реального ожидания.
 
 **Тестирование WebClient:**
 ```java

@@ -73,10 +73,12 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
-- **Статус примеров:** `current`
+- **Дата проверки:** 2026-10-15 — точечно сверены транзакционные границы, persistent QueueChannel и атомарная дедупликация; остальные примеры не проходили повторную проверку.
+- **Целевая версия или диапазон:** Java 17–25, Spring Integration 6.5.x, Spring Framework 6.2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current` для исправленных фрагментов в указанной области проверки; остальные примеры не пересобирались.
 - **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
+- **Источники точечной проверки:** [Transactions 6.5](https://docs.spring.io/spring-integration/reference/6.5/transactions.html); [Persistent QueueChannel 6.5](https://docs.spring.io/spring-integration/reference/6.5/channel/configuration.html); [JDBC Metadata Store 6.5](https://docs.spring.io/spring-integration/reference/6.5/jdbc/metadata-store.html); [Idempotent Receiver 6.5](https://docs.spring.io/spring-integration/reference/6.5/handler-advice/idempotent-receiver.html).
+- **Воспроизводимая проверка:** [Maven-проект с тестами конкурентной дедупликации и rollback очередей](../../examples/spring-behavior/pom.xml); запуск из корня: `mvn -f examples/spring-behavior/pom.xml verify`.
 
 ## Введение
 
@@ -878,7 +880,7 @@ XML-конфигурация поддерживается для обратно�
 
 ## Poller и планирование
 
-Для `QueueChannel`, `PriorityChannel` и всех inbound-адаптеров требуется **Poller** — компонент, опрашивающий источник данных.
+Для polling consumers на `QueueChannel`/`PriorityChannel` и опрашиваемых inbound adapters нужен **Poller**. Message-driven adapters (например, JMS listener) получают события без polling и не требуют poller.
 
 **Настройка поллера:**
 
@@ -1027,45 +1029,26 @@ public Advice circuitBreakerAdvice() {
 
 ## Транзакции
 
-Spring Integration поддерживает транзакционную обработку сообщений.
+Spring Integration поддерживает транзакционные границы для ресурсов, участвующих в выбранной транзакции. Синхронный поток через `DirectChannel` может продолжать транзакцию вызывающего. Смена потока (`ExecutorChannel`, асинхронный subscriber) разрывает thread-bound контекст: продолжение требует собственной границы.
+
+Пример для существующего `queueChannel`: poller открывает транзакцию, сервис вызывается синхронно и выполняет операции через тот же transaction manager.
 
 ```java
 @Bean
-public IntegrationFlow transactionalFlow(PlatformTransactionManager txManager) {
-    return IntegrationFlows
+public IntegrationFlow transactionalFlow(PlatformTransactionManager transactionManager,
+        OrderConsumer orderConsumer) {
+    return IntegrationFlow
         .from("queueChannel", 
             e -> e.poller(Pollers.fixedDelay(1000)
-                .transactional(txManager)))
-        .handle(Jpa.updatingGateway(entityManagerFactory())
-            .entityClass(Order.class)
-            .persistMode(PersistMode.PERSIST))
+                .transactional(transactionManager)))
+        .handle(orderConsumer, "process")
         .get();
 }
 ```
 
-**Транзакционная синхронизация:**
+**Что гарантирует rollback:** обычный `new QueueChannel(100)` хранит данные в памяти и не становится транзакционным от наличия `.transactional(...)`. Полученное сообщение автоматически в такую очередь не возвращается. Для отката получения нужен transactional persistent store (например, `JdbcChannelMessageStore`) и poller с transaction manager того же ресурса либо соответствующий транзакционный broker/adapter. Схему store необходимо создать заранее из DDL модуля `spring-integration-jdbc`.
 
-```java
-@Bean
-public IntegrationFlow txSyncFlow() {
-    return IntegrationFlows.from("inputChannel")
-        .handle("orderService", "processOrder",
-            e -> e.transactional(true))
-        .handle("notificationService", "sendConfirmation",
-            e -> e.transactional(new TransactionSynchronizationFactory() {
-                @Override
-                public TransactionSynchronization create(Object key) {
-                    return new TransactionSynchronizationAdapter() {
-                        @Override
-                        public void afterCommit() {
-                            // выполняется после успешного коммита
-                        }
-                    };
-                }
-            }))
-        .get();
-}
-```
+Транзакция одной БД не откатывает уже отправленный HTTP-запрос или email и не создаёт атомарности между отдельными БД и брокером. Для надёжной публикации после изменения БД применяйте transactional outbox и идемпотентного получателя. `afterCommit` подходит для действий после commit, но при падении процесса между commit и callback действие может не выполниться: это не замена устойчивой очереди/outbox.
 
 ## Мониторинг и метрики
 
@@ -1363,24 +1346,55 @@ public MessageStore messageStore() {
 
 ### Idempotent Receiver
 
-Предотвращение дублирующей обработки сообщений.
+Повторная доставка требует устойчивого бизнес-ключа: producer создаёт `eventId` один раз и сохраняет его при retry. `MessageHeaders.ID` может измениться при пересоздании сообщения. Проверка `contains` и последующий `add` в отдельном шаге не атомарны; два consumer могут одновременно выполнить бизнес-действие.
+
+Ниже `JdbcMetadataStore.putIfAbsent` атомарно резервирует ключ. Запись маркера и изменение заказа выполняются в **одной JDBC-транзакции на одном DataSource**. Требуются `spring-integration-jdbc`, заранее созданная таблица `INT_METADATA_STORE`, таблица `orders` и настроенный `JdbcTransactionManager` для этого DataSource:
 
 ```java
+// JdbcMetadataStore: org.springframework.integration.jdbc.metadata.JdbcMetadataStore
 @Bean
-public IntegrationFlow idempotentFlow() {
-    return IntegrationFlows.from("inputChannel")
-        .filter(Message.class, message -> {
-            String messageId = (String) message.getHeaders().get("messageId");
-            return !processedMessages.contains(messageId);
-        })
-        .handle("service", "process")
-        .handle(message -> {
-            String messageId = (String) message.getHeaders().get("messageId");
-            processedMessages.add(messageId);
-        })
+public JdbcMetadataStore metadataStore(DataSource dataSource) {
+    return new JdbcMetadataStore(dataSource);
+}
+
+@Bean
+public IntegrationFlow idempotentFlow(OrderConsumer orderConsumer) {
+    return IntegrationFlow.from("inputChannel")
+        .handle(orderConsumer, "process")
         .get();
 }
+
+record OrderEvent(java.util.UUID eventId, long orderId, String status) { }
+
+@Service
+public class OrderConsumer {
+    private final JdbcMetadataStore metadataStore;
+    private final JdbcTemplate jdbcTemplate;
+
+    public OrderConsumer(JdbcMetadataStore metadataStore, JdbcTemplate jdbcTemplate) {
+        this.metadataStore = metadataStore;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Transactional
+    public void process(OrderEvent event) {
+        String key = "orders-consumer:" + event.eventId();
+        if (metadataStore.putIfAbsent(key, "processed") != null) {
+            return; // уже обработано другой доставкой
+        }
+        int updated = jdbcTemplate.update("UPDATE orders SET status = ? WHERE id = ?",
+            event.status(), event.orderId());
+        if (updated != 1) {
+            throw new IllegalStateException("Order not found: " + event.orderId());
+        }
+        // При исключении rollback отменяет и маркер, и изменение заказа.
+    }
+}
 ```
+
+Ключ включает consumer, чтобы независимые обработчики одного события не подавляли друг друга. Маркер очищают только после согласованного срока возможной повторной доставки; раннее удаление снова разрешит обработку. Для внешнего побочного эффекта нужен отдельный протокол идемпотентности/outbox. Атомарность маркера отдельно от бизнес-операции не обеспечивает exactly-once effect.
+
+**Критерий проверки:** две конкурентные доставки одного `eventId` дают один бизнес-эффект; сбой после резервирования ключа откатывает маркер и позволяет retry; после перезапуска успешная доставка остаётся дубликатом. Отдельно сравните rollback получения для in-memory очереди и persistent store. Штатный `IdempotentReceiverInterceptor` с `MetadataStoreSelector` также требует анализа устойчивости store и его участия в транзакции.
 
 ### Message Expiration
 
@@ -1611,7 +1625,7 @@ public IntegrationFlow fileProcessingFlow() {
 
 5. **Что такое Poller и когда он нужен?**
    
-   *Ответ:* Poller — компонент для опроса источников данных (QueueChannel, PriorityChannel, inbound adapters). Периодически проверяет наличие сообщений и отправляет в поток обработки. Настраивается через `fixedDelay`, `fixedRate` или `cron`. Можно настроить `maxMessagesPerPoll`, транзакционность, error handling, advice (retry). Без Poller асинхронные каналы и адаптеры не будут работать.
+   *Ответ:* Poller опрашивает `PollableChannel` или polling message source. Он нужен polling consumer на QueueChannel/PriorityChannel и опрашиваемым adapters; message-driven JMS/HTTP adapters и ExecutorChannel работают иначе. Настройки включают период, `maxMessagesPerPoll`, транзакцию и обработку ошибок.
 
 6. **Как обрабатывать ошибки в интеграционных потоках?**
    
@@ -1623,7 +1637,7 @@ public IntegrationFlow fileProcessingFlow() {
 
 8. **Как настроить транзакционную обработку сообщений?**
    
-   *Ответ:* Для транзакций нужен `PlatformTransactionManager`. В Poller указывается `.transactional(txManager)`. Для Service Activator и других endpoint'ов: `.handle(..., e -> e.transactional(true))`. Транзакция включает получение сообщения из канала, обработку и отправку в выходной канал. При ошибке происходит rollback, сообщение возвращается в канал (для QueueChannel). Можно использовать `TransactionSynchronization` для post-commit/rollback действий.
+   *Ответ:* Poller может начать транзакцию через `.transactional(txManager)`; синхронные вызовы участвующих ресурсов продолжают её. Rollback получения возможен у transactional store/adapter, но не гарантируется обычным QueueChannel в памяти. Новый поток не наследует JDBC-транзакцию; HTTP/email не откатываются вместе с БД. Для публикации после commit нужен устойчивый outbox, если потеря недопустима.
 
 9. **Что такое Wire Tap и Message History?**
    
@@ -1639,7 +1653,7 @@ public IntegrationFlow fileProcessingFlow() {
 
 12. **Как реализовать idempotent receiver паттерн?**
     
-    *Ответ:* Idempotent receiver предотвращает дублирующую обработку одного сообщения. Реализация: хранить ID обработанных сообщений в Set, Redis, БД; в filter проверять наличие ID; если сообщение уже обработано — отбрасывать. Spring Integration предоставляет `IdempotentReceiverInterceptor` с `MetadataStore` для хранения состояния. Можно использовать `@IdempotentReceiver` или настроить через selector в filter.
+   *Ответ:* Нужны стабильный бизнес-ключ, атомарная регистрация и устойчивая связь маркера с бизнес-эффектом. Отдельные `contains`/`add` допускают гонку. В одной БД можно использовать `JdbcMetadataStore.putIfAbsent` и изменение данных в общей транзакции; для внешних эффектов нужен иной протокол. `IdempotentReceiverInterceptor` упрощает interception, но гарантии зависят от store и транзакционных границ.
 
 ## Дополнительные материалы
 

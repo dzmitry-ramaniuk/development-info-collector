@@ -66,10 +66,12 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, Spring Framework 6.2.x, Spring Boot 3.5.x
-- **Статус примеров:** `current`
+- **Дата проверки:** 2026-10-15 — точечно сверены иерархия репозиториев, JPA `@Modifying` и транзакционные defaults; остальные примеры не проходили повторную проверку.
+- **Целевая версия или диапазон:** Java 17–25, Spring Data JPA 3.5.x, Spring Framework 6.2.x, Spring Boot 3.5.x
+- **Статус примеров:** `current` для исправленных фрагментов в указанной области проверки; остальные примеры не пересобирались.
 - **Первичные источники:** [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/); [Spring Boot Reference](https://docs.spring.io/spring-boot/index.html)
+- **Источники точечной проверки:** [Repository interfaces 3.5](https://docs.spring.io/spring-data/jpa/reference/3.5/repositories/definition.html); [Transactionality 3.5](https://docs.spring.io/spring-data/jpa/reference/3.5/jpa/transactions.html); [ModifyingExecution, исходный код 3.5.0](https://github.com/spring-projects/spring-data-jpa/blob/3.5.0/spring-data-jpa/src/main/java/org/springframework/data/jpa/repository/query/JpaQueryExecution.java).
+- **Воспроизводимая проверка:** [Maven-проект с тестами CRUD, paging, modifying query и rollback](../../examples/spring-behavior/pom.xml); запуск из корня: `mvn -f examples/spring-behavior/pom.xml verify`.
 
 ## Введение
 
@@ -95,13 +97,15 @@ Spring Data — это umbrella-проект, упрощающий доступ 
 
 Spring Data предоставляет иерархию интерфейсов-репозиториев, абстрагирующих работу с данными:
 
-```
+```text
 Repository (marker interface)
-    ├── CrudRepository (базовые CRUD операции)
-    │       ├── PagingAndSortingRepository (пагинация и сортировка)
-    │       │       └── JpaRepository (JPA-специфичные методы)
-    │       └── ReactiveCrudRepository (реактивные CRUD)
+    ├── CrudRepository / ListCrudRepository (CRUD)
+    ├── PagingAndSortingRepository / ListPagingAndSortingRepository (сортировка)
+    ├── ReactiveCrudRepository (реактивные CRUD)
     └── RxJava3CrudRepository (RxJava интерфейс)
+
+JpaRepository объединяет ListCrudRepository, ListPagingAndSortingRepository
+и QueryByExampleExecutor; reactive-интерфейсы не наследуют блокирующий CRUD.
 ```
 
 ### Автоматическая реализация репозиториев
@@ -174,11 +178,13 @@ public class UserService {
 
 ### PagingAndSortingRepository — пагинация и сортировка
 
-`PagingAndSortingRepository<T, ID>` расширяет `CrudRepository`, добавляя методы для постраничного вывода и сортировки:
+`PagingAndSortingRepository<T, ID>` предоставляет сортировку и пагинацию. Начиная со Spring Data 3.0 он **не наследует `CrudRepository`**. Если нужны оба набора операций, расширяйте оба интерфейса; для JPA обычно достаточно `JpaRepository`:
 
 ```java
-public interface UserRepository extends PagingAndSortingRepository<User, Long> {
-    // Дополнительные методы:
+public interface UserRepository extends CrudRepository<User, Long>,
+        PagingAndSortingRepository<User, Long> {
+    // CRUD: save, findById, deleteById и т. д.
+    // Пагинация и сортировка:
     // findAll(Sort sort)
     // findAll(Pageable pageable)
 }
@@ -437,7 +443,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 ```
 
 **Важно:** 
-- Методы с `@Modifying` должны возвращать `void`, `int` (количество изменённых строк) или `boolean`
+- Для JPA-запроса с `@Modifying` допустимы `void`, `int` или `Integer` (количество изменённых строк); `boolean` недопустим. Это ограничение не следует переносить на все методы других модулей Spring Data.
 - Требуется `@Transactional` на уровне сервиса или метода репозитория
 - После модификации данных может потребоваться очистка контекста: `@Modifying(clearAutomatically = true)`
 
@@ -815,17 +821,16 @@ Spring Data JPA тесно интегрирован с механизмом тр
 
 ### Транзакции на уровне репозитория
 
-По умолчанию методы репозиториев выполняются в транзакции только для чтения:
+Унаследованные CRUD-методы получают настройки `SimpleJpaRepository`: операции чтения используют `@Transactional(readOnly = true)`, записи — обычный `@Transactional`. Объявленные в интерфейсе query methods не получают транзакцию автоматически. Границу для них задавайте на сервисе или явно на методе репозитория. Внешняя сервисная транзакция определяет фактические настройки для вложенного вызова с `REQUIRED`.
+
+Пример явной политики для объявленных методов:
 
 ```java
-@Transactional(readOnly = true)
 public interface UserRepository extends JpaRepository<User, Long> {
-    
-    // Для модифицирующих операций readOnly переопределяется
-    @Transactional
-    @Override
-    <S extends User> S save(S entity);
-    
+    // Объявленный query method: политика чтения задаётся явно
+    @Transactional(readOnly = true)
+    List<User> findByActive(boolean active);
+
     // Кастомный метод модификации
     @Transactional
     @Modifying
@@ -833,6 +838,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     void updateActive(@Param("id") Long id, @Param("active") boolean active);
 }
 ```
+
+`readOnly = true` — настройка/подсказка транзакционной инфраструктуре и persistence provider, а не универсальная защита БД от записи. `@Modifying` выбирает выполнение update/delete вместо select, но сам по себе транзакцию не открывает.
 
 ### Транзакции на уровне сервиса
 
@@ -1562,6 +1569,10 @@ public class UserRepositoryTest {
 
 8. **Создайте кастомную реализацию метода репозитория** для выполнения сложного запроса с использованием Criteria API.
 
+9. **Проверьте контракты репозитория:** объедините `CrudRepository` и `PagingAndSortingRepository`; выполните сохранение и выборку страницы. Добавьте JPA `@Modifying` с результатом `int` и сервисный метод, который меняет данные, затем выбрасывает unchecked exception. Проверьте количество изменённых строк и rollback из нового persistence context. Объясните, какие транзакционные настройки получает унаследованный CRUD-метод и какие нужно явно задать query method.
+
+   **Критерий готовности:** CRUD и paging доступны одному репозиторию, update возвращает число строк, откат не оставляет изменения в БД, а `readOnly` не описывается как универсальный запрет записи.
+
 ## Вопросы на собеседовании
 
 1. **Как работает генерация запросов по имени метода репозитория?**
@@ -1598,7 +1609,7 @@ public class UserRepositoryTest {
 
 9. **Что такое @Modifying и когда её использовать?**
    
-   *Ответ:* `@Modifying` используется с `@Query` для UPDATE/DELETE запросов, изменяющих данные. Без неё Spring Data выполнит SELECT вместо модификации. Аннотация сигнализирует, что запрос модифицирует состояние БД. Требуется `@Transactional`. Параметр `clearAutomatically = true` очищает контекст персистентности после выполнения, предотвращая рассинхронизацию кеша. Возвращаемый тип: void, int (кол-во изменённых строк), boolean.
+   *Ответ:* JPA `@Modifying` вместе с `@Query` выбирает выполнение update/delete через `executeUpdate`; без неё запрос будет обрабатываться как запрос результата и может завершиться ошибкой. Транзакцию задают отдельно, обычно на сервисе. `clearAutomatically = true` очищает persistence context после выполнения; учитывайте несохранённые изменения и необходимость предварительного flush. Допустимый возвращаемый тип: `void`, `int` или `Integer`, но не `boolean`.
 
 10. **Как настроить и использовать аудит в Spring Data JPA?**
     

@@ -67,10 +67,11 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** Java 17–25, JUnit 5.12–6.0, Mockito 5.x, Testcontainers 1.21–2.x, Spring Boot 3.5.x
+- **Дата проверки:** 2026-10-15 (точечная проверка указанной ниже области; остальная редакция — 2026-08-04)
+- **Целевая версия или диапазон:** Java 17+; JUnit Jupiter 5.12.2; Maven Surefire 3.5.3
 - **Статус примеров:** `current`
-- **Первичные источники:** [JUnit User Guide](https://docs.junit.org/); [Mockito documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html); [Testcontainers for Java](https://java.testcontainers.org/); [Spring Boot Testing](https://docs.spring.io/spring-boot/reference/testing/)
+- **Первичные источники:** [JUnit 5.12.2 User Guide](https://docs.junit.org/5.12.2/user-guide/); [Surefire: JUnit Platform](https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit-platform.html)
+- **Область проверки:** зависимости и запуск JUnit; проект `examples/testing` проверен на JDK 21 с `--release 17`. Остальные учебные фрагменты не являются единым готовым проектом.
 
 JUnit — это один из наиболее популярных фреймворков для написания и выполнения модульных тестов в Java. Он обеспечивает структурированный подход к тестированию, предоставляя аннотации, утверждения и инструменты для организации тестового кода.
 
@@ -92,7 +93,7 @@ JUnit 5 состоит из трёх основных компонентов:
 <dependency>
     <groupId>org.junit.jupiter</groupId>
     <artifactId>junit-jupiter</artifactId>
-    <version>5.10.0</version>
+    <version>5.12.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -244,7 +245,7 @@ class UserServiceTest {
     <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
-        <version>5.10.0</version>
+        <version>5.12.2</version>
         <scope>test</scope>
     </dependency>
     
@@ -252,7 +253,7 @@ class UserServiceTest {
     <dependency>
         <groupId>org.junit.vintage</groupId>
         <artifactId>junit-vintage-engine</artifactId>
-        <version>5.10.0</version>
+        <version>5.12.2</version>
         <scope>test</scope>
     </dependency>
 </dependencies>
@@ -261,8 +262,8 @@ class UserServiceTest {
 #### Gradle
 ```groovy
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.12.2'
 }
 
 test {
@@ -535,7 +536,7 @@ void testWithMessage() {
 <dependency>
     <groupId>org.junit.jupiter</groupId>
     <artifactId>junit-jupiter-params</artifactId>
-    <version>5.10.0</version>
+    <version>5.12.2</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -928,6 +929,8 @@ com.example.DatabaseExtension
 
 ## Интеграция с инструментами сборки
 
+Полный [Maven-проект](../examples/testing/pom.xml) содержит совместимые зависимости, compiler и Surefire. Из корня выполните `mvn -f examples/testing/pom.xml test`: проверяются JUnit, Mockito и Avro reader/writer compatibility без Docker. Для параллельных тестов сначала обеспечьте независимость данных; внешние ресурсы могут потребовать `@ResourceLock` или последовательного выполнения.
+
 ### Maven
 
 #### Конфигурация Surefire Plugin
@@ -937,15 +940,21 @@ com.example.DatabaseExtension
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.22.2</version>
+            <version>3.5.3</version>
             <configuration>
                 <!-- Запуск тестов с определёнными тегами -->
                 <groups>fast</groups>
                 <excludedGroups>slow,integration</excludedGroups>
                 
-                <!-- Включение параллельного выполнения -->
-                <parallel>methods</parallel>
-                <threadCount>4</threadCount>
+                <!-- Потоками Jupiter управляет сам JUnit, а не старые parallel/threadCount -->
+                <properties>
+                    <configurationParameters>
+                        junit.jupiter.execution.parallel.enabled = true
+                        junit.jupiter.execution.parallel.mode.default = concurrent
+                        junit.jupiter.execution.parallel.config.strategy = fixed
+                        junit.jupiter.execution.parallel.config.fixed.parallelism = 4
+                    </configurationParameters>
+                </properties>
                 
                 <!-- Отчёты -->
                 <reportFormat>plain</reportFormat>
@@ -992,7 +1001,7 @@ test {
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
 }
 ```
 

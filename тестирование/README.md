@@ -89,6 +89,8 @@
 
 ## 🧭 Рекомендуемые маршруты по разделу
 
+Для практики используйте [Maven baseline](../examples/testing/pom.xml): `mvn -f examples/testing/pom.xml test` проверяет Mockito и Avro compatibility без Docker; `mvn -f examples/testing/pom.xml -Pcontainers verify` дополнительно запускает RedisIT. В [Spring Security-примере](../examples/spring-security/pom.xml) проверяется полный Bearer authentication pipeline.
+
 - **Для уверенного старта**: [JUnit](01-junit.html) → [Mockito](03-mockito.html) → [Spring Boot Test](04-spring-boot-test.html) → [Testcontainers](02-testcontainers.html)
 - **Для подготовки к собеседованию**: повторите [лучшие практики](05-best-practices.html), затем пройдите [интервью-гайд](06-interview-guide.html) и проговорите ответы вслух
 - **Для улучшения качества текущего проекта**: используйте раздел как чек-лист — изоляция тестов, реалистичные интеграционные сценарии, читаемость и скорость тестового набора
