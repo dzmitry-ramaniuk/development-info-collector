@@ -187,6 +187,9 @@ permalink: /
    - [Java Core: контрпримеры и проверки](examples/java-core/README.html)
    - [Многопоточность: CAS, shutdown и cancellation](examples/java-concurrency/README.html)
    - [Spring Security: настоящие Bearer JWT и отрицательные сценарии](examples/spring-security/README.html)
+   - [PostgreSQL: ограничения партиций и стабильная маршрутизация](базы%20данных/postgresql/examples/README.html)
+   - [Kafka Streams: окна, late events и Avro compatibility](очереди/кафка/examples/streams/README.html)
+   - [ActiveMQ Classic: rollback, redelivery и DLQ](очереди/activemq/examples/acknowledgement/README.html)
 
 Материалы организованы в десять основных разделов:
 
