@@ -19,10 +19,10 @@
 
 ## Актуальность материала
 
-- **Дата проверки:** 2026-08-04
-- **Целевая версия или диапазон:** концепции версионно-независимы; технические примеры и API проверены по состоянию на 2026-08-04
+- **Дата проверки:** 2026-10-15 — границы CDC/outbox, event sourcing и materialized views по указанным источникам.
+- **Целевая версия или диапазон:** концепции CDC/event sourcing; для встроенного materialized view — PostgreSQL 18; конфигурация Debezium в статье не задаётся.
 - **Статус примеров:** `current`
-- **Первичные источники:** [AWS Architecture Center](https://aws.amazon.com/architecture/); [Google SRE Books](https://sre.google/books/)
+- **Первичные источники:** [Debezium: Outbox Event Router](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html), [Fowler: Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html), [PostgreSQL 18: Materialized Views](https://www.postgresql.org/docs/18/rules-materializedviews.html).
 
 ## Когда одной CRUD-модели уже недостаточно
 
@@ -90,6 +90,8 @@ Event sourcing оправдан не везде. Он полезен там, г�
 ## Materialized views и projection-модели
 
 **Materialized view** или projection — это производная read-модель, собранная из исходных данных или потока событий под конкретный use case.
+
+Встроенный SQL `MATERIALIZED VIEW` и application projection не равны по механике. Например, PostgreSQL 18 сохраняет результат запроса и обновляет его через `REFRESH MATERIALIZED VIEW`; streaming consumer поддерживает отдельную проекцию своими транзакциями. Для каждого варианта назовите способ обновления, lag и процедуру восстановления, а не переносите автоматически свойства одного на другой.
 
 Примеры:
 
